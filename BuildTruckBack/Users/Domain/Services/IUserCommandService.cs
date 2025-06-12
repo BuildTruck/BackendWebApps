@@ -42,4 +42,11 @@ public interface IUserCommandService
     /// <param name="command">Delete profile image command</param>
     /// <returns>Updated user without profile image</returns>
     Task<User> Handle(DeleteProfileImageCommand command);
+    
+    /// <summary>
+    /// Handle update user command
+    /// </summary>
+    /// <param name="command">Update user command</param>
+    /// <returns>Updated user</returns>
+    Task<User> Handle(UpdateUserCommand command);
 }

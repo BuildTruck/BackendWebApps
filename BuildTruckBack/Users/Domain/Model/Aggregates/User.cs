@@ -65,16 +65,36 @@ public partial class User
         IsActive = true;
     }
 
-    /**
-     * <summary>
-     *     Update user information
-     * </summary>
-     */
-    public User UpdateInfo(string firstName, string lastName, string? personalEmail, string? phone)
+    /// <summary>
+    /// Update user information with optional parameters
+    /// Corporate email is regenerated if name changes
+    /// </summary>
+    public User UpdateInfo(string? firstName = null, string? lastName = null, string? personalEmail = null, string? phone = null, string? role = null)
     {
-        Name = new PersonName(firstName, lastName);
-        CorporateEmail = EmailAddress.GenerateCorporateEmail(Name); // ✅ Regenerar email si cambia nombre
-        ContactInfo = new ContactInfo(personalEmail, phone);
+        // ✅ Solo actualizar si se proporciona un valor
+        if (!string.IsNullOrWhiteSpace(firstName) || !string.IsNullOrWhiteSpace(lastName))
+        {
+            var newFirstName = !string.IsNullOrWhiteSpace(firstName) ? firstName : Name.FirstName;
+            var newLastName = !string.IsNullOrWhiteSpace(lastName) ? lastName : Name.LastName;
+        
+            Name = new PersonName(newFirstName, newLastName);
+            CorporateEmail = EmailAddress.GenerateCorporateEmail(Name); // ✅ Regenerar email corporativo
+        }
+    
+        // ✅ Actualizar contacto si se proporciona
+        if (personalEmail != null || phone != null)
+        {
+            var newPersonalEmail = personalEmail ?? ContactInfo.PersonalEmailAddress;
+            var newPhone = phone ?? ContactInfo.Phone;
+            ContactInfo = new ContactInfo(newPersonalEmail, newPhone);
+        }
+    
+        // ✅ Actualizar rol si se proporciona
+        if (!string.IsNullOrWhiteSpace(role))
+        {
+            Role = new UserRole(role);
+        }
+    
         return this;
     }
 

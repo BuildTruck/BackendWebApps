@@ -296,4 +296,65 @@ public class UserCommandService(
             throw new InvalidOperationException($"Error deleting profile image: {ex.Message}");
         }
     }
+    
+    /**
+     * <summary>
+     *     Handle update user command
+     * </summary>
+     * <param name="command">The update user command</param>
+     * <returns>Updated user</returns>
+     */
+    public async Task<User> Handle(UpdateUserCommand command)
+    {
+        // ✅ Find user
+        var user = await userRepository.FindByIdAsync(command.UserId);
+        if (user == null)
+            throw new ArgumentException($"User with ID {command.UserId} not found");
+
+        // ✅ Validate that there are changes to make
+        if (!command.HasChanges)
+            throw new ArgumentException("No changes provided");
+
+        try
+        {
+            // ✅ Check if new corporate email would conflict (if name changes)
+            if (command.WillUpdateName)
+            {
+                var tempName = new PersonName(
+                    command.Name ?? user.Name.FirstName,
+                    command.LastName ?? user.Name.LastName
+                );
+                var newCorporateEmail = EmailAddress.GenerateCorporateEmail(tempName);
+                
+                // ✅ Only check conflict if email actually changes
+                if (newCorporateEmail.Address != user.Email)
+                {
+                    if (await userRepository.ExistsByEmailAsync(newCorporateEmail))
+                    {
+                        throw new InvalidOperationException($"Email {newCorporateEmail.Address} already exists");
+                    }
+                }
+            }
+
+            // ✅ Update user using Value Objects
+            user.UpdateInfo(
+                firstName: command.Name,
+                lastName: command.LastName,
+                personalEmail: command.PersonalEmail,
+                phone: null, // No incluido en command, mantener actual
+                role: command.Role
+            );
+
+            // ✅ Save changes
+            userRepository.Update(user);
+            await unitOfWork.CompleteAsync();
+
+            Console.WriteLine($"✏️ ✅ User {user.FullName} (ID: {user.Id}) updated successfully");
+            return user;
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Error updating user: {ex.Message}");
+        }
+    }
 }

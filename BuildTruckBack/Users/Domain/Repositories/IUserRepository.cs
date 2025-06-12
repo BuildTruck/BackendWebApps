@@ -1,6 +1,7 @@
 using BuildTruckBack.Users.Domain.Model.Aggregates;
 using BuildTruckBack.Users.Domain.Model.ValueObjects;
 using BuildTruckBack.Shared.Domain.Repositories;
+using BuildTruckBack.Users.Domain.Model.Commands;
 
 namespace BuildTruckBack.Users.Domain.Repositories;
 
@@ -54,4 +55,5 @@ public interface IUserRepository : IBaseRepository<User>
     /// </summary>
     /// <param name="user">User to remove</param>
     void Remove(User user);
+    
 }

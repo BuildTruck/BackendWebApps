@@ -279,4 +279,55 @@ public class UsersController(
             return StatusCode(500, $"Internal server error: {ex.Message}");
         }
     }
+    /// <summary>
+    /// Update user basic information
+    /// </summary>
+    /// <param name="id">The user ID</param>
+    /// <param name="request">Update user request</param>
+    /// <returns>Updated user</returns>
+    [HttpPut("{id}")]
+    [SwaggerOperation(
+        Summary = "Update user information",
+        Description = "Update user's basic information. Corporate email is auto-generated if name changes.",
+        OperationId = "UpdateUser")]
+    [SwaggerResponse(StatusCodes.Status200OK, "User updated successfully", typeof(UserResource))]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid data provided")]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "User not found")]
+    public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateUserRequest request)
+    {
+        try
+        {
+            // ✅ Create command
+            var updateCommand = new UpdateUserCommand(
+                id,
+                request.Name,
+                request.LastName,
+                request.PersonalEmail,
+                request.Role
+            );
+
+            // ✅ Execute command
+            var user = await userCommandService.Handle(updateCommand);
+
+            // ✅ Return updated user
+            var userResource = UserResourceFromEntityAssembler.ToResourceFromEntity(user);
+            return Ok(userResource);
+        }
+        catch (ArgumentException ex) when (ex.Message.Contains("not found"))
+        {
+            return NotFound($"User with ID {id} not found");
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest($"Invalid data: {ex.Message}");
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest($"Operation failed: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Internal server error: {ex.Message}");
+        }
+    }
 }

@@ -5,7 +5,7 @@ using BuildTruckBack.Users.Domain.Repositories;
 using BuildTruckBack.Users.Domain.Services;
 using BuildTruckBack.Users.Infrastructure.Persistence.EFC.Repositories;
 using BuildTruckBack.Users.Application.ACL.Services; 
-using BuildTruckBack.Users.Application.ACL.Services;
+using BuildTruckBack.Users.Application.Internal.OutboundServices;
 
 // Shared Context
 using BuildTruckBack.Shared.Domain.Repositories;
@@ -128,7 +128,7 @@ if (cloudinarySettings == null || !cloudinarySettings.IsValid)
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserCommandService, UserCommandService>();
 builder.Services.AddScoped<IUserQueryService, UserQueryService>();
-
+builder.Services.AddScoped<IUserFacade, UserFacade>();
 // ✅ Users ACL Services
 builder.Services.AddScoped<BuildTruckBack.Users.Application.ACL.Services.IEmailService, EmailServiceAdapter>();
 

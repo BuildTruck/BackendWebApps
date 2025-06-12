@@ -122,4 +122,41 @@ public class EmailServiceAdapter : IEmailService
         </body>
         </html>";
     }
+    
+    /// <summary>
+    /// Send password reset email with token (Domain-specific logic)
+    /// </summary>
+    public async Task SendPasswordResetEmailAsync(User user, string resetToken)
+    {
+        try
+        {
+            _logger.LogInformation("Sending password reset email for user {UserId} via ACL", user.Id);
+
+            // ✅ Domain-specific email content for password reset
+            var subject = "Restablecer contraseña - BuildTruck";
+            var resetUrl = $"https://buildtruck.pe/reset-password?token={resetToken}&email={Uri.EscapeDataString(user.Email)}";
+        
+            var body = $@"
+            <h2>Solicitud de restablecimiento de contraseña</h2>
+            <p>Hola {user.FullName},</p>
+            <p>Has solicitado restablecer tu contraseña en BuildTruck.</p>
+            <p>Haz clic en el siguiente enlace para crear una nueva contraseña:</p>
+            <p><a href='{resetUrl}' style='background-color: #f97316; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;'>Restablecer Contraseña</a></p>
+            <p>Este enlace expirará en 1 hora por seguridad.</p>
+            <p>Si no solicitaste este cambio, puedes ignorar este email.</p>
+            <br>
+            <p>Saludos,<br>Equipo BuildTruck</p>
+        ";
+
+            // ✅ Delegate to generic email service
+            await _genericEmailService.SendEmailAsync(user.Email, subject, body);
+
+            _logger.LogInformation("✅ Password reset email sent successfully for user {UserId}", user.Id);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "❌ Failed to send password reset email for user {UserId} via ACL", user.Id);
+            throw new InvalidOperationException($"Failed to send password reset email to {user.FullName}: {ex.Message}");
+        }
+    }
 }
