@@ -4,6 +4,8 @@ using BuildTruckBack.Users.Application.Internal.QueryServices;
 using BuildTruckBack.Users.Domain.Repositories;
 using BuildTruckBack.Users.Domain.Services;
 using BuildTruckBack.Users.Infrastructure.Persistence.EFC.Repositories;
+using BuildTruckBack.Users.Application.ACL.Services; 
+using BuildTruckBack.Users.Application.ACL.Services;
 
 // Shared Context
 using BuildTruckBack.Shared.Domain.Repositories;
@@ -14,6 +16,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using BuildTruckBack.Shared.Infrastructure.ExternalServices.Email.Configuration;
 using BuildTruckBack.Shared.Infrastructure.ExternalServices.Email.Services;
+using BuildTruckBack.Shared.Infrastructure.ExternalServices.Cloudinary.Configuration;
+using BuildTruckBack.Shared.Infrastructure.ExternalServices.Cloudinary.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -94,17 +98,39 @@ builder.Services.AddSwaggerGen(options =>
     options.EnableAnnotations();
 });
 
-// Dependency Injection
+// ===== DEPENDENCY INJECTION =====
 
-// Shared Bounded Context
+// Shared Bounded Context - Infrastructure
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
-builder.Services.AddScoped<IEmailService, EmailService>();
 
-// Users Bounded Context
+// ✅ Shared Email Services (renamed to Generic)
+builder.Services.AddScoped<IGenericEmailService, GenericEmailService>();
+// 📦 Configure Cloudinary Settings
+builder.Services.Configure<CloudinarySettings>(
+    builder.Configuration.GetSection("CloudinarySettings"));
+// 📦 Register Cloudinary Image Service (Shared)
+builder.Services.AddScoped<ICloudinaryImageService, CloudinaryImageService>();
+
+// 📦 Register Users Domain Image Service (ACL)
+builder.Services.AddScoped<IImageService, ImageServiceAdapter>();
+
+// ✅ Validar configuración de Cloudinary al inicio
+var cloudinarySettings = builder.Configuration.GetSection("CloudinarySettings").Get<CloudinarySettings>();
+if (cloudinarySettings == null || !cloudinarySettings.IsValid)
+{
+    throw new InvalidOperationException(
+        "Cloudinary settings are missing or invalid. Please check your appsettings.json file.");
+}
+
+
+// ✅ Users Bounded Context
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserCommandService, UserCommandService>();
 builder.Services.AddScoped<IUserQueryService, UserQueryService>();
+
+// ✅ Users ACL Services
+builder.Services.AddScoped<BuildTruckBack.Users.Application.ACL.Services.IEmailService, EmailServiceAdapter>();
 
 var app = builder.Build();
 

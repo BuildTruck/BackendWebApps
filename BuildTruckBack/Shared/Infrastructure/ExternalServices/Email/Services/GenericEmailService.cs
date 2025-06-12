@@ -1,20 +1,20 @@
 using System.Net;
 using System.Net.Mail;
 using BuildTruckBack.Shared.Infrastructure.ExternalServices.Email.Configuration;
-using BuildTruckBack.Shared.Infrastructure.ExternalServices.Email.Services;
 using Microsoft.Extensions.Options;
 
 namespace BuildTruckBack.Shared.Infrastructure.ExternalServices.Email.Services;
 
 /// <summary>
-/// Email service implementation using System.Net.Mail
+/// Generic email service implementation using System.Net.Mail
+/// Serves all bounded contexts with generic email operations
 /// </summary>
-public class EmailService : IEmailService
+public class GenericEmailService : IGenericEmailService
 {
     private readonly EmailSettings _emailSettings;
-    private readonly ILogger<EmailService> _logger;
+    private readonly ILogger<GenericEmailService> _logger;
 
-    public EmailService(IOptions<EmailSettings> emailSettings, ILogger<EmailService> logger)
+    public GenericEmailService(IOptions<EmailSettings> emailSettings, ILogger<GenericEmailService> logger)
     {
         _emailSettings = emailSettings.Value;
         _logger = logger;
@@ -30,7 +30,7 @@ public class EmailService : IEmailService
             var subject = "🚛 Bienvenido a BuildTruck - Credenciales de acceso";
             var htmlBody = CreateWelcomeEmailTemplate(fullName, email, temporalPassword);
 
-            await SendEmailAsync(email, subject, htmlBody);
+            await SendEmailInternalAsync(email, subject, htmlBody);
             
             _logger.LogInformation("✅ Welcome email sent successfully to {Email}", email);
         }
@@ -38,6 +38,23 @@ public class EmailService : IEmailService
         {
             _logger.LogError(ex, "❌ Failed to send welcome email to {Email}", email);
             // No lanzar excepción para no afectar el registro del usuario
+        }
+    }
+
+    /// <summary>
+    /// Send email with custom subject and body (for ACL usage)
+    /// </summary>
+    public async Task SendEmailAsync(string email, string subject, string htmlBody)
+    {
+        try
+        {
+            await SendEmailInternalAsync(email, subject, htmlBody);
+            _logger.LogInformation("✅ Custom email sent successfully to {Email}", email);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "❌ Failed to send custom email to {Email}", email);
+            throw; // Re-throw for ACL error handling
         }
     }
 
@@ -62,9 +79,9 @@ public class EmailService : IEmailService
     }
 
     /// <summary>
-    /// Core method to send emails using SMTP
+    /// Core method to send emails using SMTP (internal)
     /// </summary>
-    private async Task SendEmailAsync(string toEmail, string subject, string htmlBody)
+    private async Task SendEmailInternalAsync(string toEmail, string subject, string htmlBody)
     {
         using var mailMessage = new MailMessage();
         mailMessage.From = new MailAddress(_emailSettings.FromEmail, _emailSettings.FromName);

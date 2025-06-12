@@ -48,4 +48,10 @@ public interface IUserRepository : IBaseRepository<User>
      * <returns>List of available supervisors</returns>
      */
     Task<IEnumerable<User>> FindAvailableSupervisorsAsync();
+    
+    /// <summary>
+    /// Remove user from database (physical deletion)
+    /// </summary>
+    /// <param name="user">User to remove</param>
+    void Remove(User user);
 }

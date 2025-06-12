@@ -6,6 +6,8 @@ using BuildTruckBack.Users.Interfaces.REST.Transform;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 using BuildTruckBack.Users.Domain.Model.Commands;
+
+
 namespace BuildTruckBack.Users.Interfaces.REST.Controllers;
 
 /// <summary>
@@ -156,6 +158,121 @@ public class UsersController(
         catch (UnauthorizedAccessException ex)
         {
             return Unauthorized(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Internal server error: {ex.Message}");
+        }
+    }
+    /// <summary>
+    /// Delete user (physical deletion)
+    /// </summary>
+    /// <param name="id">The user ID</param>
+    /// <returns>Success message</returns>
+    [HttpDelete("{id}")]
+    [SwaggerOperation(
+        Summary = "Delete user",
+        Description = "Permanently delete a user from the system. This action cannot be undone.",
+        OperationId = "DeleteUser")]
+    [SwaggerResponse(StatusCodes.Status204NoContent, "User deleted successfully")]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "User not found")]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid request")]
+    public async Task<IActionResult> DeleteUser(int id)
+    {
+        try
+        {
+            // ✅ Convert to Command
+            var deleteUserCommand = new DeleteUserCommand(id);
+            
+            // ✅ Execute business logic
+            await userCommandService.Handle(deleteUserCommand);
+            
+            return NoContent(); // 204 - Success with no content
+        }
+        catch (ArgumentException ex) when (ex.Message.Contains("not found"))
+        {
+            return NotFound($"User with ID {id} not found");
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Internal server error: {ex.Message}");
+        }
+    }
+    /// <summary>
+    /// Upload or update user profile image
+    /// </summary>
+    /// <param name="id">The user ID</param>
+    /// <param name="file">Image file (JPG, PNG, max 5MB)</param>
+    /// <returns>Updated user with new profile image</returns>
+    [HttpPost("{id}/profile-image")]
+    [SwaggerOperation(
+        Summary = "Upload user profile image",
+        Description = "Upload or update a user's profile image. Automatically replaces existing image.",
+        OperationId = "UploadUserProfileImage")]
+    [SwaggerResponse(StatusCodes.Status200OK, "Profile image uploaded successfully", typeof(UserResource))]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid image file")]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "User not found")]
+    public async Task<IActionResult> UploadProfileImage(int id, IFormFile file)
+    {
+        try
+        {
+            // ✅ Validate file
+            if (file == null || file.Length == 0)
+                return BadRequest("No file uploaded");
+
+            // ✅ Convert to bytes
+            byte[] imageBytes;
+            using (var memoryStream = new MemoryStream())
+            {
+                await file.CopyToAsync(memoryStream);
+                imageBytes = memoryStream.ToArray();
+            }
+
+            // ✅ Create command and execute
+            var uploadCommand = new UploadProfileImageCommand(id, imageBytes, file.FileName);
+            var user = await userCommandService.Handle(uploadCommand);
+
+            // ✅ Return updated user
+            var userResource = UserResourceFromEntityAssembler.ToResourceFromEntity(user);
+            return Ok(userResource);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest($"Invalid data: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Internal server error: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Delete user profile image
+    /// </summary>
+    /// <param name="id">The user ID</param>
+    /// <returns>Updated user without profile image</returns>
+    [HttpDelete("{id}/profile-image")]
+    [SwaggerOperation(
+        Summary = "Delete user profile image",
+        Description = "Delete the current profile image for a user.",
+        OperationId = "DeleteUserProfileImage")]
+    [SwaggerResponse(StatusCodes.Status200OK, "Profile image deleted successfully", typeof(UserResource))]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "User not found")]
+    public async Task<IActionResult> DeleteProfileImage(int id)
+    {
+        try
+        {
+            // ✅ Create command and execute
+            var deleteCommand = new DeleteProfileImageCommand(id);
+            var user = await userCommandService.Handle(deleteCommand);
+
+            // ✅ Return updated user
+            var userResource = UserResourceFromEntityAssembler.ToResourceFromEntity(user);
+            return Ok(userResource);
+        }
+        catch (ArgumentException ex) when (ex.Message.Contains("not found"))
+        {
+            return NotFound($"User with ID {id} not found");
         }
         catch (Exception ex)
         {

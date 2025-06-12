@@ -122,3 +122,6 @@ D:\MATTHEW\UNIVERSIDAD\CICLO V\APPS WEB\BuildTruck\BackEnd\BuildTruckBack\BuildT
 D:\MATTHEW\UNIVERSIDAD\CICLO V\APPS WEB\BuildTruck\BackEnd\BuildTruckBack\BuildTruckBack\obj\Debug\net9.0\BuildTruckBack.pdb
 D:\MATTHEW\UNIVERSIDAD\CICLO V\APPS WEB\BuildTruck\BackEnd\BuildTruckBack\BuildTruckBack\obj\Debug\net9.0\BuildTruckBack.genruntimeconfig.cache
 D:\MATTHEW\UNIVERSIDAD\CICLO V\APPS WEB\BuildTruck\BackEnd\BuildTruckBack\BuildTruckBack\obj\Debug\net9.0\ref\BuildTruckBack.dll
+D:\MATTHEW\UNIVERSIDAD\CICLO V\APPS WEB\BuildTruck\BackEnd\BuildTruckBack\BuildTruckBack\obj\Debug\net9.0\BuildTruckBack.sourcelink.json
+D:\MATTHEW\UNIVERSIDAD\CICLO V\APPS WEB\BuildTruck\BackEnd\BuildTruckBack\BuildTruckBack\bin\Debug\net9.0\CloudinaryDotNet.dll
+D:\MATTHEW\UNIVERSIDAD\CICLO V\APPS WEB\BuildTruck\BackEnd\BuildTruckBack\BuildTruckBack\bin\Debug\net9.0\Newtonsoft.Json.dll

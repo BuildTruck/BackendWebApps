@@ -1,9 +1,9 @@
 namespace BuildTruckBack.Shared.Infrastructure.ExternalServices.Email.Services;
 
 /// <summary>
-/// Email service interface for sending notifications
+/// Generic email service interface for sending notifications across all bounded contexts
 /// </summary>
-public interface IEmailService
+public interface IGenericEmailService
 {
     /// <summary>
     /// Send welcome email with temporal credentials
@@ -21,4 +21,13 @@ public interface IEmailService
     /// <param name="fullName">User full name</param>
     /// <returns>Task</returns>
     Task SendPasswordChangedNotificationAsync(string email, string fullName);
+
+    /// <summary>
+    /// Send email with custom subject and body (for ACL usage)
+    /// </summary>
+    /// <param name="email">Destination email address</param>
+    /// <param name="subject">Email subject</param>
+    /// <param name="htmlBody">Email HTML body</param>
+    /// <returns>Task</returns>
+    Task SendEmailAsync(string email, string subject, string htmlBody);
 }

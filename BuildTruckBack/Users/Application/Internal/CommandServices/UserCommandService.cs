@@ -4,7 +4,8 @@ using BuildTruckBack.Users.Domain.Model.ValueObjects;
 using BuildTruckBack.Users.Domain.Repositories;
 using BuildTruckBack.Users.Domain.Services;
 using BuildTruckBack.Shared.Domain.Repositories;
-using BuildTruckBack.Shared.Infrastructure.ExternalServices.Email.Services;
+using BuildTruckBack.Users.Application.ACL.Services;  // ✅ ACL import
+using BuildTruckBack.Shared.Infrastructure.ExternalServices.Email.Services; // ✅ Para password changed
 
 namespace BuildTruckBack.Users.Application.Internal.CommandServices;
 
@@ -14,12 +15,15 @@ namespace BuildTruckBack.Users.Application.Internal.CommandServices;
  * </summary>
  * <remarks>
  *     This service handles user commands for the BuildTruck platform using Value Objects
+ *     Uses ACL pattern for email operations to maintain clean architecture
  * </remarks>
  */
 public class UserCommandService(
     IUserRepository userRepository,
     IUnitOfWork unitOfWork,
-    IEmailService emailService)
+    IEmailService userEmailService,          // ✅ ACL Email Service for Users domain
+    IGenericEmailService genericEmailService,
+    IImageService imageService)  // ✅ Direct access for legacy operations
     : IUserCommandService
 {
     /**
@@ -57,21 +61,16 @@ public class UserCommandService(
             await userRepository.AddAsync(user);
             await unitOfWork.CompleteAsync();
             
-            // ✅ Enviar email de bienvenida al email PERSONAL
+            // ✅ Enviar email de bienvenida usando ACL - más limpio y orientado al dominio
             try 
             {
-                var emailDestination = user.PersonalEmail ?? user.Email;
-                await emailService.SendWelcomeEmailAsync(
-                    emailDestination,
-                    user.FullName,
-                    temporalPassword
-                );
-                Console.WriteLine($"📧 ✅ Email de bienvenida enviado a {emailDestination} (email personal)");
+                await userEmailService.SendUserCredentialsAsync(user, temporalPassword);
+                Console.WriteLine($"📧 ✅ Email de credenciales enviado via ACL para usuario {user.FullName}");
             }
             catch (Exception emailEx)
             {
                 // Log error pero no fallar la creación del usuario
-                Console.WriteLine($"📧 ❌ Error enviando email de bienvenida: {emailEx.Message}");
+                Console.WriteLine($"📧 ❌ Error enviando email via ACL: {emailEx.Message}");
                 // El usuario se crea exitosamente aunque falle el email
             }
             
@@ -133,9 +132,10 @@ public class UserCommandService(
         await unitOfWork.CompleteAsync();
 
         // ✅ Enviar notificación de cambio de contraseña al email CORPORATIVO
+        // TODO: Refactorizar esto también al ACL en el futuro
         try 
         {
-            await emailService.SendPasswordChangedNotificationAsync(
+            await genericEmailService.SendPasswordChangedNotificationAsync(
                 user.Email, 
                 user.FullName
             );
@@ -184,5 +184,116 @@ public class UserCommandService(
 
         if (!password.Any(ch => "!@#$%^&*()_+-=[]{}|;:,.<>?".Contains(ch)))
             throw new ArgumentException("Password must contain at least one special character");
+    }
+
+    /**
+     * <summary>
+     *     Handle delete user command (physical deletion)
+     * </summary>
+     * <param name="command">The delete user command</param>
+     * <returns>Task</returns>
+     */
+    public async Task Handle(DeleteUserCommand command)
+    {
+        // ✅ Find user
+        var user = await userRepository.FindByIdAsync(command.UserId);
+        if (user == null)
+            throw new ArgumentException($"User with ID {command.UserId} not found");
+
+        try
+        {
+            // ✅ Remove user from database
+            userRepository.Remove(user);
+            await unitOfWork.CompleteAsync();
+
+            Console.WriteLine($"🗑️ ✅ User {user.FullName} (ID: {user.Id}) deleted successfully");
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Error deleting user: {ex.Message}");
+        }
+    }
+    
+    /**
+     * <summary>
+     *     Handle upload profile image command (creates new or replaces existing)
+     * </summary>
+     * <param name="command">The upload profile image command</param>
+     * <returns>Updated user with new profile image URL</returns>
+     */
+    public async Task<User> Handle(UploadProfileImageCommand command)
+    {
+        // ✅ Find user
+        var user = await userRepository.FindByIdAsync(command.UserId);
+        if (user == null)
+            throw new ArgumentException($"User with ID {command.UserId} not found");
+
+        try
+        {
+            // ✅ Validate image through ACL
+            var validation = imageService.ValidateUserProfileImage(command.ImageBytes, command.FileName);
+            if (!validation.IsValid)
+                throw new ArgumentException(validation.ErrorMessage);
+
+            // ✅ Upload image through ACL (handles deletion of previous image)
+            var imageUrl = await imageService.UploadUserProfileImageAsync(user, command.ImageBytes, command.FileName);
+
+            // ✅ Update user domain entity
+            user.UpdateProfileImage(imageUrl);
+
+            // ✅ Save changes
+            userRepository.Update(user);
+            await unitOfWork.CompleteAsync();
+
+            Console.WriteLine($"📸 ✅ Profile image uploaded for user {user.FullName} (ID: {user.Id})");
+            return user;
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Error uploading profile image: {ex.Message}");
+        }
+    }
+
+    /**
+     * <summary>
+     *     Handle delete profile image command
+     * </summary>
+     * <param name="command">The delete profile image command</param>
+     * <returns>Updated user without profile image</returns>
+     */
+    public async Task<User> Handle(DeleteProfileImageCommand command)
+    {
+        // ✅ Find user
+        var user = await userRepository.FindByIdAsync(command.UserId);
+        if (user == null)
+            throw new ArgumentException($"User with ID {command.UserId} not found");
+
+        try
+        {
+            // ✅ Delete image through ACL
+            var deleted = await imageService.DeleteUserProfileImageAsync(user);
+            
+            if (deleted)
+            {
+                // ✅ Update user domain entity (remove image URL)
+                user.UpdateProfileImage(null);
+
+                // ✅ Save changes
+                userRepository.Update(user);
+                await unitOfWork.CompleteAsync();
+
+                Console.WriteLine($"🗑️ ✅ Profile image deleted for user {user.FullName} (ID: {user.Id})");
+            }
+            else
+            {
+                Console.WriteLine($"⚠️ Could not delete profile image for user {user.FullName} (ID: {user.Id})");
+            }
+
+            return user;
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Error deleting profile image: {ex.Message}");
+        }
     }
 }
