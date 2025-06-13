@@ -82,7 +82,6 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
         // ✅ Other User properties
         builder.Entity<User>().Property(u => u.PasswordHash).IsRequired().HasMaxLength(500);
         builder.Entity<User>().Property(u => u.ProfileImageUrl).HasMaxLength(500);
-        builder.Entity<User>().Property(u => u.ProjectId);
         builder.Entity<User>().Property(u => u.IsActive).IsRequired().HasDefaultValue(true);
         builder.Entity<User>().Property(u => u.LastLogin);
 

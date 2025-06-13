@@ -29,7 +29,6 @@ public static class UserResourceFromEntityAssembler
             entity.PersonalEmail,            // ✅ From ContactInfo Value Object
             entity.Phone,                    // ✅ From ContactInfo Value Object
             entity.ProfileImageUrl,
-            entity.ProjectId,
             entity.IsActive,
             entity.LastLogin,
             entity.CreatedDate,

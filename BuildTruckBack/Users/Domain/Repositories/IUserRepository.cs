@@ -41,14 +41,7 @@ public interface IUserRepository : IBaseRepository<User>
      * <returns>List of users with the specified role</returns>
      */
     Task<IEnumerable<User>> FindByRoleAsync(UserRole role);
-
-    /**
-     * <summary>
-     *     Find available supervisors (not assigned to any project)
-     * </summary>
-     * <returns>List of available supervisors</returns>
-     */
-    Task<IEnumerable<User>> FindAvailableSupervisorsAsync();
+    
     
     /// <summary>
     /// Remove user from database (physical deletion)

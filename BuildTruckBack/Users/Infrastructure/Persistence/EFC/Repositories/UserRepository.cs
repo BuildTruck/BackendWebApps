@@ -59,22 +59,7 @@ public class UserRepository(AppDbContext context) : BaseRepository<User>(context
             .Where(user => user.Role.Role == role.Role && user.IsActive)
             .ToListAsync();
     }
-
-    /**
-     * <summary>
-     *     Find available supervisors (not assigned to any project)
-     * </summary>
-     * <returns>List of available supervisors</returns>
-     */
-    public async Task<IEnumerable<User>> FindAvailableSupervisorsAsync()
-    {
-        return await Context.Set<User>()
-            .Where(user => user.Role.Role == "Supervisor" 
-                          && user.ProjectId == null 
-                          && user.IsActive)
-            .ToListAsync();
-    }
-
+    
     /**
      * <summary>
      *     Find user by person name (first name + last name) - NUEVO

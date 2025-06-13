@@ -17,7 +17,6 @@ public record UserResource(
     string? PersonalEmail,           // ✅ Optional personal email
     string? Phone,                   // ✅ Optional phone
     string? ProfileImageUrl,         // ✅ Cloudinary URL
-    int? ProjectId,                  // ✅ For supervisors
     bool IsActive,
     DateTime? LastLogin,
     DateTimeOffset? CreatedAt,

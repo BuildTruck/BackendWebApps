@@ -18,6 +18,17 @@ using BuildTruckBack.Shared.Infrastructure.ExternalServices.Email.Configuration;
 using BuildTruckBack.Shared.Infrastructure.ExternalServices.Email.Services;
 using BuildTruckBack.Shared.Infrastructure.ExternalServices.Cloudinary.Configuration;
 using BuildTruckBack.Shared.Infrastructure.ExternalServices.Cloudinary.Services;
+// Auth Context
+using BuildTruckBack.Auth.Application.ACL.Services;
+using BuildTruckBack.Auth.Application.Internal.CommandServices;
+using BuildTruckBack.Auth.Application.Internal.QueryServices;
+using BuildTruckBack.Auth.Domain.Services;
+using BuildTruckBack.Auth.Infrastructure.ACL;
+using BuildTruckBack.Auth.Infrastructure.Tokens.JWT.Configuration;
+using BuildTruckBack.Auth.Infrastructure.Tokens.JWT.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -49,6 +60,31 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseMySQL(connectionString)
             .LogTo(Console.WriteLine, LogLevel.Error);
 });
+
+// JWT Configuration
+builder.Services.Configure<TokenSettings>(builder.Configuration.GetSection("TokenSettings"));
+
+var tokenSettings = builder.Configuration.GetSection("TokenSettings").Get<TokenSettings>();
+if (tokenSettings == null || !tokenSettings.IsValid())
+{
+    throw new InvalidOperationException("JWT TokenSettings are missing or invalid");
+}
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = tokenSettings.ValidateIssuerSigningKey,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(tokenSettings.SecretKey)),
+            ValidateIssuer = tokenSettings.ValidateIssuer,
+            ValidIssuer = tokenSettings.Issuer,
+            ValidateAudience = tokenSettings.ValidateAudience,
+            ValidAudience = tokenSettings.Audience,
+            ValidateLifetime = tokenSettings.ValidateLifetime,
+            ClockSkew = TimeSpan.FromMinutes(tokenSettings.ClockSkewMinutes)
+        };
+    });
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -104,18 +140,18 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 
-// ✅ Shared Email Services (renamed to Generic)
+// Shared Email Services (renamed to Generic)
 builder.Services.AddScoped<IGenericEmailService, GenericEmailService>();
-// 📦 Configure Cloudinary Settings
+// Configure Cloudinary Settings
 builder.Services.Configure<CloudinarySettings>(
     builder.Configuration.GetSection("CloudinarySettings"));
-// 📦 Register Cloudinary Image Service (Shared)
+// Register Cloudinary Image Service (Shared)
 builder.Services.AddScoped<ICloudinaryImageService, CloudinaryImageService>();
 
-// 📦 Register Users Domain Image Service (ACL)
+// Register Users Domain Image Service (ACL)
 builder.Services.AddScoped<IImageService, ImageServiceAdapter>();
 
-// ✅ Validar configuración de Cloudinary al inicio
+// Validar configuración de Cloudinary al inicio
 var cloudinarySettings = builder.Configuration.GetSection("CloudinarySettings").Get<CloudinarySettings>();
 if (cloudinarySettings == null || !cloudinarySettings.IsValid)
 {
@@ -124,13 +160,28 @@ if (cloudinarySettings == null || !cloudinarySettings.IsValid)
 }
 
 
-// ✅ Users Bounded Context
+//  Users Bounded Context
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserCommandService, UserCommandService>();
 builder.Services.AddScoped<IUserQueryService, UserQueryService>();
 builder.Services.AddScoped<IUserFacade, UserFacade>();
-// ✅ Users ACL Services
+
+// Users ACL Services
 builder.Services.AddScoped<BuildTruckBack.Users.Application.ACL.Services.IEmailService, EmailServiceAdapter>();
+
+// Auth Bounded Context
+builder.Services.AddScoped<IUserContextService, UserContextService>();
+builder.Services.AddScoped<TokenService>();
+builder.Services.AddScoped<IAuthCommandService, AuthCommandService>();
+builder.Services.AddScoped<IAuthQueryService, AuthQueryService>();
+
+
+
+
+
+
+
+
 
 var app = builder.Build();
 
@@ -153,6 +204,8 @@ if (app.Environment.IsDevelopment())
 // Apply CORS Policy
 app.UseCors("AllowAllPolicy");
 
+app.UseAuthentication(); 
+app.UseAuthorization();
 app.UseHttpsRedirection();
 
 app.UseAuthorization();

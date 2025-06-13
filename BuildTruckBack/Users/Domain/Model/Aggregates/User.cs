@@ -24,7 +24,7 @@ public partial class User
     public string PasswordHash { get; private set; }
     
     public string? ProfileImageUrl { get; private set; }
-    public int? ProjectId { get; private set; } // Para supervisores asignados
+    
     public bool IsActive { get; private set; }
     public DateTime? LastLogin { get; private set; }
 
@@ -120,31 +120,7 @@ public partial class User
         return this;
     }
 
-    /**
-     * <summary>
-     *     Assign project to supervisor
-     * </summary>
-     */
-    public User AssignToProject(int projectId)
-    {
-        if (!Role.CanBeAssignedToProject)
-            throw new InvalidOperationException("Only supervisors can be assigned to projects");
-        
-        ProjectId = projectId;
-        return this;
-    }
-
-    /**
-     * <summary>
-     *     Unassign from project
-     * </summary>
-     */
-    public User UnassignFromProject()
-    {
-        ProjectId = null;
-        return this;
-    }
-
+    
     /**
      * <summary>
      *     Update last login timestamp
@@ -152,7 +128,8 @@ public partial class User
      */
     public User UpdateLastLogin()
     {
-        LastLogin = DateTime.UtcNow;
+        var peruTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SA Pacific Standard Time");
+        LastLogin = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, peruTimeZone);
         return this;
     }
 
