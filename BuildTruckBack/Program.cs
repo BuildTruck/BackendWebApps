@@ -22,6 +22,7 @@ using BuildTruckBack.Shared.Infrastructure.ExternalServices.Cloudinary.Services;
 using BuildTruckBack.Auth.Application.ACL.Services;
 using BuildTruckBack.Auth.Application.Internal.CommandServices;
 using BuildTruckBack.Auth.Application.Internal.QueryServices;
+using BuildTruckBack.Auth.Application.Internal.OutboundServices;
 using BuildTruckBack.Auth.Domain.Services;
 using BuildTruckBack.Auth.Infrastructure.ACL;
 using BuildTruckBack.Auth.Infrastructure.Tokens.JWT.Configuration;
@@ -174,7 +175,7 @@ builder.Services.AddScoped<IUserContextService, UserContextService>();
 builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<IAuthCommandService, AuthCommandService>();
 builder.Services.AddScoped<IAuthQueryService, AuthQueryService>();
-
+builder.Services.AddScoped<IAuthFacade, AuthFacade>();
 
 
 
