@@ -18,8 +18,9 @@ using BuildTruckBack.Shared.Infrastructure.ExternalServices.Email.Configuration;
 using BuildTruckBack.Shared.Infrastructure.ExternalServices.Email.Services;
 using BuildTruckBack.Shared.Infrastructure.ExternalServices.Cloudinary.Configuration;
 using BuildTruckBack.Shared.Infrastructure.ExternalServices.Cloudinary.Services;
-// Auth Context
-using BuildTruckBack.Auth.Application.ACL.Services;
+
+// Auth Context (with alias to avoid conflicts)
+using AuthUserContextService = BuildTruckBack.Auth.Application.ACL.Services.IUserContextService;
 using BuildTruckBack.Auth.Application.Internal.CommandServices;
 using BuildTruckBack.Auth.Application.Internal.QueryServices;
 using BuildTruckBack.Auth.Application.Internal.OutboundServices;
@@ -30,6 +31,15 @@ using BuildTruckBack.Auth.Infrastructure.Tokens.JWT.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+
+// Projects Context (with alias to avoid conflicts)
+using ProjectsUserContextService = BuildTruckBack.Projects.Application.ACL.Services.IUserContextService;
+using ProjectsCloudinaryService = BuildTruckBack.Projects.Application.ACL.Services.ICloudinaryService;
+using BuildTruckBack.Projects.Application.Internal.CommandServices;
+using BuildTruckBack.Projects.Domain.Services;
+using BuildTruckBack.Projects.Infrastructure.Persistence.EFC.Repositories;
+using BuildTruckBack.Projects.Infrastructure.ACL;
+using BuildTruckBack.Projects.Interfaces.REST.Transform;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -143,9 +153,11 @@ builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Emai
 
 // Shared Email Services (renamed to Generic)
 builder.Services.AddScoped<IGenericEmailService, GenericEmailService>();
+
 // Configure Cloudinary Settings
 builder.Services.Configure<CloudinarySettings>(
     builder.Configuration.GetSection("CloudinarySettings"));
+
 // Register Cloudinary Image Service (Shared)
 builder.Services.AddScoped<ICloudinaryImageService, CloudinaryImageService>();
 
@@ -160,8 +172,7 @@ if (cloudinarySettings == null || !cloudinarySettings.IsValid)
         "Cloudinary settings are missing or invalid. Please check your appsettings.json file.");
 }
 
-
-//  Users Bounded Context
+// Users Bounded Context
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserCommandService, UserCommandService>();
 builder.Services.AddScoped<IUserQueryService, UserQueryService>();
@@ -171,18 +182,27 @@ builder.Services.AddScoped<IUserFacade, UserFacade>();
 builder.Services.AddScoped<BuildTruckBack.Users.Application.ACL.Services.IEmailService, EmailServiceAdapter>();
 
 // Auth Bounded Context
-builder.Services.AddScoped<IUserContextService, UserContextService>();
+builder.Services.AddScoped<AuthUserContextService, BuildTruckBack.Auth.Infrastructure.ACL.UserContextService>();
 builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<IAuthCommandService, AuthCommandService>();
 builder.Services.AddScoped<IAuthQueryService, AuthQueryService>();
 builder.Services.AddScoped<IAuthFacade, AuthFacade>();
 
+// Projects Bounded Context
+builder.Services.AddScoped<ProjectRepository>();
+builder.Services.AddScoped<IProjectCommandService, ProjectCommandService>();
+builder.Services.AddScoped<ProjectResourceAssembler>();
 
+// Projects ACL Services - Using aliases to avoid conflicts
+builder.Services.AddScoped<ProjectsUserContextService, BuildTruckBack.Projects.Infrastructure.ACL.UserContextService>();
 
-
-
-
-
+// Projects Cloudinary Service - Create adapter that wraps shared service
+builder.Services.AddScoped<ProjectsCloudinaryService>(provider =>
+{
+    var sharedCloudinaryService = provider.GetRequiredService<ICloudinaryImageService>();
+    var logger = provider.GetRequiredService<ILogger<CloudinaryService>>();
+    return new CloudinaryService(sharedCloudinaryService, logger);  // ← Usa el de Infrastructure
+});
 
 var app = builder.Build();
 
@@ -208,8 +228,6 @@ app.UseCors("AllowAllPolicy");
 app.UseAuthentication(); 
 app.UseAuthorization();
 app.UseHttpsRedirection();
-
-app.UseAuthorization();
 
 app.MapControllers();
 
