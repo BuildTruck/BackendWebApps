@@ -7293,23 +7293,23 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\ingte\\.nuget\\packages\\": {},
+    "C:\\Users\\Ly\\.nuget\\packages\\": {},
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\MATTHEW\\UNIVERSIDAD\\CICLO V\\APPS WEB\\BuildTruck\\BackEnd\\BuildTruckBack\\BuildTruckBack\\BuildTruckBack.csproj",
+      "projectUniqueName": "E:\\BackendWebApps\\BuildTruckBack\\BuildTruckBack.csproj",
       "projectName": "BuildTruckBack",
-      "projectPath": "D:\\MATTHEW\\UNIVERSIDAD\\CICLO V\\APPS WEB\\BuildTruck\\BackEnd\\BuildTruckBack\\BuildTruckBack\\BuildTruckBack.csproj",
-      "packagesPath": "C:\\Users\\ingte\\.nuget\\packages\\",
-      "outputPath": "D:\\MATTHEW\\UNIVERSIDAD\\CICLO V\\APPS WEB\\BuildTruck\\BackEnd\\BuildTruckBack\\BuildTruckBack\\obj\\",
+      "projectPath": "E:\\BackendWebApps\\BuildTruckBack\\BuildTruckBack.csproj",
+      "packagesPath": "C:\\Users\\Ly\\.nuget\\packages\\",
+      "outputPath": "E:\\BackendWebApps\\BuildTruckBack\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
       ],
       "configFilePaths": [
-        "C:\\Users\\ingte\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\Ly\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
@@ -7426,7 +7426,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Users\\ingte\\.dotnet\\sdk\\9.0.300/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Users\\Ly\\.dotnet\\sdk\\9.0.300/PortableRuntimeIdentifierGraph.json"
       }
     }
   }
