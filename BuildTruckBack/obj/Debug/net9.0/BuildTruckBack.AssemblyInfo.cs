@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("BuildTruckBack")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7cc1f21b4cffff05bfd7535f25b11b8222e4ea7d")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+55846a7dc6f1ecba06564b7e5582b8f0000416b8")]
 [assembly: System.Reflection.AssemblyProductAttribute("BuildTruckBack")]
 [assembly: System.Reflection.AssemblyTitleAttribute("BuildTruckBack")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

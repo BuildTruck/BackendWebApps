@@ -1,3 +1,5 @@
+using DotNetEnv;
+
 // Users Context
 using BuildTruckBack.Users.Application.Internal.CommandServices;
 using BuildTruckBack.Users.Application.Internal.QueryServices;
@@ -41,7 +43,26 @@ using BuildTruckBack.Projects.Infrastructure.Persistence.EFC.Repositories;
 using BuildTruckBack.Projects.Infrastructure.ACL;
 using BuildTruckBack.Projects.Interfaces.REST.Transform;
 
+// ===== LOAD ENVIRONMENT VARIABLES =====
+Env.Load();
+
 var builder = WebApplication.CreateBuilder(args);
+
+// ===== OVERRIDE CONFIGURATION WITH .ENV VALUES =====
+builder.Configuration.AddEnvironmentVariables();
+
+// Replace appsettings values with .env values if they exist
+if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("JWT_SECRET_KEY")))
+    builder.Configuration["TokenSettings:SecretKey"] = Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
+
+if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DB_CONNECTION")))
+    builder.Configuration["ConnectionStrings:DefaultConnection"] = Environment.GetEnvironmentVariable("DB_CONNECTION");
+
+if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("SMTP_PASSWORD")))
+    builder.Configuration["EmailSettings:SmtpPassword"] = Environment.GetEnvironmentVariable("SMTP_PASSWORD");
+
+if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("CLOUDINARY_SECRET")))
+    builder.Configuration["CloudinarySettings:ApiSecret"] = Environment.GetEnvironmentVariable("CLOUDINARY_SECRET");
 
 // Add services to the container.
 builder.Services.AddRouting(options => options.LowercaseUrls = true);

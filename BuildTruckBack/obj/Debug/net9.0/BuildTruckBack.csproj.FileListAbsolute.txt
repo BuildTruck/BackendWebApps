@@ -125,3 +125,5 @@ D:\MATTHEW\UNIVERSIDAD\CICLO V\APPS WEB\BuildTruck\BackEnd\BuildTruckBack\BuildT
 D:\MATTHEW\UNIVERSIDAD\CICLO V\APPS WEB\BuildTruck\BackEnd\BuildTruckBack\BuildTruckBack\obj\Debug\net9.0\BuildTruckBack.sourcelink.json
 D:\MATTHEW\UNIVERSIDAD\CICLO V\APPS WEB\BuildTruck\BackEnd\BuildTruckBack\BuildTruckBack\bin\Debug\net9.0\CloudinaryDotNet.dll
 D:\MATTHEW\UNIVERSIDAD\CICLO V\APPS WEB\BuildTruck\BackEnd\BuildTruckBack\BuildTruckBack\bin\Debug\net9.0\Newtonsoft.Json.dll
+D:\MATTHEW\UNIVERSIDAD\CICLO V\APPS WEB\BuildTruck\BackEnd\BuildTruckBack\BuildTruckBack\bin\Debug\net9.0\DotNetEnv.dll
+D:\MATTHEW\UNIVERSIDAD\CICLO V\APPS WEB\BuildTruck\BackEnd\BuildTruckBack\BuildTruckBack\bin\Debug\net9.0\Sprache.dll
