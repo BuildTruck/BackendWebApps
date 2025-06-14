@@ -48,21 +48,9 @@ Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ===== OVERRIDE CONFIGURATION WITH .ENV VALUES =====
+// ===== CONFIGURATION =====
+// Las variables de entorno se cargan automáticamente usando la sintaxis jerárquica
 builder.Configuration.AddEnvironmentVariables();
-
-// Replace appsettings values with .env values if they exist
-if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("JWT_SECRET_KEY")))
-    builder.Configuration["TokenSettings:SecretKey"] = Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
-
-if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DB_CONNECTION")))
-    builder.Configuration["ConnectionStrings:DefaultConnection"] = Environment.GetEnvironmentVariable("DB_CONNECTION");
-
-if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("SMTP_PASSWORD")))
-    builder.Configuration["EmailSettings:SmtpPassword"] = Environment.GetEnvironmentVariable("SMTP_PASSWORD");
-
-if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("CLOUDINARY_SECRET")))
-    builder.Configuration["CloudinarySettings:ApiSecret"] = Environment.GetEnvironmentVariable("CLOUDINARY_SECRET");
 
 // Add services to the container.
 builder.Services.AddRouting(options => options.LowercaseUrls = true);
@@ -249,7 +237,5 @@ app.UseCors("AllowAllPolicy");
 app.UseAuthentication(); 
 app.UseAuthorization();
 app.UseHttpsRedirection();
-
-app.MapControllers();
 
 app.Run();
