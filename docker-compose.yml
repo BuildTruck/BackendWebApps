@@ -12,6 +12,9 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ConnectionStrings__DefaultConnection=server=mysql;port=3306;database=buildtruck;user=root;password=BuildTruck123!
+      - TokenSettings__SecretKey=4f8a2c1e9b7d3f6a8c5e2b9f1a4d7c0e3b6f9a2c5e8b1f4a7d0c3f6b9e2a5d8c1f
+      - EmailSettings__SmtpPassword=hjkj kqmw pigk utwz
+      - CloudinarySettings__ApiSecret=wLNbBt2imcpgflwDdOsr3CoHZPI
     networks:
       - buildtruck-network
 
