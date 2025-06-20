@@ -229,7 +229,7 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 
-// Apply CORS Policy
+// Apply CORS Policyy
 app.UseCors("AllowAllPolicy");
 
 app.UseAuthentication(); 
