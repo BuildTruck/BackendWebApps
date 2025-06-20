@@ -16,7 +16,8 @@ services:
       - ConnectionStrings__DefaultConnection=server=mysql;port=3306;database=buildtruck;user=root;password=${MYSQL_PASSWORD}
     networks:
       - buildtruck-network
-
+    restart: always
+    
   # MySQL Database
   mysql:
     image: mysql:8.0
@@ -32,7 +33,8 @@ services:
       - mysql_data:/var/lib/mysql
     networks:
       - buildtruck-network
-
+    restart: always
+    
 volumes:
   mysql_data:
 
