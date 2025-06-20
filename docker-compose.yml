@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  # Backend .NET
+  buildtruck-backend:
+    build: .
+    container_name: buildtruck-dotnet
+    ports:
+      - "5000:80"
+    depends_on:
+      - mysql
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=server=mysql;port=3306;database=buildtruck;user=root;password=BuildTruck123!
+    networks:
+      - buildtruck-network
+
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: buildtruck-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: BuildTruck123!
+      MYSQL_DATABASE: buildtruck
+      MYSQL_USER: buildtruckuser
+      MYSQL_PASSWORD: BuildTruck123!
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - buildtruck-network
+
+volumes:
+  mysql_data:
+
+networks:
+  buildtruck-network:
+    driver: bridge
