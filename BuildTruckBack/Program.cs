@@ -1,5 +1,12 @@
 using DotNetEnv;
 
+// Configurations Context
+using BuildTruckBack.Configurations.Application.Internal.CommandServices;
+using BuildTruckBack.Configurations.Application.Internal.OutboundServices;
+using BuildTruckBack.Configurations.Domain.Repositories;
+using BuildTruckBack.Configurations.Infrastructure.Persistence.EFC.Repositories;
+using BuildTruckBack.Configurations.Domain.Model.Commands;
+
 // Users Context
 using BuildTruckBack.Users.Application.Internal.CommandServices;
 using BuildTruckBack.Users.Application.Internal.QueryServices;
@@ -46,6 +53,7 @@ using BuildTruckBack.Projects.Domain.Services;
 using BuildTruckBack.Projects.Infrastructure.Persistence.EFC.Repositories;
 using BuildTruckBack.Projects.Infrastructure.ACL;
 using BuildTruckBack.Projects.Interfaces.REST.Transform;
+
 // Personnel Context
 using BuildTruckBack.Personnel.Application.Internal.CommandServices;
 using BuildTruckBack.Personnel.Application.Internal.QueryServices;
@@ -209,6 +217,10 @@ if (cloudinarySettings == null || !cloudinarySettings.IsValid)
     throw new InvalidOperationException(
         "Cloudinary settings are missing or invalid. Please check your appsettings.json file.");
 }
+
+builder.Services.AddScoped<IConfigurationRepository, ConfigurationRepository>();
+builder.Services.AddScoped<IConfigurationCommandHandler, ConfigurationCommandService>();
+builder.Services.AddScoped<IConfigurationFacade, ConfigurationFacade>();
 
 // Users Bounded Context
 builder.Services.AddScoped<IUserRepository, UserRepository>();
