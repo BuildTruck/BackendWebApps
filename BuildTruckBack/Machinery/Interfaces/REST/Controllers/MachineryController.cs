@@ -1,74 +1,122 @@
-using BuildTruckBack.Machinery.Application.Internal.OutboundServices;
+using BuildTruckBack.Machinery.Application.Internal.CommandServices;
+using BuildTruckBack.Machinery.Application.Internal.QueryServices;
+using BuildTruckBack.Machinery.Domain.Model.Commands;
+using BuildTruckBack.Machinery.Domain.Model.Queries;
 using BuildTruckBack.Machinery.Interfaces.REST.Resources;
 using BuildTruckBack.Machinery.Interfaces.REST.Transform;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Swashbuckle.AspNetCore.Annotations;
 
 namespace BuildTruckBack.Machinery.Interfaces.REST.Controllers;
 
 [ApiController]
-[Route("api/v1/[controller]")]
-[Authorize(Roles = "manager,supervisor")]
-public class MachineryController(IMachineryFacade machineryFacade) : ControllerBase
+[Route("api/v1/projects/{projectId}/machinery")]
+public class MachineryController : ControllerBase
 {
-    [HttpGet("project/{projectId}")]
-    [SwaggerOperation(Summary = "Get all machinery for a project", Description = "Returns a list of machinery registered for the specified project.")]
-    public async Task<IActionResult> GetAllMachineryByProjectId(string projectId)
+    private readonly CreateMachineryCommandHandler _createCommandHandler;
+    private readonly UpdateMachineryCommandHandler _updateCommandHandler;
+    private readonly DeleteMachineryCommandHandler _deleteCommandHandler;
+    private readonly GetMachineryByIdQueryHandler _getByIdQueryHandler;
+    private readonly GetMachineryByProjectQueryHandler _getByProjectQueryHandler;
+    private readonly GetActiveMachineryQueryHandler _getActiveQueryHandler;
+
+    public MachineryController(
+        CreateMachineryCommandHandler createCommandHandler,
+        UpdateMachineryCommandHandler updateCommandHandler,
+        DeleteMachineryCommandHandler deleteCommandHandler,
+        GetMachineryByIdQueryHandler getByIdQueryHandler,
+        GetMachineryByProjectQueryHandler getByProjectQueryHandler,
+        GetActiveMachineryQueryHandler getActiveQueryHandler)
     {
-        var machinery = await machineryFacade.GetAllMachineryAsync(projectId);
-        var resources = machinery.Select(MachineryResourceAssembler.ToResourceFromEntity);
+        _createCommandHandler = createCommandHandler;
+        _updateCommandHandler = updateCommandHandler;
+        _deleteCommandHandler = deleteCommandHandler;
+        _getByIdQueryHandler = getByIdQueryHandler;
+        _getByProjectQueryHandler = getByProjectQueryHandler;
+        _getActiveQueryHandler = getActiveQueryHandler;
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetAllMachinery(int projectId)
+    {
+        var query = new GetMachineryByProjectQuery(projectId);
+        var machinery = await _getByProjectQueryHandler.Handle(query);
+        var resources = machinery.Select(m => m.ToResource());
         return Ok(resources);
     }
 
     [HttpGet("{id}")]
-    [SwaggerOperation(Summary = "Get machinery by ID", Description = "Returns the details of a specific machinery.")]
-    public async Task<IActionResult> GetMachineryById(int id)
+    public async Task<IActionResult> GetMachineryById(int projectId, int id)
     {
-        var machinery = await machineryFacade.GetMachineryByIdAsync(id);
-        if (machinery == null)
+        var query = new GetMachineryByIdQuery(id);
+        var machinery = await _getByIdQueryHandler.Handle(query);
+        if (machinery == null || machinery.ProjectId != projectId)
             return NotFound();
-        var resource = MachineryResourceAssembler.ToResourceFromEntity(machinery);
-        return Ok(resource);
+        
+        return Ok(machinery.ToResource());
     }
 
     [HttpPost]
-    [Authorize(Roles = "supervisor")]
-    [SwaggerOperation(Summary = "Create new machinery", Description = "Registers a new machinery for a project.")]
-    public async Task<IActionResult> CreateMachinery([FromBody] SaveMachineryResource resource)
+    public async Task<IActionResult> CreateMachinery(
+        int projectId, 
+        [FromForm] CreateMachineryResource resource,
+        IFormFile? imageFile)
     {
-        var command = MachineryResourceAssembler.ToCommandFromSaveResource(resource);
-        var createdMachinery = await machineryFacade.CreateMachineryAsync(command);
-        if (createdMachinery == null)
-            return BadRequest();
-        var createdResource = MachineryResourceAssembler.ToResourceFromEntity(createdMachinery);
-        return CreatedAtAction(nameof(GetMachineryById), new { id = createdMachinery.Id }, createdResource);
+        var command = new CreateMachineryCommand(
+            projectId,
+            resource.Name,
+            resource.LicensePlate,
+            resource.MachineryType,
+            resource.Status,
+            resource.Provider,
+            resource.Description,
+            resource.PersonnelId,
+            resource.RegisterDate);
+        
+        var machinery = await _createCommandHandler.Handle(command, imageFile);
+        return CreatedAtAction(
+            nameof(GetMachineryById), 
+            new { projectId, id = machinery.Id }, 
+            machinery.ToResource());
     }
 
     [HttpPut("{id}")]
-    [Authorize(Roles = "supervisor")]
-    [SwaggerOperation(Summary = "Update machinery", Description = "Updates the details of an existing machinery.")]
-    public async Task<IActionResult> UpdateMachinery(int id, [FromBody] UpdateMachineryResource resource)
+    public async Task<IActionResult> UpdateMachinery(
+        int projectId, 
+        int id, 
+        [FromForm] MachineryResource resource,
+        IFormFile? imageFile)
     {
-        var command = MachineryResourceAssembler.ToCommandFromUpdateResource(resource, id);
-        var updatedMachinery = await machineryFacade.UpdateMachineryAsync(command);
-        if (updatedMachinery == null)
-            return NotFound();
-        var updatedResource = MachineryResourceAssembler.ToResourceFromEntity(updatedMachinery);
-        return Ok(updatedResource);
+        if (id != resource.Id || projectId != resource.ProjectId)
+            return BadRequest("ID mismatch");
+        
+        var command = new UpdateMachineryCommand(
+            id,
+            projectId,
+            resource.Name,
+            resource.LicensePlate,
+            resource.MachineryType,
+            resource.Status,
+            resource.Provider,
+            resource.Description,
+            resource.PersonnelId);
+        
+        var machinery = await _updateCommandHandler.Handle(command, imageFile);
+        return Ok(machinery.ToResource());
     }
 
-    [HttpGet("{id}/download")]
-    [SwaggerOperation(Summary = "Download machinery details", Description = "Generates a JSON file with machinery details.")]
-    public async Task<IActionResult> DownloadMachineryDetails(int id)
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteMachinery(int projectId, int id)
     {
-        var machinery = await machineryFacade.GetMachineryByIdAsync(id);
-        if (machinery == null)
-            return NotFound();
+        var command = new DeleteMachineryCommand(id);
+        await _deleteCommandHandler.Handle(command);
+        return NoContent();
+    }
 
-        var resource = MachineryResourceAssembler.ToResourceFromEntity(machinery);
-        var json = System.Text.Json.JsonSerializer.Serialize(resource, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
-        var bytes = System.Text.Encoding.UTF8.GetBytes(json);
-        return File(bytes, "application/json", $"machinery_{id}.json");
+    [HttpGet("active")]
+    public async Task<IActionResult> GetActiveMachinery(int projectId)
+    {
+        var query = new GetActiveMachineryQuery(projectId);
+        var machinery = await _getActiveQueryHandler.Handle(query);
+        return Ok(machinery.Select(m => m.ToResource()));
     }
 }

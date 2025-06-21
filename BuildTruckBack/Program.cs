@@ -33,6 +33,10 @@ using BuildTruckBack.Auth.Infrastructure.Tokens.JWT.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using BuildTruckBack.Machinery.Application.Internal.CommandServices;
+using BuildTruckBack.Machinery.Application.Internal.QueryServices;
+using BuildTruckBack.Machinery.Domain.Repositories;
+using BuildTruckBack.Machinery.Infrastructure.Persistence.EFC.Repositories;
 
 // Projects Context (with alias to avoid conflicts)
 using ProjectsUserContextService = BuildTruckBack.Projects.Application.ACL.Services.IUserContextService;
@@ -250,6 +254,17 @@ builder.Services.AddScoped<ProjectsCloudinaryService>(provider =>
     var logger = provider.GetRequiredService<ILogger<BuildTruckBack.Projects.Infrastructure.ACL.CloudinaryService>>();
     return new BuildTruckBack.Projects.Infrastructure.ACL.CloudinaryService(sharedCloudinaryService, logger);
 });
+
+// Machinery Bounded Context
+builder.Services.AddScoped<IMachineryRepository, MachineryRepository>();
+builder.Services.AddScoped<CreateMachineryCommandHandler>();
+builder.Services.AddScoped<UpdateMachineryCommandHandler>();
+builder.Services.AddScoped<DeleteMachineryCommandHandler>();
+builder.Services.AddScoped<GetMachineryByIdQueryHandler>();
+builder.Services.AddScoped<GetMachineryByProjectQueryHandler>();
+builder.Services.AddScoped<GetActiveMachineryQueryHandler>();
+
+
 
 // Personnel Cloudinary Service - Using alias to avoid conflicts
 builder.Services.AddScoped<BuildTruckBack.Personnel.Application.ACL.Services.ICloudinaryService>(provider =>

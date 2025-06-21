@@ -20,8 +20,10 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
     // ✅ Projects DbSet
     public DbSet<Project> Projects { get; set; }
 
+    // ✅ Machinery DbSet
+    public DbSet<Machinery.Domain.Model.Aggregates.Machinery> Machinery { get; set; }
     /// <summary>
-    ///     On configuring the database context
+    ///     On configuring  the database context
     /// </summary>
     /// <remarks>
     ///     This method is used to configure the database context.
@@ -256,6 +258,45 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
             .HasDatabaseName("IX_Personnel_ProjectId_Status_IsDeleted");
 
     // Add Personnel DbSet to your AppDbContext class:
+    
+    
+    // Machinery Configuration
+   
+    builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>().HasKey(m => m.Id);
+    builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>().Property(m => m.Id).IsRequired().ValueGeneratedOnAdd();
+    builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>().Property(m => m.ProjectId).IsRequired();
+    builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>().Property(m => m.Name).IsRequired().HasMaxLength(100);
+    builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>().Property(m => m.LicensePlate).IsRequired().HasMaxLength(20);
+    builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>().Property(m => m.MachineryType).IsRequired().HasMaxLength(50);
+    builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>().Property(m => m.Status)
+        .IsRequired()
+        .HasConversion<string>()  // Store enum as string
+        .HasMaxLength(20);
+    builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>().Property(m => m.Provider).IsRequired().HasMaxLength(100);
+    builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>().Property(m => m.Description).HasMaxLength(500);
+    builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>().Property(m => m.PersonnelId);
+    builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>().Property(m => m.ImageUrl).HasMaxLength(500);
+    builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>().Property(m => m.CreatedAt).IsRequired();
+    builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>().Property(m => m.UpdatedAt).IsRequired();
+    builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>().Property(m => m.RegisterDate).IsRequired();
+
+    // Machinery-Project Relationship
+    builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>()
+        .HasOne<Project>()
+        .WithMany()
+        .HasForeignKey(m => m.ProjectId)
+        .OnDelete(DeleteBehavior.Cascade);  // Delete machinery when project is deleted
+
+    // Ensure LicensePlate is unique per project
+    builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>()
+        .HasIndex(m => new { m.ProjectId, m.LicensePlate })
+        .IsUnique();
+
+    // Index for status filtering
+    builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>()
+        .HasIndex(m => m.Status)
+        .HasDatabaseName("IX_Machinery_Status");
+    
     // public DbSet<BuildTruckBack.Personnel.Domain.Model.Aggregates.Personnel> Personnel { get; set; }
             // ===== NAMING CONVENTION =====
         builder.UseSnakeCaseNamingConvention();

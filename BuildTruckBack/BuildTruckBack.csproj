@@ -35,4 +35,9 @@
         </Content>
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Machinery\Application\Internal\OutboundServices\" />
+      <Folder Include="Machinery\Infrastructure\Persistence\EFC\Configuration\" />
+    </ItemGroup>
+
 </Project>

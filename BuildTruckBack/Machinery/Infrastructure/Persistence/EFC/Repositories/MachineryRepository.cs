@@ -1,22 +1,33 @@
+
 using BuildTruckBack.Machinery.Domain.Repositories;
 using BuildTruckBack.Shared.Infrastructure.Persistence.EFC.Configuration;
 using BuildTruckBack.Shared.Infrastructure.Persistence.EFC.Repositories;
 using Microsoft.EntityFrameworkCore;
-using BuildTruckBack.Machinery.Domain.Model.Aggregates;
+
 namespace BuildTruckBack.Machinery.Infrastructure.Persistence.EFC.Repositories;
 
-public class MachineryRepository(AppDbContext context) : BaseRepository<Domain.Model.Aggregates.Machinery>(context), IMachineryRepository
+public class MachineryRepository : BaseRepository<Domain.Model.Aggregates.Machinery>, IMachineryRepository
 {
-    public async Task<IEnumerable<Domain.Model.Aggregates.Machinery>> FindByProjectIdAsync(string projectId)
+    private readonly AppDbContext _context;
+
+    public MachineryRepository(AppDbContext context) : base(context)
     {
-        return await Context.Set<Domain.Model.Aggregates.Machinery>()
+        _context = context;
+    }
+
+    public async Task<IEnumerable<Domain.Model.Aggregates.Machinery>> FindByProjectIdAsync(int projectId)
+    {
+        return await _context.Set<Domain.Model.Aggregates.Machinery>()
             .Where(m => m.ProjectId == projectId)
             .ToListAsync();
     }
 
-    public async Task<Domain.Model.Aggregates.Machinery?> FindByLicensePlateAsync(string licensePlate)
+    public async Task<Domain.Model.Aggregates.Machinery?> FindByLicensePlateAsync(string licensePlate, int projectId)
     {
-        return await Context.Set<Domain.Model.Aggregates.Machinery>()
-            .FirstOrDefaultAsync(m => m.LicensePlate == licensePlate);
+        return await _context.Set<Domain.Model.Aggregates.Machinery>()
+            .FirstOrDefaultAsync(m => 
+                m.ProjectId == projectId && 
+                m.LicensePlate == licensePlate);
     }
+    
 }
