@@ -43,10 +43,16 @@ using BuildTruckBack.Projects.Infrastructure.Persistence.EFC.Repositories;
 using BuildTruckBack.Projects.Infrastructure.ACL;
 using BuildTruckBack.Projects.Interfaces.REST.Transform;
 
+//Shared
+using BuildTruckBack.Shared.Infrastructure.ExternalServices.Exports.Services;
+using BuildTruckBack.Shared.Infrastructure.ExternalServices.Exports.Configuration;
+
 // ===== LOAD ENVIRONMENT VARIABLES =====
 Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
+
+OfficeOpenXml.ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
 
 // ===== CONFIGURATION =====
 // Las variables de entorno se cargan automáticamente usando la sintaxis jerárquica
@@ -159,6 +165,14 @@ builder.Services.AddSwaggerGen(options =>
 // Shared Bounded Context - Infrastructure
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+// Configurar Export Settings
+builder.Services.Configure<ExportSettings>(
+    builder.Configuration.GetSection("ExportSettings"));
+
+// Registrar servicios de Export
+builder.Services.AddScoped<IExcelGeneratorService, ExcelGeneratorService>();
+builder.Services.AddScoped<IPdfGeneratorService, PdfGeneratorService>();
+builder.Services.AddScoped<IUniversalExportService, UniversalExportService>();
 
 // Shared Email Services (renamed to Generic)
 builder.Services.AddScoped<IGenericEmailService, GenericEmailService>();
