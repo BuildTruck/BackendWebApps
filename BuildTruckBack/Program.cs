@@ -42,6 +42,17 @@ using BuildTruckBack.Projects.Domain.Services;
 using BuildTruckBack.Projects.Infrastructure.Persistence.EFC.Repositories;
 using BuildTruckBack.Projects.Infrastructure.ACL;
 using BuildTruckBack.Projects.Interfaces.REST.Transform;
+// Personnel Context
+using BuildTruckBack.Personnel.Application.Internal.CommandServices;
+using BuildTruckBack.Personnel.Application.Internal.QueryServices;
+using BuildTruckBack.Personnel.Application.ACL.Services;
+using BuildTruckBack.Personnel.Domain.Repositories;
+using BuildTruckBack.Personnel.Domain.Services;
+using BuildTruckBack.Personnel.Infrastructure.Persistence.EFC.Repositories;
+using BuildTruckBack.Personnel.Infrastructure.ACL;
+using BuildTruckBack.Personnel.Infrastructure.Exports;
+using BuildTruckBack.Projects.Application.Internal.OutboundServices;
+using PersonnelCloudinaryService = BuildTruckBack.Personnel.Infrastructure.ACL.CloudinaryService;
 
 //Shared
 using BuildTruckBack.Shared.Infrastructure.ExternalServices.Exports.Services;
@@ -216,16 +227,40 @@ builder.Services.AddScoped<ProjectRepository>();
 builder.Services.AddScoped<IProjectCommandService, ProjectCommandService>();
 builder.Services.AddScoped<ProjectResourceAssembler>();
 
+// Personnel Bounded Context
+builder.Services.AddScoped<IPersonnelRepository, PersonnelRepository>();
+builder.Services.AddScoped<IPersonnelCommandService, PersonnelCommandService>();
+builder.Services.AddScoped<IPersonnelQueryService, PersonnelQueryService>();
+builder.Services.AddScoped<IProjectFacade, ProjectFacade>();
+
 // Projects ACL Services - Using aliases to avoid conflicts
 builder.Services.AddScoped<ProjectsUserContextService, BuildTruckBack.Projects.Infrastructure.ACL.UserContextService>();
+
+// Personnel ACL Services - Communication with other contexts
+builder.Services.AddScoped<BuildTruckBack.Personnel.Application.ACL.Services.IProjectContextService, 
+    BuildTruckBack.Personnel.Infrastructure.ACL.ProjectContextService>();
+
+builder.Services.AddScoped<BuildTruckBack.Personnel.Application.ACL.Services.IUserContextService, 
+    BuildTruckBack.Personnel.Infrastructure.ACL.UserContextService>();
 
 // Projects Cloudinary Service - Create adapter that wraps shared service
 builder.Services.AddScoped<ProjectsCloudinaryService>(provider =>
 {
     var sharedCloudinaryService = provider.GetRequiredService<ICloudinaryImageService>();
-    var logger = provider.GetRequiredService<ILogger<CloudinaryService>>();
-    return new CloudinaryService(sharedCloudinaryService, logger);  // ← Usa el de Infrastructure
+    var logger = provider.GetRequiredService<ILogger<BuildTruckBack.Projects.Infrastructure.ACL.CloudinaryService>>();
+    return new BuildTruckBack.Projects.Infrastructure.ACL.CloudinaryService(sharedCloudinaryService, logger);
 });
+
+// Personnel Cloudinary Service - Using alias to avoid conflicts
+builder.Services.AddScoped<BuildTruckBack.Personnel.Application.ACL.Services.ICloudinaryService>(provider =>
+{
+    var sharedCloudinaryService = provider.GetRequiredService<ICloudinaryImageService>();
+    var logger = provider.GetRequiredService<ILogger<PersonnelCloudinaryService>>();
+    return new PersonnelCloudinaryService(sharedCloudinaryService, logger);
+});
+
+// Personnel Export Handler
+builder.Services.AddScoped<PersonnelExportHandler>();
 
 var app = builder.Build();
 
