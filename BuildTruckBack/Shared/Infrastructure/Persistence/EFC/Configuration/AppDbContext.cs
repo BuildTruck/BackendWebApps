@@ -540,7 +540,8 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
             .HasDatabaseName("IX_MaterialUsages_Date");
         
         // Incident configuration
-        modelBuilder.Entity<Incident>(entity =>
+        // ===== INCIDENTS CONTEXT CONFIGURATION =====
+        builder.Entity<Incident>(entity =>
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).ValueGeneratedOnAdd();
@@ -548,8 +549,16 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
             entity.Property(e => e.Title).IsRequired().HasMaxLength(255).HasDefaultValue("");
             entity.Property(e => e.Description).IsRequired().HasMaxLength(1000).HasDefaultValue("");
             entity.Property(e => e.IncidentType).IsRequired().HasMaxLength(50).HasDefaultValue("");
-            entity.Property(e => e.Severity).IsRequired().HasMaxLength(20).HasDefaultValue("MEDIO");
-            entity.Property(e => e.Status).IsRequired().HasMaxLength(20).HasDefaultValue("REPORTADO");
+            entity.Property(e => e.Severity)
+                .IsRequired()
+                .HasMaxLength(20)
+                .HasConversion<string>()
+                .HasDefaultValue("MEDIO");
+            entity.Property(e => e.Status)
+                .IsRequired()
+                .HasMaxLength(20)
+                .HasConversion<string>()
+                .HasDefaultValue("REPORTADO");
             entity.Property(e => e.Location).IsRequired().HasMaxLength(255).HasDefaultValue("");
             entity.Property(e => e.ReportedBy).IsRequired(false).HasMaxLength(50);
             entity.Property(e => e.AssignedTo).IsRequired(false).HasMaxLength(50);
@@ -559,7 +568,19 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
             entity.Property(e => e.Notes).IsRequired().HasMaxLength(1000).HasDefaultValue("");
             entity.Property(e => e.UpdatedAt).IsRequired().HasDefaultValueSql("CURRENT_TIMESTAMP");
             entity.Property(e => e.RegisterDate).IsRequired().HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+            // Relación con Project
+            entity.HasOne<Project>()
+                .WithMany()
+                .HasForeignKey(e => e.ProjectId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("FK_Incidents_Projects_ProjectId");
+
+            // Índice para consultas por ProjectId
+            entity.HasIndex(e => e.ProjectId)
+                .HasDatabaseName("IX_Incidents_ProjectId");
         });
+
 
 
         // ===== NAMING CONVENTION =====

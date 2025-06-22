@@ -77,6 +77,16 @@ using BuildTruckBack.Materials.Infrastructure.Persistence.EFC.Repositories;
 using BuildTruckBack.Shared.Infrastructure.ExternalServices.Exports.Services;
 using BuildTruckBack.Shared.Infrastructure.ExternalServices.Exports.Configuration;
 
+//Incidents
+
+using BuildTruckBack.Incidents.Domain.Commands;
+using BuildTruckBack.Incidents.Domain.Model.Queries;
+using BuildTruckBack.Incidents.Application.Internal;
+using BuildTruckBack.Incidents.Application.Internal.CommandServices;
+using BuildTruckBack.Incidents.Application.Internal.QueryServices;
+using BuildTruckBack.Incidents.Application.ACL.Services;
+using BuildTruckBack.Incidents.Infrastructure.ACL;
+using BuildTruckBack.Incidents.Application.REST.Transform;
 
 // ===== LOAD ENVIRONMENT VARIABLES =====
 Env.Load();
@@ -279,9 +289,9 @@ builder.Services.AddScoped<IInventoryQueryService, InventoryQueryService>();
 // Incidents Bounded Context
 builder.Services.AddScoped<BuildTruckBack.Incidents.Domain.Repositories.IIncidentRepository, BuildTruckBack.Incidents.Infrastructure.Persistence.EFC.Repositories.IncidentRepository>();
 builder.Services.AddScoped<BuildTruckBack.Incidents.Domain.Commands.IIncidentCommandHandler, BuildTruckBack.Incidents.Application.Internal.CommandServices.IncidentCommandService>();
-builder.Services.AddScoped<BuildTruckBack.Incidents.Domain.Queries.IIncidentQueryHandler, BuildTruckBack.Incidents.Application.Internal.QueryServices.IncidentQueryService>();
+builder.Services.AddScoped<BuildTruckBack.Incidents.Domain.Model.Queries.IIncidentQueryHandler, BuildTruckBack.Incidents.Application.Internal.QueryServices.IncidentQueryService>(); // Corregido de IncidentQueryServices a IncidentQueryService
 builder.Services.AddScoped<BuildTruckBack.Incidents.Application.Internal.IIncidentFacade, BuildTruckBack.Incidents.Application.Internal.IncidentFacade>();
-builder.Services.AddScoped<BuildTruckBack.Incidents.Application.ACL.Services.IProjectContextService, BuildTruckBack.Incidents.Infrastructure.ACL.ProjectContextService>();
+//builder.Services.AddScoped<BuildTruckBack.Incidents.Application.ACL.Services.IProjectContextService, BuildTruckBack.Incidents.Infrastructure.ACL.ProjectContextService>();
 builder.Services.AddScoped<BuildTruckBack.Incidents.Application.ACL.Services.IUserContextService, BuildTruckBack.Incidents.Infrastructure.ACL.UserContextService>();
 builder.Services.AddScoped<BuildTruckBack.Incidents.Application.ACL.Services.ICloudinaryService, BuildTruckBack.Incidents.Infrastructure.ACL.CloudinaryService>();
 builder.Services.AddScoped<BuildTruckBack.Incidents.Application.REST.Transform.IncidentResourceAssembler>();
