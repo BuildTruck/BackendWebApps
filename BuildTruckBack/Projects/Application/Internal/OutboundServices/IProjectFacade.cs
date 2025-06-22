@@ -93,5 +93,5 @@ public record ProjectInfo
     public DateTimeOffset? CreatedAt { get; init; }
     public bool IsActive { get; init; }
     public bool HasSupervisor { get; init; }
-    public bool IsReadyToStart { get; init; }
+    public bool IsReadyToStart { get; init; }
 }

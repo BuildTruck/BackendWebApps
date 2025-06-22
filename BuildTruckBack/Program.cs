@@ -275,6 +275,16 @@ builder.Services.AddScoped<IMaterialUsageQueryService, MaterialUsageQueryService
 // Inventory Service
 builder.Services.AddScoped<IInventoryQueryService, InventoryQueryService>();
 
+// Incidents 
+// Incidents Bounded Context
+builder.Services.AddScoped<BuildTruckBack.Incidents.Domain.Repositories.IIncidentRepository, BuildTruckBack.Incidents.Infrastructure.Persistence.EFC.Repositories.IncidentRepository>();
+builder.Services.AddScoped<BuildTruckBack.Incidents.Domain.Commands.IIncidentCommandHandler, BuildTruckBack.Incidents.Application.Internal.CommandServices.IncidentCommandService>();
+builder.Services.AddScoped<BuildTruckBack.Incidents.Domain.Queries.IIncidentQueryHandler, BuildTruckBack.Incidents.Application.Internal.QueryServices.IncidentQueryService>();
+builder.Services.AddScoped<BuildTruckBack.Incidents.Application.Internal.IIncidentFacade, BuildTruckBack.Incidents.Application.Internal.IncidentFacade>();
+builder.Services.AddScoped<BuildTruckBack.Incidents.Application.ACL.Services.IProjectContextService, BuildTruckBack.Incidents.Infrastructure.ACL.ProjectContextService>();
+builder.Services.AddScoped<BuildTruckBack.Incidents.Application.ACL.Services.IUserContextService, BuildTruckBack.Incidents.Infrastructure.ACL.UserContextService>();
+builder.Services.AddScoped<BuildTruckBack.Incidents.Application.ACL.Services.ICloudinaryService, BuildTruckBack.Incidents.Infrastructure.ACL.CloudinaryService>();
+builder.Services.AddScoped<BuildTruckBack.Incidents.Application.REST.Transform.IncidentResourceAssembler>();
 
 // Projects ACL Services - Using aliases to avoid conflicts
 builder.Services.AddScoped<ProjectsUserContextService, BuildTruckBack.Projects.Infrastructure.ACL.UserContextService>();

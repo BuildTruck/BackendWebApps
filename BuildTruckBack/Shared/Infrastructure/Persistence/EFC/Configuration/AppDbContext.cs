@@ -3,6 +3,7 @@ using BuildTruckBack.Configurations.Domain.Model.Aggregates;
 using BuildTruckBack.Projects.Domain.Model.Aggregates;
 using BuildTruckBack.Shared.Infrastructure.Persistence.EFC.Configuration.Extensions;
 using EntityFrameworkCore.CreatedUpdatedDate.Extensions;
+using BuildTruckBack.Incidents.Domain.Aggregates;
 using Microsoft.EntityFrameworkCore;
 
 namespace BuildTruckBack.Shared.Infrastructure.Persistence.EFC.Configuration;
@@ -34,6 +35,8 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
     public DbSet<BuildTruckBack.Materials.Domain.Model.Aggregates.Material> Materials { get; set; }
     public DbSet<BuildTruckBack.Materials.Domain.Model.Aggregates.MaterialEntry> MaterialEntries { get; set; }
     public DbSet<BuildTruckBack.Materials.Domain.Model.Aggregates.MaterialUsage> MaterialUsages { get; set; }
+    public DbSet<Incident> Incidents { get; set; } // Add Incidents entity
+
 
 
     /// <summary>
@@ -535,6 +538,29 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
         builder.Entity<BuildTruckBack.Materials.Domain.Model.Aggregates.MaterialUsage>()
             .HasIndex(mu => mu.Date)
             .HasDatabaseName("IX_MaterialUsages_Date");
+        
+        // Incident configuration
+        modelBuilder.Entity<Incident>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
+            entity.Property(e => e.ProjectId).IsRequired(false);
+            entity.Property(e => e.Title).IsRequired().HasMaxLength(255).HasDefaultValue("");
+            entity.Property(e => e.Description).IsRequired().HasMaxLength(1000).HasDefaultValue("");
+            entity.Property(e => e.IncidentType).IsRequired().HasMaxLength(50).HasDefaultValue("");
+            entity.Property(e => e.Severity).IsRequired().HasMaxLength(20).HasDefaultValue("MEDIO");
+            entity.Property(e => e.Status).IsRequired().HasMaxLength(20).HasDefaultValue("REPORTADO");
+            entity.Property(e => e.Location).IsRequired().HasMaxLength(255).HasDefaultValue("");
+            entity.Property(e => e.ReportedBy).IsRequired(false).HasMaxLength(50);
+            entity.Property(e => e.AssignedTo).IsRequired(false).HasMaxLength(50);
+            entity.Property(e => e.OccurredAt).IsRequired().HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.ResolvedAt).IsRequired(false);
+            entity.Property(e => e.Image).IsRequired(false).HasMaxLength(500);
+            entity.Property(e => e.Notes).IsRequired().HasMaxLength(1000).HasDefaultValue("");
+            entity.Property(e => e.UpdatedAt).IsRequired().HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.RegisterDate).IsRequired().HasDefaultValueSql("CURRENT_TIMESTAMP");
+        });
+
 
         // ===== NAMING CONVENTION =====
 
