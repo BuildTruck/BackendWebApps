@@ -66,9 +66,17 @@ using BuildTruckBack.Personnel.Infrastructure.Exports;
 using BuildTruckBack.Projects.Application.Internal.OutboundServices;
 using PersonnelCloudinaryService = BuildTruckBack.Personnel.Infrastructure.ACL.CloudinaryService;
 
+// Materials Context
+using BuildTruckBack.Materials.Application.Internal.CommandServices;
+using BuildTruckBack.Materials.Application.Internal.QueryServices;
+using BuildTruckBack.Materials.Domain.Repositories;
+using BuildTruckBack.Materials.Domain.Services;
+using BuildTruckBack.Materials.Infrastructure.Persistence.EFC.Repositories;
+
 //Shared
 using BuildTruckBack.Shared.Infrastructure.ExternalServices.Exports.Services;
 using BuildTruckBack.Shared.Infrastructure.ExternalServices.Exports.Configuration;
+
 
 // ===== LOAD ENVIRONMENT VARIABLES =====
 Env.Load();
@@ -248,6 +256,25 @@ builder.Services.AddScoped<IPersonnelRepository, PersonnelRepository>();
 builder.Services.AddScoped<IPersonnelCommandService, PersonnelCommandService>();
 builder.Services.AddScoped<IPersonnelQueryService, PersonnelQueryService>();
 builder.Services.AddScoped<IProjectFacade, ProjectFacade>();
+
+// Materials Bounded Context
+builder.Services.AddScoped<IMaterialRepository, MaterialRepository>();
+builder.Services.AddScoped<IMaterialCommandService, MaterialCommandService>();
+builder.Services.AddScoped<IMaterialQueryService, MaterialQueryService>();
+
+// Material Entries
+builder.Services.AddScoped<IMaterialEntryRepository, MaterialEntryRepository>();
+builder.Services.AddScoped<IMaterialEntryCommandService, MaterialEntryCommandService>();
+builder.Services.AddScoped<IMaterialEntryQueryService, MaterialEntryQueryService>();
+
+// Material Usages
+builder.Services.AddScoped<IMaterialUsageRepository, MaterialUsageRepository>();
+builder.Services.AddScoped<IMaterialUsageCommandService, MaterialUsageCommandService>();
+builder.Services.AddScoped<IMaterialUsageQueryService, MaterialUsageQueryService>();
+
+// Inventory Service
+builder.Services.AddScoped<IInventoryQueryService, InventoryQueryService>();
+
 
 // Projects ACL Services - Using aliases to avoid conflicts
 builder.Services.AddScoped<ProjectsUserContextService, BuildTruckBack.Projects.Infrastructure.ACL.UserContextService>();
