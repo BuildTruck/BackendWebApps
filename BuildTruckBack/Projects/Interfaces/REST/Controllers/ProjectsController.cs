@@ -323,7 +323,67 @@ public class ProjectsController : ControllerBase
             return StatusCode(500, "An internal error occurred while deleting the project");
         }
     }
+    /// <summary>
+    /// Get project by supervisor ID
+    /// GET /api/v1/projects/by-supervisor/{supervisorId}
+    /// </summary>
+    [HttpGet("by-supervisor/{supervisorId}")]
+    [ProducesResponseType(typeof(ProjectResource), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(string), (int)HttpStatusCode.BadRequest)]
+    [ProducesResponseType(typeof(string), (int)HttpStatusCode.NotFound)]
+    [ProducesResponseType(typeof(string), (int)HttpStatusCode.Forbidden)]
+    public async Task<ActionResult<ProjectResource>> GetProjectBySupervisor(int supervisorId)
+    {
+        try
+        {
+            _logger.LogInformation("🔍 Getting project for supervisor: {SupervisorId}", supervisorId);
 
+            // 1. Validate supervisor ID
+            if (supervisorId <= 0)
+            {
+                return BadRequest("Supervisor ID must be greater than 0");
+            }
+
+            // 2. Security: Verify the requesting user
+            var currentUserIdClaim = User.FindFirst("userId")?.Value ?? User.FindFirst("user_id")?.Value;
+            if (int.TryParse(currentUserIdClaim, out var currentUserId))
+            {
+                // Allow if it's the same supervisor or if it's an admin/manager
+                var currentUserRole = User.FindFirst("role")?.Value;
+                if (currentUserId != supervisorId && 
+                    currentUserRole != "Admin" && 
+                    currentUserRole != "Manager")
+                {
+                    return Forbid("You can only access your own project information");
+                }
+            }
+
+            // 3. Find projects by supervisor ID
+            var projects = await _projectRepository.FindBySupervisorIdAsync(supervisorId);
+            
+            if (!projects.Any())
+            {
+                return NotFound($"No project found for supervisor {supervisorId}");
+            }
+
+            // 4. Return the most recent project (supervisors usually have one active project)
+            var currentProject = projects.First();
+
+            // 5. Transform to resource
+            var projectResource = await _resourceAssembler.ToResourceFromEntityAsync(currentProject);
+
+            _logger.LogInformation("✅ Project found for supervisor {SupervisorId}: {ProjectId} - {ProjectName}", 
+                supervisorId, currentProject.Id, currentProject.ProjectName);
+
+            return Ok(projectResource);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "❌ Error getting project for supervisor: {SupervisorId}", supervisorId);
+            return StatusCode(500, "An internal error occurred while retrieving project");
+        }
+    }
+    
     /*
     /// <summary>
     /// Get project by ID (additional endpoint for single project details)
