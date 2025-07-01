@@ -77,6 +77,16 @@ using BuildTruckBack.Materials.Infrastructure.Persistence.EFC.Repositories;
 using BuildTruckBack.Shared.Infrastructure.ExternalServices.Exports.Services;
 using BuildTruckBack.Shared.Infrastructure.ExternalServices.Exports.Configuration;
 
+// Documentation Bounded Context
+using BuildTruckBack.Documentation.Application.Internal.CommandServices;
+using BuildTruckBack.Documentation.Application.Internal.QueryServices;
+using BuildTruckBack.Documentation.Application.ACL.Services;
+using BuildTruckBack.Documentation.Domain.Repositories;
+using BuildTruckBack.Documentation.Domain.Services;
+using BuildTruckBack.Documentation.Infrastructure.Persistence.EFC.Repositories;
+using BuildTruckBack.Documentation.Infrastructure.ACL;
+using BuildTruckBack.Documentation.Infrastructure.Exports;
+using DocumentationCloudinaryService = BuildTruckBack.Documentation.Infrastructure.ACL.CloudinaryService;
 
 // ===== LOAD ENVIRONMENT VARIABLES =====
 Env.Load();
@@ -275,7 +285,6 @@ builder.Services.AddScoped<IMaterialUsageQueryService, MaterialUsageQueryService
 // Inventory Service
 builder.Services.AddScoped<IInventoryQueryService, InventoryQueryService>();
 
-
 // Projects ACL Services - Using aliases to avoid conflicts
 builder.Services.AddScoped<ProjectsUserContextService, BuildTruckBack.Projects.Infrastructure.ACL.UserContextService>();
 
@@ -315,6 +324,29 @@ builder.Services.AddScoped<BuildTruckBack.Personnel.Application.ACL.Services.ICl
 
 // Personnel Export Handler
 builder.Services.AddScoped<PersonnelExportHandler>();
+
+// Documentation Bounded Context
+builder.Services.AddScoped<IDocumentationRepository, DocumentationRepository>();
+builder.Services.AddScoped<IDocumentationCommandService, DocumentationCommandService>();
+builder.Services.AddScoped<IDocumentationQueryService, DocumentationQueryService>();
+
+// Documentation ACL Services - Communication with other contexts
+builder.Services.AddScoped<BuildTruckBack.Documentation.Application.ACL.Services.IProjectContextService, 
+    BuildTruckBack.Documentation.Infrastructure.ACL.ProjectContextService>();
+
+builder.Services.AddScoped<BuildTruckBack.Documentation.Application.ACL.Services.IUserContextService, 
+    BuildTruckBack.Documentation.Infrastructure.ACL.UserContextService>();
+
+// Documentation Cloudinary Service
+builder.Services.AddScoped<BuildTruckBack.Documentation.Application.ACL.Services.ICloudinaryService>(provider =>
+{
+    var sharedCloudinaryService = provider.GetRequiredService<ICloudinaryImageService>();
+    var logger = provider.GetRequiredService<ILogger<DocumentationCloudinaryService>>();
+    return new DocumentationCloudinaryService(sharedCloudinaryService, logger);
+});
+
+// Documentation Export Handler
+builder.Services.AddScoped<DocumentationExportHandler>();
 
 var app = builder.Build();
 
