@@ -11,7 +11,7 @@ using System.Security.Claims;
 namespace BuildTruckBack.Documentation.Interfaces.REST.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/v1/[controller]")]
 [Produces("application/json")]
 public class DocumentationController : ControllerBase
 {
