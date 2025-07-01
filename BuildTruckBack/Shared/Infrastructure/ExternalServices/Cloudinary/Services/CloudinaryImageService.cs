@@ -56,10 +56,10 @@ public class CloudinaryImageService : ICloudinaryImageService
                 PublicId = publicId,
                 Folder = folder,
                 Transformation = new Transformation()
-                    .Quality("auto")           // Auto quality optimization
+                    .Quality("auto:best")           // Auto quality optimization
                     .FetchFormat("auto")       // Auto format (WebP, etc.)
-                    .Width(500)                // Max width
-                    .Height(500)               // Max height
+                    .Width(1200)                // Max width
+                    .Height(1200)               // Max height
                     .Crop("limit"),            // Don't upscale, just limit size
                 Overwrite = true,
                 UseFilename = false
@@ -122,7 +122,7 @@ public class CloudinaryImageService : ICloudinaryImageService
     /// <summary>
     /// Get optimized image URL with transformations
     /// </summary>
-    public string GetOptimizedImageUrl(string publicId, int width = 200, int height = 200)
+    public string GetOptimizedImageUrl(string publicId, int width = 800, int height = 600)
     {
         try
         {

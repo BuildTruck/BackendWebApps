@@ -265,7 +265,7 @@ public class ProjectsController : ControllerBase
             }
 
             // 3. Get current user ID (from JWT token)
-            var currentUserIdClaim = User.FindFirst("userId")?.Value;
+            var currentUserIdClaim = User.FindFirst("userId")?.Value ?? User.FindFirst("user_id")?.Value;
             if (!int.TryParse(currentUserIdClaim, out var currentUserId))
             {
                 return BadRequest("Invalid user ID in token");
