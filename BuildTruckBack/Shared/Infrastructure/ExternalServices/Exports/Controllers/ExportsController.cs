@@ -6,7 +6,7 @@ using BuildTruckBack.Shared.Infrastructure.ExternalServices.Exports.Services;
 namespace BuildTruckBack.Shared.Infrastructure.ExternalServices.Exports.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/v1/[controller]")]
 [Authorize]
 public class ExportsController : ControllerBase
 {
