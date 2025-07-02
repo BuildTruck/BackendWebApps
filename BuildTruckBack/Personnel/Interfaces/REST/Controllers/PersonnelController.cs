@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Authorization;
 namespace BuildTruckBack.Personnel.Interfaces.REST.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/v1/[controller]")]
 [Produces("application/json")]
 public class PersonnelController : ControllerBase
 {
