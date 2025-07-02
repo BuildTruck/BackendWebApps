@@ -71,7 +71,7 @@ public class UpdatePersonnelResource
         var errors = new List<string>();
 
         // Validate personnel type
-        var validPersonnelTypes = new[] { "EMPLOYEE", "CONTRACTOR", "INTERN", "CONSULTANT" };
+        var validPersonnelTypes = new[] { "TECHNICAL", "SPECIALIST", "ADMINISTRATIVE", "RENTED_OPERATOR", "LABORER" };
         if (!validPersonnelTypes.Contains(PersonnelType))
         {
             errors.Add($"Invalid personnel type. Valid types: {string.Join(", ", validPersonnelTypes)}");
