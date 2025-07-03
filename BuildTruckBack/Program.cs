@@ -282,6 +282,25 @@ builder.Services.AddScoped<IMaterialUsageRepository, MaterialUsageRepository>();
 builder.Services.AddScoped<IMaterialUsageCommandService, MaterialUsageCommandService>();
 builder.Services.AddScoped<IMaterialUsageQueryService, MaterialUsageQueryService>();
 
+// Materials ACL Services (para comunicación con otros bounded contexts)
+builder.Services.AddScoped<BuildTruckBack.Materials.Application.ACL.Services.IProjectContextService, 
+    BuildTruckBack.Materials.Infrastructure.ACL.ProjectContextService>();
+
+builder.Services.AddScoped<BuildTruckBack.Materials.Application.ACL.Services.IUserContextService, 
+    BuildTruckBack.Materials.Infrastructure.ACL.UserContextService>();
+
+// Materials Facade (para que otros contexts puedan acceder a Materials)
+builder.Services.AddScoped<BuildTruckBack.Materials.Application.Internal.OutboundServices.IMaterialFacade, 
+    BuildTruckBack.Materials.Application.Internal.OutboundServices.MaterialFacade>();
+
+// Materials Context Facade (para acceso externo)
+builder.Services.AddScoped<BuildTruckBack.Materials.Interfaces.ACL.IMaterialsContextFacade, 
+    BuildTruckBack.Materials.Interfaces.ACL.Services.MaterialsContextFacade>();
+
+// ===== AGREGAR DESPUÉS DE LA LÍNEA DE HttpContextAccessor (si no existe) =====
+builder.Services.AddHttpContextAccessor();
+
+
 // Inventory Service
 builder.Services.AddScoped<IInventoryQueryService, InventoryQueryService>();
 

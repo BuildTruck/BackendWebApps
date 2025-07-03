@@ -9,22 +9,41 @@ using BuildTruckBack.Shared.Domain.Repositories;
 
 namespace BuildTruckBack.Materials.Application.Internal.CommandServices
 {
-    /// <summary>
-    /// Application service for handling material entry commands
-    /// </summary>
     public class MaterialEntryCommandService : IMaterialEntryCommandService
     {
         private readonly IMaterialEntryRepository _entryRepository;
+        private readonly IMaterialRepository _materialRepository;
         private readonly IUnitOfWork _unitOfWork;
 
-        public MaterialEntryCommandService(IMaterialEntryRepository entryRepository, IUnitOfWork unitOfWork)
+        public MaterialEntryCommandService(
+            IMaterialEntryRepository entryRepository, 
+            IMaterialRepository materialRepository,
+            IUnitOfWork unitOfWork)
         {
             _entryRepository = entryRepository;
+            _materialRepository = materialRepository;
             _unitOfWork = unitOfWork;
         }
 
         public async Task<MaterialEntry?> Handle(CreateMaterialEntryCommand command)
         {
+            // Validar que el material existe y pertenece al proyecto
+            var material = await _materialRepository.GetByIdAsync(command.MaterialId);
+            if (material == null)
+                throw new InvalidOperationException("El material especificado no existe");
+                
+            if (material.ProjectId != command.ProjectId)
+                throw new InvalidOperationException("El material no pertenece al proyecto especificado");
+
+            // CORRECCIÓN: No hay duplicación aquí porque MaterialEntry permite múltiples entradas
+            // para el mismo material (diferentes fechas, proveedores, etc.)
+            // Si quisieras evitar duplicados en el mismo día/proveedor, agregarías:
+            
+            // var existingEntry = await _entryRepository.GetByMaterialAndDateAsync(
+            //     command.MaterialId, command.Date, command.Provider);
+            // if (existingEntry != null)
+            //     throw new InvalidOperationException("Ya existe una entrada para este material en esta fecha con este proveedor");
+
             var entry = new MaterialEntry(
                 command.ProjectId,
                 command.MaterialId,
@@ -49,7 +68,7 @@ namespace BuildTruckBack.Materials.Application.Internal.CommandServices
         {
             var entry = await _entryRepository.GetByIdAsync(command.EntryId);
             if (entry == null)
-                throw new InvalidOperationException("Entry not found");
+                throw new InvalidOperationException("Entrada no encontrada");
 
             entry.UpdateDetails(
                 command.Date,
