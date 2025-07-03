@@ -35,7 +35,9 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
     public DbSet<BuildTruckBack.Materials.Domain.Model.Aggregates.MaterialEntry> MaterialEntries { get; set; }
     public DbSet<BuildTruckBack.Materials.Domain.Model.Aggregates.MaterialUsage> MaterialUsages { get; set; }
 
-
+    
+    public DbSet<BuildTruckBack.Documentation.Domain.Model.Aggregates.Documentation> Documentation { get; set; }
+    
     /// <summary>
     ///     On configuring  the database context
     /// </summary>
@@ -293,8 +295,7 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
     // Add Personnel DbSet to your AppDbContext class:
     
     
-    // Machinery Configuration
-   
+    // ===== MACHINERY CONFIGURATION =====
     builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>().HasKey(m => m.Id);
     builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>().Property(m => m.Id).IsRequired().ValueGeneratedOnAdd();
     builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>().Property(m => m.ProjectId).IsRequired();
@@ -303,7 +304,7 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
     builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>().Property(m => m.MachineryType).IsRequired().HasMaxLength(50);
     builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>().Property(m => m.Status)
         .IsRequired()
-        .HasConversion<string>()  // Store enum as string
+        .HasConversion<string>()
         .HasMaxLength(20);
     builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>().Property(m => m.Provider).IsRequired().HasMaxLength(100);
     builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>().Property(m => m.Description).HasMaxLength(500);
@@ -330,9 +331,48 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
         .HasIndex(m => m.Status)
         .HasDatabaseName("IX_Machinery_Status");
     
+    
     // public DbSet<BuildTruckBack.Personnel.Domain.Model.Aggregates.Personnel> Personnel { get; set; }
             // ===== NAMING CONVENTION =====
 
+            // ===== DOCUMENTATION CONTEXT CONFIGURATION =====
+        builder.Entity<BuildTruckBack.Documentation.Domain.Model.Aggregates.Documentation>().HasKey(d => d.Id);
+        builder.Entity<BuildTruckBack.Documentation.Domain.Model.Aggregates.Documentation>().Property(d => d.Id).IsRequired().ValueGeneratedOnAdd();
+        builder.Entity<BuildTruckBack.Documentation.Domain.Model.Aggregates.Documentation>().Property(d => d.ProjectId).IsRequired();
+        builder.Entity<BuildTruckBack.Documentation.Domain.Model.Aggregates.Documentation>().Property(d => d.Title).IsRequired().HasMaxLength(200);
+        builder.Entity<BuildTruckBack.Documentation.Domain.Model.Aggregates.Documentation>().Property(d => d.Description).IsRequired().HasMaxLength(1000);
+        builder.Entity<BuildTruckBack.Documentation.Domain.Model.Aggregates.Documentation>().Property(d => d.ImagePath).IsRequired().HasColumnType("text");
+        builder.Entity<BuildTruckBack.Documentation.Domain.Model.Aggregates.Documentation>().Property(d => d.Date).IsRequired().HasColumnType("date");
+        builder.Entity<BuildTruckBack.Documentation.Domain.Model.Aggregates.Documentation>().Property(d => d.CreatedBy).IsRequired();
+        builder.Entity<BuildTruckBack.Documentation.Domain.Model.Aggregates.Documentation>().Property(d => d.IsDeleted).IsRequired().HasDefaultValue(false);
+
+        // Documentation belongs to Project
+        builder.Entity<BuildTruckBack.Documentation.Domain.Model.Aggregates.Documentation>()
+            .HasOne<Project>()
+            .WithMany()
+            .HasForeignKey(d => d.ProjectId)
+            .OnDelete(DeleteBehavior.Restrict)
+            .HasConstraintName("FK_Documentation_Projects_ProjectId");
+
+        // Documentation indexes
+        builder.Entity<BuildTruckBack.Documentation.Domain.Model.Aggregates.Documentation>()
+            .HasIndex(d => d.ProjectId)
+            .HasDatabaseName("IX_Documentation_ProjectId");
+
+        builder.Entity<BuildTruckBack.Documentation.Domain.Model.Aggregates.Documentation>()
+            .HasIndex(d => new { d.ProjectId, d.Title })
+            .HasDatabaseName("IX_Documentation_ProjectId_Title")
+            .IsUnique()
+            .HasFilter("[IsDeleted] = 0");
+
+        builder.Entity<BuildTruckBack.Documentation.Domain.Model.Aggregates.Documentation>()
+            .HasIndex(d => d.Date)
+            .HasDatabaseName("IX_Documentation_Date");
+
+        builder.Entity<BuildTruckBack.Documentation.Domain.Model.Aggregates.Documentation>()
+            .HasIndex(d => d.CreatedBy)
+            .HasDatabaseName("IX_Documentation_CreatedBy");
+        
         // ===== MATERIALS CONTEXT CONFIGURATION =====
         
         // Material Configuration

@@ -92,7 +92,7 @@ public class ProjectResourceAssembler
                     var publicId = ExtractPublicIdFromUrl(project.ImageUrl);
                     if (!string.IsNullOrEmpty(publicId))
                     {
-                        thumbnailUrl = _cloudinaryService.GenerateThumbnailUrl(publicId, 200);
+                        thumbnailUrl = _cloudinaryService.GenerateThumbnailUrl(publicId, 800); 
                     }
                 }
                 catch (Exception ex)
@@ -193,7 +193,7 @@ public class ProjectResourceAssembler
                     var publicId = ExtractPublicIdFromUrl(project.ImageUrl);
                     if (!string.IsNullOrEmpty(publicId))
                     {
-                        thumbnailUrl = _cloudinaryService.GenerateThumbnailUrl(publicId, 150);
+                        thumbnailUrl = _cloudinaryService.GenerateThumbnailUrl(publicId, 800);
                     }
                 }
                 catch

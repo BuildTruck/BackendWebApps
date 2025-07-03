@@ -1,6 +1,7 @@
 using BuildTruckBack.Machinery.Domain.Model.Commands;
 using BuildTruckBack.Machinery.Domain.Model.ValueObjects;
 using BuildTruckBack.Machinery.Interfaces.REST.Resources;
+
 namespace BuildTruckBack.Machinery.Interfaces.REST.Transform;
 
 public static class MachineryResourceAssembler
@@ -25,19 +26,47 @@ public static class MachineryResourceAssembler
         };
     }
 
-    public static Domain.Model.Aggregates.Machinery ToDomain(this CreateMachineryResource resource)
+    public static CreateMachineryCommand ToCommandFromResource(this CreateMachineryResource resource)
     {
-        return new Domain.Model.Aggregates.Machinery
+        byte[]? imageBytes = null;
+        string? imageFileName = null;
+
+        if (resource.ImageFile != null)
         {
-            ProjectId = resource.ProjectId,
-            Name = resource.Name,
-            LicensePlate = resource.LicensePlate,
-            MachineryType = resource.MachineryType,
-            Status = resource.Status.ToString(),
-            Provider = resource.Provider,
-            Description = resource.Description,
-            PersonnelId = resource.PersonnelId,
-            RegisterDate = resource.RegisterDate
-        };
+            using var memoryStream = new MemoryStream();
+            resource.ImageFile.CopyTo(memoryStream);
+            imageBytes = memoryStream.ToArray();
+            imageFileName = resource.ImageFile.FileName;
+        }
+
+        return new CreateMachineryCommand(
+            resource.ProjectId,
+            resource.Name,
+            resource.LicensePlate,
+            resource.MachineryType,
+            resource.Status,
+            resource.Provider,
+            resource.Description,
+            resource.PersonnelId,
+            resource.RegisterDate,
+            imageBytes,
+            imageFileName
+        );
+    }
+    
+    
+    public static UpdateMachineryCommand ToCommandFromResource(this UpdateMachineryResource resource, int id)
+    {
+        return new UpdateMachineryCommand(
+            id,
+            resource.ProjectId,
+            resource.Name,
+            resource.LicensePlate,
+            resource.MachineryType,
+            resource.Status,
+            resource.Provider,
+            resource.Description,
+            resource.PersonnelId
+        );
     }
 }

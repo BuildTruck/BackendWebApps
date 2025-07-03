@@ -40,9 +40,12 @@ using BuildTruckBack.Auth.Infrastructure.Tokens.JWT.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using BuildTruckBack.Machinery.Application.ACL.Services;
 using BuildTruckBack.Machinery.Application.Internal.CommandServices;
 using BuildTruckBack.Machinery.Application.Internal.QueryServices;
 using BuildTruckBack.Machinery.Domain.Repositories;
+using BuildTruckBack.Machinery.Domain.Services;
+using BuildTruckBack.Machinery.Infrastructure.ACL;
 using BuildTruckBack.Machinery.Infrastructure.Persistence.EFC.Repositories;
 
 // Projects Context (with alias to avoid conflicts)
@@ -77,6 +80,17 @@ using BuildTruckBack.Materials.Infrastructure.Persistence.EFC.Repositories;
 using BuildTruckBack.Shared.Infrastructure.ExternalServices.Exports.Services;
 using BuildTruckBack.Shared.Infrastructure.ExternalServices.Exports.Configuration;
 
+// Documentation Bounded Context
+using BuildTruckBack.Documentation.Application.Internal.CommandServices;
+using BuildTruckBack.Documentation.Application.Internal.QueryServices;
+using BuildTruckBack.Documentation.Application.ACL.Services;
+using BuildTruckBack.Documentation.Domain.Repositories;
+using BuildTruckBack.Documentation.Domain.Services;
+using BuildTruckBack.Documentation.Infrastructure.Persistence.EFC.Repositories;
+using BuildTruckBack.Documentation.Infrastructure.ACL;
+using BuildTruckBack.Documentation.Infrastructure.Exports;
+using Microsoft.Extensions.Options;
+using DocumentationCloudinaryService = BuildTruckBack.Documentation.Infrastructure.ACL.CloudinaryService;
 
 // ===== LOAD ENVIRONMENT VARIABLES =====
 Env.Load();
@@ -203,7 +217,6 @@ builder.Services.Configure<ExportSettings>(
 // Registrar servicios de Export
 builder.Services.AddScoped<IExcelGeneratorService, ExcelGeneratorService>();
 builder.Services.AddScoped<IPdfGeneratorService, PdfGeneratorService>();
-builder.Services.AddScoped<IUniversalExportService, UniversalExportService>();
 
 // Shared Email Services (renamed to Generic)
 builder.Services.AddScoped<IGenericEmailService, GenericEmailService>();
@@ -272,9 +285,27 @@ builder.Services.AddScoped<IMaterialUsageRepository, MaterialUsageRepository>();
 builder.Services.AddScoped<IMaterialUsageCommandService, MaterialUsageCommandService>();
 builder.Services.AddScoped<IMaterialUsageQueryService, MaterialUsageQueryService>();
 
+// Materials ACL Services (para comunicación con otros bounded contexts)
+builder.Services.AddScoped<BuildTruckBack.Materials.Application.ACL.Services.IProjectContextService, 
+    BuildTruckBack.Materials.Infrastructure.ACL.ProjectContextService>();
+
+builder.Services.AddScoped<BuildTruckBack.Materials.Application.ACL.Services.IUserContextService, 
+    BuildTruckBack.Materials.Infrastructure.ACL.UserContextService>();
+
+// Materials Facade (para que otros contexts puedan acceder a Materials)
+builder.Services.AddScoped<BuildTruckBack.Materials.Application.Internal.OutboundServices.IMaterialFacade, 
+    BuildTruckBack.Materials.Application.Internal.OutboundServices.MaterialFacade>();
+
+// Materials Context Facade (para acceso externo)
+builder.Services.AddScoped<BuildTruckBack.Materials.Interfaces.ACL.IMaterialsContextFacade, 
+    BuildTruckBack.Materials.Interfaces.ACL.Services.MaterialsContextFacade>();
+
+// ===== AGREGAR DESPUÉS DE LA LÍNEA DE HttpContextAccessor (si no existe) =====
+builder.Services.AddHttpContextAccessor();
+
+
 // Inventory Service
 builder.Services.AddScoped<IInventoryQueryService, InventoryQueryService>();
-
 
 // Projects ACL Services - Using aliases to avoid conflicts
 builder.Services.AddScoped<ProjectsUserContextService, BuildTruckBack.Projects.Infrastructure.ACL.UserContextService>();
@@ -294,17 +325,6 @@ builder.Services.AddScoped<ProjectsCloudinaryService>(provider =>
     return new BuildTruckBack.Projects.Infrastructure.ACL.CloudinaryService(sharedCloudinaryService, logger);
 });
 
-// Machinery Bounded Context
-builder.Services.AddScoped<IMachineryRepository, MachineryRepository>();
-builder.Services.AddScoped<CreateMachineryCommandHandler>();
-builder.Services.AddScoped<UpdateMachineryCommandHandler>();
-builder.Services.AddScoped<DeleteMachineryCommandHandler>();
-builder.Services.AddScoped<GetMachineryByIdQueryHandler>();
-builder.Services.AddScoped<GetMachineryByProjectQueryHandler>();
-builder.Services.AddScoped<GetActiveMachineryQueryHandler>();
-
-
-
 // Personnel Cloudinary Service - Using alias to avoid conflicts
 builder.Services.AddScoped<BuildTruckBack.Personnel.Application.ACL.Services.ICloudinaryService>(provider =>
 {
@@ -314,9 +334,78 @@ builder.Services.AddScoped<BuildTruckBack.Personnel.Application.ACL.Services.ICl
 });
 
 // Personnel Export Handler
-builder.Services.AddScoped<PersonnelExportHandler>();
+builder.Services.AddScoped<PersonnelEntityExportHandler>();
+
+builder.Services.AddScoped<IUniversalExportService>(provider =>
+{
+    var excelGenerator = provider.GetRequiredService<IExcelGeneratorService>();
+    var pdfGenerator = provider.GetRequiredService<IPdfGeneratorService>();
+    var settings = provider.GetRequiredService<IOptions<ExportSettings>>();
+    var logger = provider.GetRequiredService<ILogger<UniversalExportService>>();
+    
+    var universalService = new UniversalExportService(excelGenerator, pdfGenerator, settings, logger);
+    
+    var personnelHandler = provider.GetRequiredService<PersonnelEntityExportHandler>();
+    universalService.RegisterHandler(personnelHandler);
+    
+    return universalService;
+});
+
+// Documentation Bounded Context
+builder.Services.AddScoped<IDocumentationRepository, DocumentationRepository>();
+builder.Services.AddScoped<IDocumentationCommandService, DocumentationCommandService>();
+builder.Services.AddScoped<IDocumentationQueryService, DocumentationQueryService>();
+
+// Documentation ACL Services - Communication with other contexts
+builder.Services.AddScoped<BuildTruckBack.Documentation.Application.ACL.Services.IProjectContextService, 
+    BuildTruckBack.Documentation.Infrastructure.ACL.ProjectContextService>();
+
+builder.Services.AddScoped<BuildTruckBack.Documentation.Application.ACL.Services.IUserContextService, 
+    BuildTruckBack.Documentation.Infrastructure.ACL.UserContextService>();
+
+// Documentation Cloudinary Service
+builder.Services.AddScoped<BuildTruckBack.Documentation.Application.ACL.Services.ICloudinaryService>(provider =>
+{
+    var sharedCloudinaryService = provider.GetRequiredService<ICloudinaryImageService>();
+    var logger = provider.GetRequiredService<ILogger<DocumentationCloudinaryService>>();
+    return new DocumentationCloudinaryService(sharedCloudinaryService, logger);
+});
+
+// Documentation Export Handler
+builder.Services.AddScoped<DocumentationExportHandler>();
+
+
+
+
+
+// Machinery Bounded Context
+builder.Services.AddScoped<IMachineryRepository, MachineryRepository>();
+//builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped<IProjectFacade, ProjectFacade>(); // Implement as needed
+builder.Services.AddScoped<CreateMachineryCommandHandler>();
+builder.Services.AddScoped<UpdateMachineryCommandHandler>();
+builder.Services.AddScoped<DeleteMachineryCommandHandler>();
+
+builder.Services.AddScoped<GetActiveMachineryQueryHandler>();
+builder.Services.AddScoped<GetMachineryByIdQueryHandler>();
+builder.Services.AddScoped<GetMachineryByProjectQueryHandler>();
+// Register Command Service
+builder.Services.AddScoped<IMachineryCommandService, MachineryCommandService>();
+builder.Services.AddScoped<IMachineryQueryService, MachineryQueryService>();
+builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("Cloudinary"));
+builder.Services.AddScoped<ICloudinaryImageService, CloudinaryImageService>();
+builder.Services.AddScoped<IMachineryCloudinaryService, MachineryCloudinaryService>();
+
+
+
+
 
 var app = builder.Build();
+
+
+
+
+
 
 // Verify if the database exists and create it if it doesn't
 using (var scope = app.Services.CreateScope())

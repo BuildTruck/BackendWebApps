@@ -132,7 +132,7 @@ public class CloudinaryService : ICloudinaryService
         }
     }
 
-    public string GenerateThumbnailUrl(string publicId, int size = 200)
+    public string GenerateThumbnailUrl(string publicId, int size = 600) 
     {
         try
         {

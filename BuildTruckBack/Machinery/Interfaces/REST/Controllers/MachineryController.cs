@@ -1,122 +1,243 @@
-using BuildTruckBack.Machinery.Application.Internal.CommandServices;
-using BuildTruckBack.Machinery.Application.Internal.QueryServices;
-using BuildTruckBack.Machinery.Domain.Model.Commands;
+using System.Net.Mime;
 using BuildTruckBack.Machinery.Domain.Model.Queries;
+using BuildTruckBack.Machinery.Domain.Services;
 using BuildTruckBack.Machinery.Interfaces.REST.Resources;
 using BuildTruckBack.Machinery.Interfaces.REST.Transform;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
+using BuildTruckBack.Machinery.Domain.Model.Commands;
+using BuildTruckBack.Shared.Infrastructure.ExternalServices.Cloudinary.Services;
+using BuildTruckBack.Shared.Infrastructure.ExternalServices.Cloudinary.Configuration;
+using Microsoft.AspNetCore.Authorization;
 
 namespace BuildTruckBack.Machinery.Interfaces.REST.Controllers;
 
+/// <summary>
+/// Machinery Controller
+/// </summary>
+/// <remarks>
+/// REST API controller for managing machinery in BuildTruck platform
+/// Only admins can access these endpoints
+/// </remarks>
 [ApiController]
-[Route("api/v1/projects/{projectId}/machinery")]
-public class MachineryController : ControllerBase
+[Route("api/v1/[controller]")]
+[Produces(MediaTypeNames.Application.Json)]
+[SwaggerTag("Available Machinery Management endpoints")]
+[Authorize]
+public class MachineryController(
+    IMachineryCommandService machineryCommandService,
+    IMachineryQueryService machineryQueryService,
+    ICloudinaryImageService cloudinaryImageService) : ControllerBase
 {
-    private readonly CreateMachineryCommandHandler _createCommandHandler;
-    private readonly UpdateMachineryCommandHandler _updateCommandHandler;
-    private readonly DeleteMachineryCommandHandler _deleteCommandHandler;
-    private readonly GetMachineryByIdQueryHandler _getByIdQueryHandler;
-    private readonly GetMachineryByProjectQueryHandler _getByProjectQueryHandler;
-    private readonly GetActiveMachineryQueryHandler _getActiveQueryHandler;
+    private readonly CloudinarySettings _cloudinarySettings = new CloudinarySettings(); // Assuming configured via DI or appsettings
 
-    public MachineryController(
-        CreateMachineryCommandHandler createCommandHandler,
-        UpdateMachineryCommandHandler updateCommandHandler,
-        DeleteMachineryCommandHandler deleteCommandHandler,
-        GetMachineryByIdQueryHandler getByIdQueryHandler,
-        GetMachineryByProjectQueryHandler getByProjectQueryHandler,
-        GetActiveMachineryQueryHandler getActiveQueryHandler)
+   /// <summary>
+/// Create a new machinery
+/// </summary>
+/// <param name="createMachineryResource">The machinery creation data</param>
+/// <returns>The created machinery</returns>
+[HttpPost]
+[Authorize(Roles = "Supervisor,Admin")]
+[SwaggerOperation(
+    Summary = "Create a new machinery",
+    Description = "Creates a new machinery in the BuildTruck platform with optional image upload.",
+    OperationId = "CreateMachinery")]
+[SwaggerResponse(StatusCodes.Status201Created, "The machinery was created successfully", typeof(MachineryResource))]
+[SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid machinery data")]
+[SwaggerResponse(StatusCodes.Status409Conflict, "Machinery already exists")]
+public async Task<IActionResult> CreateMachinery([FromForm] CreateMachineryResource createMachineryResource)
+{
+    try
     {
-        _createCommandHandler = createCommandHandler;
-        _updateCommandHandler = updateCommandHandler;
-        _deleteCommandHandler = deleteCommandHandler;
-        _getByIdQueryHandler = getByIdQueryHandler;
-        _getByProjectQueryHandler = getByProjectQueryHandler;
-        _getActiveQueryHandler = getActiveQueryHandler;
-    }
+        
+        // ✅ Convert DTO to Command
+         var createMachineryCommand = MachineryResourceAssembler.ToCommandFromResource(createMachineryResource);
+        /*
+         
+          string imageUrl = string.Empty;
+                 if (createMachineryResource.ImageFile != null)
+                 {
+                     using var stream = new MemoryStream();
+                     await createMachineryResource.ImageFile.CopyToAsync(stream);
+                     imageUrl = await cloudinaryImageService.UploadImageAsync(
+                         stream.ToArray(),
+                         createMachineryResource.ImageFile.FileName,
+                         _cloudinarySettings.MachineryImagesFolder);
+                 }
+         */
+       
 
-    [HttpGet]
-    public async Task<IActionResult> GetAllMachinery(int projectId)
+        // ✅ Handle image upload to Cloudinary if provided
+       
+
+        // ✅ Execute business logic
+        var machinery = await machineryCommandService.Handle(createMachineryCommand, createMachineryResource.ImageFile);
+
+        // ✅ Convert Entity to DTO
+        var machineryResource = MachineryResourceAssembler.ToResource(machinery);
+
+        return CreatedAtAction(nameof(GetMachineryById), new { id = machinery.Id }, machineryResource);
+    }
+    catch (ArgumentException ex)
     {
-        var query = new GetMachineryByProjectQuery(projectId);
-        var machinery = await _getByProjectQueryHandler.Handle(query);
-        var resources = machinery.Select(m => m.ToResource());
-        return Ok(resources);
+        return BadRequest($"Invalid data: {ex.Message}");
     }
+    catch (InvalidOperationException ex)
+    {
+        return Conflict($"Conflict: {ex.Message}");
+    }
+    catch (Exception ex)
+    {
+        return StatusCode(500, $"Internal server error: {ex.Message}");
+    }
+}
 
+    /// <summary>
+    /// Get machinery by ID
+    /// </summary>
+    /// <param name="id">The machinery ID</param>
+    /// <returns>The machinery</returns>
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetMachineryById(int projectId, int id)
+    [Authorize(Roles = "Supervisor,Manager,Admin")]
+    [SwaggerOperation(
+        Summary = "Get machinery by ID",
+        Description = "Retrieves a machinery by its ID",
+        OperationId = "GetMachineryById")]
+    [SwaggerResponse(StatusCodes.Status200OK, "The machinery was found", typeof(MachineryResource))]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Machinery not found")]
+    public async Task<IActionResult> GetMachineryById(int id)
     {
-        var query = new GetMachineryByIdQuery(id);
-        var machinery = await _getByIdQueryHandler.Handle(query);
-        if (machinery == null || machinery.ProjectId != projectId)
-            return NotFound();
-        
-        return Ok(machinery.ToResource());
+        try
+        {
+            var getMachineryByIdQuery = new GetMachineryByIdQuery(id);
+            var machinery = await machineryQueryService.Handle(getMachineryByIdQuery);
+
+            if (machinery == null)
+                return NotFound($"Machinery with ID {id} not found");
+
+            var machineryResource = MachineryResourceAssembler.ToResource(machinery);
+            return Ok(machineryResource);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Internal server error: {ex.Message}");
+        }
     }
 
-    [HttpPost]
-    public async Task<IActionResult> CreateMachinery(
-        int projectId, 
-        [FromForm] CreateMachineryResource resource,
-        IFormFile? imageFile)
+    /// <summary>
+    /// Get all machinery
+    /// </summary>
+    /// <returns>List of all machinery</returns>
+    [HttpGet]
+    [Authorize(Roles = "Supervisor,Manager,Admin")]
+    [SwaggerOperation(
+        Summary = "Get all machinery",
+        Description = "Retrieves all machinery in the system",
+        OperationId = "GetAllMachinery")]
+    [SwaggerResponse(StatusCodes.Status200OK, "Machinery retrieved successfully", typeof(IEnumerable<MachineryResource>))]
+    public async Task<IActionResult> GetAllMachinery()
     {
-        var command = new CreateMachineryCommand(
-            projectId,
-            resource.Name,
-            resource.LicensePlate,
-            resource.MachineryType,
-            resource.Status,
-            resource.Provider,
-            resource.Description,
-            resource.PersonnelId,
-            resource.RegisterDate);
-        
-        var machinery = await _createCommandHandler.Handle(command, imageFile);
-        return CreatedAtAction(
-            nameof(GetMachineryById), 
-            new { projectId, id = machinery.Id }, 
-            machinery.ToResource());
+        try
+        {
+            var getAllMachineryQuery = new GetMachineryByProjectQuery(0); // Assuming 0 fetches all
+            var machinery = await machineryQueryService.Handle(getAllMachineryQuery);
+
+            var machineryResources = machinery.Select(MachineryResourceAssembler.ToResource);
+            return Ok(machineryResources);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Internal server error: {ex.Message}");
+        }
     }
 
+    /// <summary>
+    /// Update machinery information
+    /// </summary>
+    /// <param name="id">The machinery ID</param>
+    /// <param name="request">Update machinery request</param>
+    /// <returns>Updated machinery</returns>
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateMachinery(
-        int projectId, 
-        int id, 
-        [FromForm] MachineryResource resource,
-        IFormFile? imageFile)
+    [Authorize(Roles = "Supervisor,Admin")]
+    [SwaggerOperation(
+        Summary = "Update machinery information",
+        Description = "Update machinery's basic information.",
+        OperationId = "UpdateMachinery")]
+    [SwaggerResponse(StatusCodes.Status200OK, "Machinery updated successfully", typeof(MachineryResource))]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid data provided")]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Machinery not found")]
+    [SwaggerResponse(StatusCodes.Status409Conflict, "Machinery license plate already exists")]
+
+    public async Task<IActionResult> UpdateMachinery(int id, [FromForm] UpdateMachineryResource request)
     {
-        if (id != resource.Id || projectId != resource.ProjectId)
-            return BadRequest("ID mismatch");
-        
-        var command = new UpdateMachineryCommand(
-            id,
-            projectId,
-            resource.Name,
-            resource.LicensePlate,
-            resource.MachineryType,
-            resource.Status,
-            resource.Provider,
-            resource.Description,
-            resource.PersonnelId);
-        
-        var machinery = await _updateCommandHandler.Handle(command, imageFile);
-        return Ok(machinery.ToResource());
+        try
+        {
+            
+            // ✅ Create command
+            var updateCommand = request.ToCommandFromResource(id); // Fixed: Pass id parameter
+
+            // ✅ Execute command
+            var machinery = await machineryCommandService.Handle(updateCommand, request.ImageFile);
+
+            // ✅ Return updated machinery
+            var machineryResource = MachineryResourceAssembler.ToResource(machinery);
+            return Ok(machineryResource);
+        }
+        catch (ArgumentException ex) when (ex.Message.Contains("not found"))
+        {
+            return NotFound($"Machinery with ID {id} not found");
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest($"Invalid data: {ex.Message}");
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest($"Operation failed: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Internal server error: {ex.Message}");
+        }
     }
 
+    /// <summary>
+    /// Delete machinery
+    /// </summary>
+    /// <param name="id">The machinery ID</param>
+    /// <returns>Success message</returns>
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteMachinery(int projectId, int id)
+    [Authorize(Roles = "Supervisor,Admin")]
+    [SwaggerOperation(
+        Summary = "Delete machinery",
+        Description = "Permanently delete a machinery from the system. This action cannot be undone.",
+        OperationId = "DeleteMachinery")]
+    [SwaggerResponse(StatusCodes.Status204NoContent, "Machinery deleted successfully")]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Machinery not found")]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid request")]
+    public async Task<IActionResult> DeleteMachinery(int id)
     {
-        var command = new DeleteMachineryCommand(id);
-        await _deleteCommandHandler.Handle(command);
-        return NoContent();
+        try
+        {
+            // ✅ Convert to Command
+            var deleteMachineryCommand = new DeleteMachineryCommand(id);
+
+            // ✅ Execute business logic
+            await machineryCommandService.Handle(deleteMachineryCommand);
+
+            return NoContent(); // 204 - Success with no content
+        }
+        catch (ArgumentException ex) when (ex.Message.Contains("not found"))
+        {
+            return NotFound($"Machinery with ID {id} not found");
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Internal server error: {ex.Message}");
+        }
     }
 
-    [HttpGet("active")]
-    public async Task<IActionResult> GetActiveMachinery(int projectId)
-    {
-        var query = new GetActiveMachineryQuery(projectId);
-        var machinery = await _getActiveQueryHandler.Handle(query);
-        return Ok(machinery.Select(m => m.ToResource()));
-    }
+  
+    
+    
 }

@@ -13,4 +13,6 @@ public class CreateMachineryResource
     public string Description { get; set; } = string.Empty;
     public int? PersonnelId { get; set; }
     public DateTime RegisterDate { get; set; } = DateTime.UtcNow.Date;
+    public IFormFile? ImageFile { get; set; } // Added for image upload
+
 }
