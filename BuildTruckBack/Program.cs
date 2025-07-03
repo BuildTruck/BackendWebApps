@@ -343,6 +343,13 @@ builder.Services.AddScoped<BuildTruckBack.Personnel.Application.ACL.Services.ICl
 
 // Personnel Export Handler
 builder.Services.AddScoped<PersonnelExportHandler>();
+builder.Services.AddScoped(provider =>
+{
+    var universalService = provider.GetRequiredService<UniversalExportService>();
+    var personnelHandler = provider.GetRequiredService<PersonnelEntityExportHandler>();
+    universalService.RegisterHandler(personnelHandler);
+    return universalService;
+});
 
 // Documentation Bounded Context
 builder.Services.AddScoped<IDocumentationRepository, DocumentationRepository>();
