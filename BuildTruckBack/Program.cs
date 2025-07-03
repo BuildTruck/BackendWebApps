@@ -40,9 +40,12 @@ using BuildTruckBack.Auth.Infrastructure.Tokens.JWT.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using BuildTruckBack.Machinery.Application.ACL.Services;
 using BuildTruckBack.Machinery.Application.Internal.CommandServices;
 using BuildTruckBack.Machinery.Application.Internal.QueryServices;
 using BuildTruckBack.Machinery.Domain.Repositories;
+using BuildTruckBack.Machinery.Domain.Services;
+using BuildTruckBack.Machinery.Infrastructure.ACL;
 using BuildTruckBack.Machinery.Infrastructure.Persistence.EFC.Repositories;
 
 // Projects Context (with alias to avoid conflicts)
@@ -322,17 +325,6 @@ builder.Services.AddScoped<ProjectsCloudinaryService>(provider =>
     return new BuildTruckBack.Projects.Infrastructure.ACL.CloudinaryService(sharedCloudinaryService, logger);
 });
 
-// Machinery Bounded Context
-builder.Services.AddScoped<IMachineryRepository, MachineryRepository>();
-builder.Services.AddScoped<CreateMachineryCommandHandler>();
-builder.Services.AddScoped<UpdateMachineryCommandHandler>();
-builder.Services.AddScoped<DeleteMachineryCommandHandler>();
-builder.Services.AddScoped<GetMachineryByIdQueryHandler>();
-builder.Services.AddScoped<GetMachineryByProjectQueryHandler>();
-builder.Services.AddScoped<GetActiveMachineryQueryHandler>();
-
-
-
 // Personnel Cloudinary Service - Using alias to avoid conflicts
 builder.Services.AddScoped<BuildTruckBack.Personnel.Application.ACL.Services.ICloudinaryService>(provider =>
 {
@@ -382,7 +374,38 @@ builder.Services.AddScoped<BuildTruckBack.Documentation.Application.ACL.Services
 // Documentation Export Handler
 builder.Services.AddScoped<DocumentationExportHandler>();
 
+
+
+
+
+// Machinery Bounded Context
+builder.Services.AddScoped<IMachineryRepository, MachineryRepository>();
+//builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped<IProjectFacade, ProjectFacade>(); // Implement as needed
+builder.Services.AddScoped<CreateMachineryCommandHandler>();
+builder.Services.AddScoped<UpdateMachineryCommandHandler>();
+builder.Services.AddScoped<DeleteMachineryCommandHandler>();
+
+builder.Services.AddScoped<GetActiveMachineryQueryHandler>();
+builder.Services.AddScoped<GetMachineryByIdQueryHandler>();
+builder.Services.AddScoped<GetMachineryByProjectQueryHandler>();
+// Register Command Service
+builder.Services.AddScoped<IMachineryCommandService, MachineryCommandService>();
+builder.Services.AddScoped<IMachineryQueryService, MachineryQueryService>();
+builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("Cloudinary"));
+builder.Services.AddScoped<ICloudinaryImageService, CloudinaryImageService>();
+builder.Services.AddScoped<IMachineryCloudinaryService, MachineryCloudinaryService>();
+
+
+
+
+
 var app = builder.Build();
+
+
+
+
+
 
 // Verify if the database exists and create it if it doesn't
 using (var scope = app.Services.CreateScope())

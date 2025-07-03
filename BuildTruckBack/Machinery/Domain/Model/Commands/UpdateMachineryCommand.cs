@@ -11,4 +11,6 @@ public record UpdateMachineryCommand(
     MachineryStatus Status,
     string Provider,
     string Description,
-    int? PersonnelId);
+    int? PersonnelId
+    
+    );
