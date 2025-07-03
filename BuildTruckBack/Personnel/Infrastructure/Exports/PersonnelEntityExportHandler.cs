@@ -77,4 +77,38 @@ public class PersonnelEntityExportHandler : EntityExportHandler
             new() { PropertyName = "TotalDays", DisplayName = "Total Days", DataType = "number", Order = 22, IsVisible = true }
         };
     }
+
+    public override string GetFileName(string format, Dictionary<string, string> filters)
+    {
+        var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+        var baseFileName = "Personnel_Report";
+        
+        // Si incluye asistencia, cambiar el nombre
+        if (filters != null && 
+            filters.ContainsKey("includeAttendance") && 
+            bool.TryParse(filters["includeAttendance"], out bool includeAttendance) && 
+            includeAttendance &&
+            filters.ContainsKey("year") && 
+            filters.ContainsKey("month"))
+        {
+            baseFileName = $"Personnel_Attendance_{filters["year"]}_{filters["month"]}";
+        }
+        else if (filters != null && 
+                 filters.ContainsKey("activeOnly") && 
+                 bool.TryParse(filters["activeOnly"], out bool activeOnly) && 
+                 activeOnly)
+        {
+            baseFileName = "Personnel_Active";
+        }
+        
+        var extension = format.ToLower() switch
+        {
+            "excel" => "xlsx",
+            "pdf" => "pdf", 
+            "csv" => "csv",
+            _ => "xlsx"
+        };
+        
+        return $"{baseFileName}_{timestamp}.{extension}";
+    }
 }
