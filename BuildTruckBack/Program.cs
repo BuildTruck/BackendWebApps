@@ -343,6 +343,8 @@ builder.Services.AddScoped<BuildTruckBack.Personnel.Application.ACL.Services.ICl
 
 // Personnel Export Handler
 builder.Services.AddScoped<PersonnelExportHandler>();
+builder.Services.AddScoped<PersonnelEntityExportHandler>(); 
+
 builder.Services.AddScoped(provider =>
 {
     var universalService = provider.GetRequiredService<UniversalExportService>();
