@@ -146,7 +146,8 @@ public class PersonnelController : ControllerBase
     {
         try
         {
-            _logger.LogInformation("🔍 Getting personnel for project: {ProjectId}", projectId);
+            _logger.LogInformation("🔍 Getting personnel for project: {ProjectId} (includeAttendance: {IncludeAttendance})", 
+                projectId, includeAttendance);
 
             if (projectId <= 0)
                 return BadRequest("Invalid project ID");
@@ -166,10 +167,12 @@ public class PersonnelController : ControllerBase
                 if (targetMonth < 1 || targetMonth > 12)
                     return BadRequest("Invalid month. Must be between 1 and 12");
 
+                _logger.LogInformation("📊 Loading personnel with attendance for {Year}/{Month}", targetYear, targetMonth);
+
                 personnel = await _personnelQueryService.GetPersonnelWithAttendanceAsync(
                     projectId, targetYear, targetMonth, true);
 
-                _logger.LogInformation("📊 Retrieved personnel with attendance for {Year}/{Month}", targetYear, targetMonth);
+                _logger.LogInformation("📊 Retrieved personnel with attendance calculations completed");
             }
             else
             {
@@ -177,10 +180,23 @@ public class PersonnelController : ControllerBase
             }
 
             var personnelList = personnel.ToList();
-            var resources = PersonnelResourceFromEntityAssembler.ToResourceFromEntity(personnelList);
             
-            _logger.LogInformation("✅ Found {PersonnelCount} personnel for project: {ProjectId}", 
-                personnelList.Count, projectId);
+            // 🆕 MODIFICADO: Pass the includeAttendance flag to the assembler
+            var resources = PersonnelResourceFromEntityAssembler.ToResourceFromEntity(
+                personnelList, 
+                includeAttendance);
+            
+            _logger.LogInformation("✅ Found {PersonnelCount} personnel for project: {ProjectId} (with attendance data: {WithAttendance})", 
+                personnelList.Count, projectId, includeAttendance);
+
+            // 🔍 DEBUG: Log sample attendance data if included
+            if (includeAttendance && personnelList.Any())
+            {
+                var firstPersonnel = personnelList.First();
+                _logger.LogInformation("🔍 Sample attendance data for {PersonnelName}: {AttendanceKeys}", 
+                    firstPersonnel.GetFullName(), 
+                    string.Join(", ", firstPersonnel.MonthlyAttendance.Keys));
+            }
 
             return Ok(resources);
         }

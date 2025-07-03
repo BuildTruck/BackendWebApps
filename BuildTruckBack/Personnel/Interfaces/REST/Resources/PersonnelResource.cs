@@ -33,6 +33,9 @@ public record PersonnelResource(
     int Sundays,
     int TotalDays,
     
+    // 🆕 NUEVO: Attendance data for frontend
+    Dictionary<string, string>? MonthlyAttendanceData,
+    
     // Timestamps
     DateTimeOffset? CreatedAt,
     DateTimeOffset? UpdatedAt
