@@ -86,6 +86,7 @@ using BuildTruckBack.Documentation.Domain.Services;
 using BuildTruckBack.Documentation.Infrastructure.Persistence.EFC.Repositories;
 using BuildTruckBack.Documentation.Infrastructure.ACL;
 using BuildTruckBack.Documentation.Infrastructure.Exports;
+using Microsoft.Extensions.Options;
 using DocumentationCloudinaryService = BuildTruckBack.Documentation.Infrastructure.ACL.CloudinaryService;
 
 // ===== LOAD ENVIRONMENT VARIABLES =====
@@ -213,7 +214,6 @@ builder.Services.Configure<ExportSettings>(
 // Registrar servicios de Export
 builder.Services.AddScoped<IExcelGeneratorService, ExcelGeneratorService>();
 builder.Services.AddScoped<IPdfGeneratorService, PdfGeneratorService>();
-builder.Services.AddScoped<IUniversalExportService, UniversalExportService>();
 
 // Shared Email Services (renamed to Generic)
 builder.Services.AddScoped<IGenericEmailService, GenericEmailService>();
@@ -343,11 +343,20 @@ builder.Services.AddScoped<BuildTruckBack.Personnel.Application.ACL.Services.ICl
 
 // Personnel Export Handler
 builder.Services.AddScoped<PersonnelExportHandler>();
-builder.Services.AddScoped(provider =>
+builder.Services.AddScoped<PersonnelEntityExportHandler>();
+
+builder.Services.AddScoped<IUniversalExportService>(provider =>
 {
-    var universalService = provider.GetRequiredService<UniversalExportService>();
+    var excelGenerator = provider.GetRequiredService<IExcelGeneratorService>();
+    var pdfGenerator = provider.GetRequiredService<IPdfGeneratorService>();
+    var settings = provider.GetRequiredService<IOptions<ExportSettings>>();
+    var logger = provider.GetRequiredService<ILogger<UniversalExportService>>();
+    
+    var universalService = new UniversalExportService(excelGenerator, pdfGenerator, settings, logger);
+    
     var personnelHandler = provider.GetRequiredService<PersonnelEntityExportHandler>();
     universalService.RegisterHandler(personnelHandler);
+    
     return universalService;
 });
 
