@@ -103,10 +103,7 @@ public class UpdatePersonnelResource
             if (!allowedExtensions.Contains(extension))
                 errors.Add("Image file must be JPG, PNG, or WebP format");
         }
-
-        // Business rule validations
-        if (RemoveImage && ImageFile != null)
-            errors.Add("Cannot remove image and upload new image simultaneously");
+        
 
         return errors;
     }
