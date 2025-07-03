@@ -71,7 +71,7 @@ public class UpdatePersonnelResource
         var errors = new List<string>();
 
         // Validate personnel type
-        var validPersonnelTypes = new[] { "EMPLOYEE", "CONTRACTOR", "INTERN", "CONSULTANT" };
+        var validPersonnelTypes = new[] { "TECHNICAL", "SPECIALIST", "ADMINISTRATIVE", "RENTED_OPERATOR", "LABORER" };
         if (!validPersonnelTypes.Contains(PersonnelType))
         {
             errors.Add($"Invalid personnel type. Valid types: {string.Join(", ", validPersonnelTypes)}");
@@ -103,10 +103,7 @@ public class UpdatePersonnelResource
             if (!allowedExtensions.Contains(extension))
                 errors.Add("Image file must be JPG, PNG, or WebP format");
         }
-
-        // Business rule validations
-        if (RemoveImage && ImageFile != null)
-            errors.Add("Cannot remove image and upload new image simultaneously");
+        
 
         return errors;
     }

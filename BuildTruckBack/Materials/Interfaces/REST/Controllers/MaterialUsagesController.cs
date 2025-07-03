@@ -13,7 +13,7 @@ using Swashbuckle.AspNetCore.Annotations;
 namespace BuildTruckBack.Materials.Interfaces.REST.Controllers
 {
     [ApiController]
-    [Route("api/material-usages")]
+    [Route("api/v1/[controller]")]
     [Authorize(Roles = "Admin,Supervisor,Manager")]
     [SwaggerTag("Material Usage Management")]
     public class MaterialUsagesController : ControllerBase

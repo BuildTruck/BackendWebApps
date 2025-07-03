@@ -86,6 +86,7 @@ using BuildTruckBack.Documentation.Domain.Services;
 using BuildTruckBack.Documentation.Infrastructure.Persistence.EFC.Repositories;
 using BuildTruckBack.Documentation.Infrastructure.ACL;
 using BuildTruckBack.Documentation.Infrastructure.Exports;
+using Microsoft.Extensions.Options;
 using DocumentationCloudinaryService = BuildTruckBack.Documentation.Infrastructure.ACL.CloudinaryService;
 
 // ===== LOAD ENVIRONMENT VARIABLES =====
@@ -213,7 +214,6 @@ builder.Services.Configure<ExportSettings>(
 // Registrar servicios de Export
 builder.Services.AddScoped<IExcelGeneratorService, ExcelGeneratorService>();
 builder.Services.AddScoped<IPdfGeneratorService, PdfGeneratorService>();
-builder.Services.AddScoped<IUniversalExportService, UniversalExportService>();
 
 // Shared Email Services (renamed to Generic)
 builder.Services.AddScoped<IGenericEmailService, GenericEmailService>();
@@ -282,6 +282,25 @@ builder.Services.AddScoped<IMaterialUsageRepository, MaterialUsageRepository>();
 builder.Services.AddScoped<IMaterialUsageCommandService, MaterialUsageCommandService>();
 builder.Services.AddScoped<IMaterialUsageQueryService, MaterialUsageQueryService>();
 
+// Materials ACL Services (para comunicación con otros bounded contexts)
+builder.Services.AddScoped<BuildTruckBack.Materials.Application.ACL.Services.IProjectContextService, 
+    BuildTruckBack.Materials.Infrastructure.ACL.ProjectContextService>();
+
+builder.Services.AddScoped<BuildTruckBack.Materials.Application.ACL.Services.IUserContextService, 
+    BuildTruckBack.Materials.Infrastructure.ACL.UserContextService>();
+
+// Materials Facade (para que otros contexts puedan acceder a Materials)
+builder.Services.AddScoped<BuildTruckBack.Materials.Application.Internal.OutboundServices.IMaterialFacade, 
+    BuildTruckBack.Materials.Application.Internal.OutboundServices.MaterialFacade>();
+
+// Materials Context Facade (para acceso externo)
+builder.Services.AddScoped<BuildTruckBack.Materials.Interfaces.ACL.IMaterialsContextFacade, 
+    BuildTruckBack.Materials.Interfaces.ACL.Services.MaterialsContextFacade>();
+
+// ===== AGREGAR DESPUÉS DE LA LÍNEA DE HttpContextAccessor (si no existe) =====
+builder.Services.AddHttpContextAccessor();
+
+
 // Inventory Service
 builder.Services.AddScoped<IInventoryQueryService, InventoryQueryService>();
 
@@ -323,7 +342,22 @@ builder.Services.AddScoped<BuildTruckBack.Personnel.Application.ACL.Services.ICl
 });
 
 // Personnel Export Handler
-builder.Services.AddScoped<PersonnelExportHandler>();
+builder.Services.AddScoped<PersonnelEntityExportHandler>();
+
+builder.Services.AddScoped<IUniversalExportService>(provider =>
+{
+    var excelGenerator = provider.GetRequiredService<IExcelGeneratorService>();
+    var pdfGenerator = provider.GetRequiredService<IPdfGeneratorService>();
+    var settings = provider.GetRequiredService<IOptions<ExportSettings>>();
+    var logger = provider.GetRequiredService<ILogger<UniversalExportService>>();
+    
+    var universalService = new UniversalExportService(excelGenerator, pdfGenerator, settings, logger);
+    
+    var personnelHandler = provider.GetRequiredService<PersonnelEntityExportHandler>();
+    universalService.RegisterHandler(personnelHandler);
+    
+    return universalService;
+});
 
 // Documentation Bounded Context
 builder.Services.AddScoped<IDocumentationRepository, DocumentationRepository>();
