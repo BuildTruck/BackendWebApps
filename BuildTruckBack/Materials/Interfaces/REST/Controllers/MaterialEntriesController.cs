@@ -54,6 +54,12 @@ namespace BuildTruckBack.Materials.Interfaces.REST.Controllers
         [SwaggerResponse(400, "Invalid request data")]
         public async Task<ActionResult<MaterialEntryResource>> CreateOrUpdateMaterialEntry([FromBody] CreateOrUpdateMaterialEntryResource resource)
         {
+            Console.WriteLine($"=== DATOS RECIBIDOS EN CONTROLLER ===");
+            Console.WriteLine($"ID: {resource.Id}");
+            Console.WriteLine($"Status recibido: '{resource.Status}'");
+            Console.WriteLine($"Payment recibido: '{resource.Payment}'");
+            Console.WriteLine($"DocumentType recibido: '{resource.DocumentType}'");
+            
             MaterialEntry? entry;
             
             if (resource.Id.HasValue && resource.Id.Value > 0)
