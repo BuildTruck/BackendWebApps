@@ -23,7 +23,7 @@ namespace BuildTruckBack.Materials.Interfaces.REST.Transform
                 resource.DocumentNumber,
                 resource.UnitCost,
                 resource.Quantity * resource.UnitCost, // TotalCost calculado
-                "PENDING", // Status por defecto
+                resource.Status ?? "PENDING", // ✅ ARREGLO: Usar el status del resource
                 resource.Observations ?? string.Empty
             );
         }
@@ -43,7 +43,7 @@ namespace BuildTruckBack.Materials.Interfaces.REST.Transform
                 resource.DocumentNumber,
                 resource.UnitCost,
                 resource.Quantity * resource.UnitCost, // TotalCost calculado
-                "PENDING", // Status por defecto
+                resource.Status ?? "PENDING", // ✅ ARREGLO: Usar el status del resource
                 resource.Observations ?? string.Empty
             );
         }
@@ -64,7 +64,7 @@ namespace BuildTruckBack.Materials.Interfaces.REST.Transform
                 resource.DocumentNumber,
                 resource.UnitCost,
                 resource.Quantity * resource.UnitCost,
-                "PENDING",
+                resource.Status ?? "PENDING", // ✅ ARREGLO: Usar el status del resource
                 resource.Observations ?? string.Empty
             );
         }
@@ -83,7 +83,7 @@ namespace BuildTruckBack.Materials.Interfaces.REST.Transform
                 resource.DocumentNumber,
                 resource.UnitCost,
                 resource.Quantity * resource.UnitCost,
-                "PENDING",
+                resource.Status ?? "PENDING", // ✅ ARREGLO: Usar el status del resource
                 resource.Observations ?? string.Empty
             );
         }

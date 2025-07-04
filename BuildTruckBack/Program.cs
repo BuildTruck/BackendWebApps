@@ -1,11 +1,12 @@
 using DotNetEnv;
 
 // Configurations Context
+using BuildTruckBack.Configurations.Application.ACL;
 using BuildTruckBack.Configurations.Application.Internal.CommandServices;
-using BuildTruckBack.Configurations.Application.Internal.OutboundServices;
+using BuildTruckBack.Configurations.Application.Internal.QueryServices;
 using BuildTruckBack.Configurations.Domain.Repositories;
+using BuildTruckBack.Configurations.Domain.Services;
 using BuildTruckBack.Configurations.Infrastructure.Persistence.EFC.Repositories;
-using BuildTruckBack.Configurations.Domain.Model.Commands;
 
 // Users Context
 using BuildTruckBack.Users.Application.Internal.CommandServices;
@@ -40,7 +41,12 @@ using BuildTruckBack.Auth.Infrastructure.Tokens.JWT.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+
 using BuildTruckBack.Machinery.Application.ACL.Services;
+
+using BuildTruckBack.Configurations.Domain.Model.ValueObjects;
+using BuildTruckBack.Configurations.Interfaces.ACL;
+
 using BuildTruckBack.Machinery.Application.Internal.CommandServices;
 using BuildTruckBack.Machinery.Application.Internal.QueryServices;
 using BuildTruckBack.Machinery.Domain.Repositories;
@@ -90,14 +96,14 @@ using BuildTruckBack.Documentation.Infrastructure.Persistence.EFC.Repositories;
 using BuildTruckBack.Documentation.Infrastructure.ACL;
 using BuildTruckBack.Documentation.Infrastructure.Exports;
 
-
 // Incidents 
 using BuildTruckBack.Incidents.Application.Internal;
 using BuildTruckBack.Incidents.Domain.Commands;
 using BuildTruckBack.Incidents.Domain.Model.Queries;
 using Microsoft.Extensions.Options;
+using Microsoft.OpenApi.Any;
+using Swashbuckle.AspNetCore.SwaggerGen;
 using DocumentationCloudinaryService = BuildTruckBack.Documentation.Infrastructure.ACL.CloudinaryService;
-
 
 
 // ===== LOAD ENVIRONMENT VARIABLES =====
@@ -110,6 +116,7 @@ OfficeOpenXml.ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonComm
 // ===== CONFIGURATION =====
 // Las variables de entorno se cargan automáticamente usando la sintaxis jerárquica
 builder.Configuration.AddEnvironmentVariables();
+
 
 // Add services to the container.
 builder.Services.AddRouting(options => options.LowercaseUrls = true);
@@ -247,9 +254,14 @@ if (cloudinarySettings == null || !cloudinarySettings.IsValid)
         "Cloudinary settings are missing or invalid. Please check your appsettings.json file.");
 }
 
-builder.Services.AddScoped<IConfigurationRepository, ConfigurationRepository>();
-builder.Services.AddScoped<IConfigurationCommandHandler, ConfigurationCommandService>();
-builder.Services.AddScoped<IConfigurationFacade, ConfigurationFacade>();
+// Configurations Bounded Context
+// Database configuration
+
+// Dependency injection for Configurations
+builder.Services.AddScoped<IConfigurationSettingsRepository, ConfigurationSettingsRepository>();
+builder.Services.AddScoped<IConfigurationSettingsCommandService, ConfigurationSettingsCommandService>();
+builder.Services.AddScoped<IConfigurationSettingsQueryService, ConfigurationSettingsQueryService>();
+builder.Services.AddScoped<IConfigurationSettingsFacade, ConfigurationSettingsFacade>();
 
 // Users Bounded Context
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -446,3 +458,21 @@ app.UseHttpsRedirection();
 app.MapControllers();
 app.Run();
 
+
+// Schema filter for enums
+public class EnumSchemaFilter : ISchemaFilter
+{
+    public void Apply(OpenApiSchema schema, SchemaFilterContext context)
+    {
+        if (context.Type == typeof(Theme) || context.Type == typeof(Theme?) ||
+            context.Type == typeof(Plan) || context.Type == typeof(Plan?))
+        {
+            schema.Enum = Enum.GetNames(context.Type)
+                .Select(name => new OpenApiString(name.ToLower()))
+                .Cast<IOpenApiAny>()
+                .ToList();
+            schema.Type = "string";
+            schema.Format = null;
+        }
+    }
+}

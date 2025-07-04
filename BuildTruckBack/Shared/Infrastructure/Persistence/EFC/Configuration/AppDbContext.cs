@@ -1,5 +1,6 @@
 using BuildTruckBack.Users.Domain.Model.Aggregates;
 using BuildTruckBack.Configurations.Domain.Model.Aggregates;
+using BuildTruckBack.Configurations.Infrastructure.Persistence.EFC.Configuration;
 using BuildTruckBack.Projects.Domain.Model.Aggregates;
 using BuildTruckBack.Shared.Infrastructure.Persistence.EFC.Configuration.Extensions;
 using EntityFrameworkCore.CreatedUpdatedDate.Extensions;
@@ -24,12 +25,12 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
     // ✅ Projects DbSet
     public DbSet<Project> Projects { get; set; }
 
-
     // ✅ Machinery DbSet
     public DbSet<Machinery.Domain.Model.Aggregates.Machinery> Machinery { get; set; }
     
-    public DbSet<BuildTruckBack.Configurations.Domain.Model.Aggregates.Configuration> Configurations { get; set; }
-
+    // ✅ Configurations DbSet
+    public DbSet<ConfigurationSettings> ConfigurationsSettings { get; set; }
+    
     // ✅ Personnel DbSet
     public DbSet<BuildTruckBack.Personnel.Domain.Model.Aggregates.Personnel> Personnel { get; set; }
 
@@ -157,13 +158,25 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
         builder.Entity<Project>().Property(p => p.StartDate);
         
         // ===== CONFIGURATIONS CONTEXT CONFIGURATION =====
-        builder.Entity<Configurations.Domain.Model.Aggregates.Configuration>().HasKey(c => c.Id);
-        builder.Entity<Configurations.Domain.Model.Aggregates.Configuration>().Property(c => c.Id).IsRequired().ValueGeneratedOnAdd();
-        builder.Entity<Configurations.Domain.Model.Aggregates.Configuration>().Property(c => c.UserId).IsRequired();
-        builder.Entity<Configurations.Domain.Model.Aggregates.Configuration>().Property(c => c.Theme).IsRequired().HasMaxLength(10);
-        builder.Entity<Configurations.Domain.Model.Aggregates.Configuration>().Property(c => c.Plan).IsRequired().HasMaxLength(20);
-        builder.Entity<Configurations.Domain.Model.Aggregates.Configuration>().Property(c => c.NotificationsEnable).IsRequired();
-        builder.Entity<Configurations.Domain.Model.Aggregates.Configuration>().Property(c => c.EmailNotifications).IsRequired();
+        builder.Entity<ConfigurationSettings>().HasKey(c => c.Id);
+        builder.Entity<ConfigurationSettings>().ToTable("configurations");
+        builder.Entity<ConfigurationSettings>().Property(c => c.Id).ValueGeneratedOnAdd();
+        builder.Entity<ConfigurationSettings>().Property(c => c.UserId).HasColumnName("user_id").IsRequired();
+        builder.Entity<ConfigurationSettings>().Property(c => c.Themes).HasColumnName("theme").HasMaxLength(20).IsRequired().HasConversion<string>();
+        builder.Entity<ConfigurationSettings>().Property(c => c.Plans).HasColumnName("plan").HasMaxLength(20).IsRequired().HasConversion<string>();
+        builder.Entity<ConfigurationSettings>().Property(c => c.NotificationsEnable).HasColumnName("notifications_enable").IsRequired();
+        builder.Entity<ConfigurationSettings>().Property(c => c.EmailNotifications).HasColumnName("email_notifications").IsRequired();
+        builder.Entity<ConfigurationSettings>().Property(c => c.CreatedAt).HasColumnName("created_at").IsRequired();
+        builder.Entity<ConfigurationSettings>().Property(c => c.UpdatedAt).HasColumnName("updated_at").IsRequired();
+        builder.Entity<ConfigurationSettings>().HasIndex(c => c.UserId).IsUnique().HasDatabaseName("IX_Configurations_User_Id");
+        builder.Entity<ConfigurationSettings>().HasOne<User>()
+            .WithOne()
+            .HasForeignKey<ConfigurationSettings>(c => c.UserId)
+            .OnDelete(DeleteBehavior.Restrict)
+            .HasConstraintName("FK_Configurations_Users_User_Id");
+
+        // Apply global filters (if any)
+        // builder.ApplyGlobalFilters();
 
         // ===== FOREIGN KEY RELATIONSHIPS =====
         
@@ -183,14 +196,6 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
             .OnDelete(DeleteBehavior.SetNull) // Si se borra Supervisor, project.SupervisorId = null
             .HasConstraintName("FK_Projects_Users_SupervisorId");
         
-        // Configuration belongs to User
-        builder.Entity<Configurations.Domain.Model.Aggregates.Configuration>()
-            .HasOne<User>()
-            .WithMany()
-            .HasForeignKey(c => c.UserId)
-            .OnDelete(DeleteBehavior.Cascade)
-            .HasConstraintName("FK_Configurations_Users_UserId");
-
         // ===== INDEXES FOR PERFORMANCE =====
         
         // Index for manager queries
@@ -202,12 +207,7 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
         builder.Entity<Project>()
             .HasIndex(p => p.SupervisorId)
             .HasDatabaseName("IX_Projects_SupervisorId");
-        
-        // Index for user queries (Configurations)
-        builder.Entity<Configurations.Domain.Model.Aggregates.Configuration>()
-            .HasIndex(c => c.UserId)
-            .HasDatabaseName("IX_Configurations_UserId")
-            .IsUnique();
+
 
         // Business constraint: Solo un supervisor por proyecto activo
         // Note: Since State is a Value Object, we use a simpler approach
