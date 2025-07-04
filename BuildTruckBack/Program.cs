@@ -89,8 +89,16 @@ using BuildTruckBack.Documentation.Domain.Services;
 using BuildTruckBack.Documentation.Infrastructure.Persistence.EFC.Repositories;
 using BuildTruckBack.Documentation.Infrastructure.ACL;
 using BuildTruckBack.Documentation.Infrastructure.Exports;
+
+
+// Incidents 
+using BuildTruckBack.Incidents.Application.Internal;
+using BuildTruckBack.Incidents.Domain.Commands;
+using BuildTruckBack.Incidents.Domain.Model.Queries;
 using Microsoft.Extensions.Options;
 using DocumentationCloudinaryService = BuildTruckBack.Documentation.Infrastructure.ACL.CloudinaryService;
+
+
 
 // ===== LOAD ENVIRONMENT VARIABLES =====
 Env.Load();
@@ -375,7 +383,14 @@ builder.Services.AddScoped<BuildTruckBack.Documentation.Application.ACL.Services
 builder.Services.AddScoped<DocumentationExportHandler>();
 
 
-
+// Incidents Bounded Context
+builder.Services.AddScoped<IIncidentFacade, IncidentFacade>();
+builder.Services.AddScoped<IIncidentCommandHandler, IncidentCommandHandler>();
+builder.Services.AddScoped<IIncidentQueryHandler, IncidentQueryHandler>();
+builder.Services.AddScoped<
+    BuildTruckBack.Incidents.Application.ACL.Services.ICloudinaryService,
+    BuildTruckBack.Incidents.Infrastructure.ACL.CloudinaryService
+>();
 
 
 // Machinery Bounded Context

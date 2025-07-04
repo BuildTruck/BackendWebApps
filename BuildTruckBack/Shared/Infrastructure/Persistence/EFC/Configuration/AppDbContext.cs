@@ -4,6 +4,7 @@ using BuildTruckBack.Projects.Domain.Model.Aggregates;
 using BuildTruckBack.Shared.Infrastructure.Persistence.EFC.Configuration.Extensions;
 using EntityFrameworkCore.CreatedUpdatedDate.Extensions;
 using Microsoft.EntityFrameworkCore;
+using BuildTruckBack.Incidents.Domain.Aggregates;
 
 namespace BuildTruckBack.Shared.Infrastructure.Persistence.EFC.Configuration;
 
@@ -17,6 +18,8 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
 {
     // ✅ Users DbSet
     public DbSet<User> Users { get; set; }
+    
+    public DbSet<Incident> Incidents { get; set; }
     
     // ✅ Projects DbSet
     public DbSet<Project> Projects { get; set; }

@@ -93,4 +93,18 @@ public class IncidentCommandService : IIncidentCommandHandler
         _incidentRepository.Update(incident);
         await _unitOfWork.CompleteAsync();
     }
+    
+    public async Task DeleteAsync(int id)
+    {
+        var incident = await _incidentRepository.FindByIdAsync(id);
+        if (incident == null)
+            throw new Exception($"No se encontró el incidente con Id {id}");
+    
+        // Elimina la imagen de Cloudinary si existe
+        if (!string.IsNullOrEmpty(incident.Image))
+            await _cloudinaryService.DeleteIncidentImageAsync(incident.Image);
+    
+        _incidentRepository.Remove(incident);
+        await _unitOfWork.CompleteAsync();
+    }
 }
