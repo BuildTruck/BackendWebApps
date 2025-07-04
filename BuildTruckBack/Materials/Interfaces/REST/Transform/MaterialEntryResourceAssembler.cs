@@ -49,7 +49,7 @@ namespace BuildTruckBack.Materials.Interfaces.REST.Transform
         }
 
         // Mantener métodos existentes para compatibilidad
-        public static CreateMaterialEntryCommand ToCommandFromResource(CreateMaterialEntryResource resource)
+        public static CreateMaterialEntryCommand ToCommandFromResource(CreateOrUpdateMaterialEntryResource resource)
         {
             return new CreateMaterialEntryCommand(
                 resource.ProjectId,
@@ -69,7 +69,7 @@ namespace BuildTruckBack.Materials.Interfaces.REST.Transform
             );
         }
 
-        public static UpdateMaterialEntryCommand ToCommandFromResource(int entryId, UpdateMaterialEntryResource resource)
+        public static UpdateMaterialEntryCommand ToCommandFromResource(int entryId, CreateOrUpdateMaterialEntryResource resource)
         {
             return new UpdateMaterialEntryCommand(
                 entryId,

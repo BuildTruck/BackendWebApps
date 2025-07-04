@@ -4,6 +4,7 @@ using BuildTruckBack.Projects.Domain.Model.Aggregates;
 using BuildTruckBack.Shared.Infrastructure.Persistence.EFC.Configuration.Extensions;
 using EntityFrameworkCore.CreatedUpdatedDate.Extensions;
 using Microsoft.EntityFrameworkCore;
+using BuildTruckBack.Incidents.Domain.Aggregates;
 
 namespace BuildTruckBack.Shared.Infrastructure.Persistence.EFC.Configuration;
 
@@ -17,6 +18,8 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
 {
     // ✅ Users DbSet
     public DbSet<User> Users { get; set; }
+    
+    public DbSet<Incident> Incidents { get; set; }
     
     // ✅ Projects DbSet
     public DbSet<Project> Projects { get; set; }
@@ -295,8 +298,7 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
     // Add Personnel DbSet to your AppDbContext class:
     
     
-    // Machinery Configuration
-   
+    // ===== MACHINERY CONFIGURATION =====
     builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>().HasKey(m => m.Id);
     builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>().Property(m => m.Id).IsRequired().ValueGeneratedOnAdd();
     builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>().Property(m => m.ProjectId).IsRequired();
@@ -305,7 +307,7 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
     builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>().Property(m => m.MachineryType).IsRequired().HasMaxLength(50);
     builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>().Property(m => m.Status)
         .IsRequired()
-        .HasConversion<string>()  // Store enum as string
+        .HasConversion<string>()
         .HasMaxLength(20);
     builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>().Property(m => m.Provider).IsRequired().HasMaxLength(100);
     builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>().Property(m => m.Description).HasMaxLength(500);
@@ -331,6 +333,7 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
     builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>()
         .HasIndex(m => m.Status)
         .HasDatabaseName("IX_Machinery_Status");
+    
     
     // public DbSet<BuildTruckBack.Personnel.Domain.Model.Aggregates.Personnel> Personnel { get; set; }
             // ===== NAMING CONVENTION =====

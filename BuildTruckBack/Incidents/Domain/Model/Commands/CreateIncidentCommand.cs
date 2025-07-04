@@ -12,4 +12,6 @@ public record CreateIncidentCommand(
     string? AssignedTo,
     DateTime OccurredAt,
     string? Image,
-    string Notes);
+    string Notes,
+    string? ImagePath // <-- Agrega esta línea
+);

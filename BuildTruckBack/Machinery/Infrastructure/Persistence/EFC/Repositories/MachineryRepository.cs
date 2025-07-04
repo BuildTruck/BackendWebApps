@@ -29,5 +29,9 @@ public class MachineryRepository : BaseRepository<Domain.Model.Aggregates.Machin
                 m.ProjectId == projectId && 
                 m.LicensePlate == licensePlate);
     }
-    
+    public async Task UpdateAsync(Domain.Model.Aggregates.Machinery machinery)
+    {
+        _context.Machinery.Update(machinery);
+        await _context.SaveChangesAsync();
+    }
 }

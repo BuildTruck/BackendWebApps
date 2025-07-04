@@ -9,6 +9,8 @@ namespace BuildTruckBack.Materials.Interfaces.REST.Resources
         string Unit,
         decimal MinimumStock,
         string Provider,
+        decimal TotalEntries,    
+        decimal TotalUsages,     
         decimal StockActual,
         decimal UnitPrice,
         decimal Total

@@ -26,6 +26,8 @@ namespace BuildTruckBack.Materials.Interfaces.REST.Transform
                 material.Unit.Value,
                 material.MinimumStock.Value,
                 material.Provider,
+                0, // TotalEntries - no disponible desde Material
+                0, // TotalUsages - no disponible desde Material
                 material.Stock.Value,
                 material.Price.Value,
                 material.Stock.Value * material.Price.Value

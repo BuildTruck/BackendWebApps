@@ -1,8 +1,9 @@
-// Materials/Application/Internal/QueryServices/InventoryQueryService.cs
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using BuildTruckBack.Materials.Interfaces.REST.Resources;
 using BuildTruckBack.Materials.Domain.Model.Aggregates;
 using BuildTruckBack.Materials.Domain.Model.Queries;
 using BuildTruckBack.Materials.Domain.Repositories;
@@ -55,6 +56,46 @@ namespace BuildTruckBack.Materials.Application.Internal.QueryServices
             }
 
             return materials;
+        }
+
+        // ✅ MÉTODO NUEVO AGREGADO CORRECTAMENTE DENTRO DE LA CLASE
+        public async Task<List<InventoryItemResource>> HandleDetailed(GetInventoryByProjectQuery query)
+        {
+            var materials = await _materialRepository.GetByProjectIdAsync(query.ProjectId);
+            var entries = await _entryRepository.GetByProjectIdAsync(query.ProjectId);
+            var usages = await _usageRepository.GetByProjectIdAsync(query.ProjectId);
+
+            var result = new List<InventoryItemResource>();
+
+            foreach (var material in materials)
+            {
+                var materialEntries = entries.Where(e => e.MaterialId == material.Id).ToList();
+                var materialUsages = usages.Where(u => u.MaterialId == material.Id).ToList();
+
+                var totalEntries = materialEntries.Sum(e => (decimal)e.Quantity);
+                var totalUsages = materialUsages.Sum(u => (decimal)u.Quantity);
+                var currentStock = totalEntries - totalUsages;
+
+                // Calcular precio promedio ponderado
+                var totalEntryCost = materialEntries.Sum(e => e.UnitCost.Value * (decimal)e.Quantity);
+                var averagePrice = totalEntries > 0 ? totalEntryCost / totalEntries : 0;
+
+                result.Add(new InventoryItemResource(
+                    material.Id,
+                    material.Name.Value,
+                    material.Type.Value,
+                    material.Unit.Value,
+                    (decimal)material.MinimumStock.Value,
+                    material.Provider,
+                    totalEntries,        // ✅ Total de entradas
+                    totalUsages,         // ✅ Total de usos
+                    currentStock,        // Stock actual calculado
+                    averagePrice,        // Precio promedio
+                    currentStock * averagePrice  // Total
+                ));
+            }
+
+            return result;
         }
     }
 }

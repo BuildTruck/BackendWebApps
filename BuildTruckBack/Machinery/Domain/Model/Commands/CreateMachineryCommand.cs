@@ -11,7 +11,9 @@ public record CreateMachineryCommand(
     string Provider,
     string Description,
     int? PersonnelId,
-    DateTime RegisterDate)
+    DateTime RegisterDate,
+    byte[]? ImageBytes, // Added for image
+    string? ImageFileName) // Added for image file name
 {
     
 }
