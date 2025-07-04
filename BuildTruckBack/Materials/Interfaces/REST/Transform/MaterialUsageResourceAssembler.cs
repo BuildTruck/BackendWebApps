@@ -37,12 +37,12 @@ namespace BuildTruckBack.Materials.Interfaces.REST.Transform
             );
         }
 
-        // Mantener métodos existentes para compatibilidad
-        public static CreateMaterialUsageCommand ToCommandFromResource(CreateMaterialUsageResource resource)
+        
+        public static CreateMaterialUsageCommand ToCommandFromResource(CreateOrUpdateMaterialUsageResource resource)
         {
             return new CreateMaterialUsageCommand(
-                resource.ProjectId,
-                resource.MaterialId,
+                resource.ProjectId,    
+                resource.MaterialId,   
                 resource.Date,
                 resource.Quantity,
                 resource.Area,
@@ -53,7 +53,7 @@ namespace BuildTruckBack.Materials.Interfaces.REST.Transform
             );
         }
 
-        public static UpdateMaterialUsageCommand ToCommandFromResource(int usageId, UpdateMaterialUsageResource resource)
+        public static UpdateMaterialUsageCommand ToCommandFromResource(int usageId, CreateOrUpdateMaterialUsageResource resource)
         {
             return new UpdateMaterialUsageCommand(
                 usageId,
