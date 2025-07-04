@@ -15,6 +15,8 @@ namespace BuildTruckBack.Materials.Interfaces.REST.Resources
         [Required][StringLength(50)] string DocumentType,
         [Required][StringLength(50)] string DocumentNumber,
         [Required][Range(0.01, 9999999.99)] decimal UnitCost,
-        [StringLength(500)] string? Observations
+        [StringLength(500)] string? Observations,
+        // ✅ AGREGAR: Campo para el status
+        [StringLength(50)] string? Status = "PENDING"
     );
 }

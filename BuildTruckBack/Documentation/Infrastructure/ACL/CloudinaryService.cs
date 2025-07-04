@@ -12,7 +12,7 @@ public class CloudinaryService : ICloudinaryService
     private readonly ICloudinaryImageService _cloudinaryImageService;
     private readonly ILogger<CloudinaryService> _logger;
     
-    private const string DOCUMENTATION_FOLDER = "documentation/";
+    private const string DOCUMENTATION_FOLDER = "buildtruck/documentation/";
 
     public CloudinaryService(ICloudinaryImageService cloudinaryImageService, ILogger<CloudinaryService> logger)
     {
