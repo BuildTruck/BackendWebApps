@@ -92,10 +92,9 @@ namespace BuildTruckBack.Materials.Interfaces.REST.Controllers
         public async Task<ActionResult<IEnumerable<InventoryItemResource>>> GetInventoryByProject(int projectId)
         {
             var query = new GetInventoryByProjectQuery(projectId);
-            var materials = await _inventoryQueryService.Handle(query);
-            
-            var resources = InventoryResourceAssembler.ToResourceListFromEntityList(materials);
-            return Ok(resources);
+            var inventoryItems = await _inventoryQueryService.HandleDetailed(query);  // ✅ Cambio aquí
+    
+            return Ok(inventoryItems);  // ✅ Retornar directamente los recursos
         }
     }
 }
