@@ -6,6 +6,8 @@ using BuildTruckBack.Shared.Infrastructure.Persistence.EFC.Configuration.Extensi
 using EntityFrameworkCore.CreatedUpdatedDate.Extensions;
 using Microsoft.EntityFrameworkCore;
 using BuildTruckBack.Incidents.Domain.Aggregates;
+using BuildTruckBack.Stats.Domain.Model.Aggregates;
+using BuildTruckBack.Stats.Infrastructure.Persistence.EFC.Configuration;
 
 namespace BuildTruckBack.Shared.Infrastructure.Persistence.EFC.Configuration;
 
@@ -38,7 +40,9 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
     public DbSet<BuildTruckBack.Materials.Domain.Model.Aggregates.Material> Materials { get; set; }
     public DbSet<BuildTruckBack.Materials.Domain.Model.Aggregates.MaterialEntry> MaterialEntries { get; set; }
     public DbSet<BuildTruckBack.Materials.Domain.Model.Aggregates.MaterialUsage> MaterialUsages { get; set; }
-
+    // ✅ Stats DbSets
+    public DbSet<ManagerStats> ManagerStats { get; set; }
+    public DbSet<StatsHistory> StatsHistory { get; set; }
     
     public DbSet<BuildTruckBack.Documentation.Domain.Model.Aggregates.Documentation> Documentation { get; set; }
     
@@ -575,7 +579,9 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
         builder.Entity<BuildTruckBack.Materials.Domain.Model.Aggregates.MaterialUsage>()
             .HasIndex(mu => mu.Date)
             .HasDatabaseName("IX_MaterialUsages_Date");
-
+        //Stats tables
+        builder.ApplyConfiguration(new ManagerStatsConfiguration());
+        builder.ApplyConfiguration(new StatsHistoryConfiguration());
         // ===== NAMING CONVENTION =====
 
         builder.UseSnakeCaseNamingConvention();

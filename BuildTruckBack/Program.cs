@@ -100,6 +100,19 @@ using BuildTruckBack.Documentation.Infrastructure.Exports;
 using BuildTruckBack.Incidents.Application.Internal;
 using BuildTruckBack.Incidents.Domain.Commands;
 using BuildTruckBack.Incidents.Domain.Model.Queries;
+//Stats
+using BuildTruckBack.Stats.Application.ACL.Services;
+using BuildTruckBack.Stats.Application.Internal.CommandServices;
+using BuildTruckBack.Stats.Application.Internal.QueryServices;
+using BuildTruckBack.Stats.Domain.Repositories;
+using BuildTruckBack.Stats.Domain.Services;
+using BuildTruckBack.Stats.Infrastructure.ACL;
+using BuildTruckBack.Stats.Infrastructure.Persistence.EFC.Repositories;
+using StatsUserService = BuildTruckBack.Stats.Application.ACL.Services.IUserContextService;
+using StatsUserServiceImpl = BuildTruckBack.Stats.Infrastructure.ACL.UserContextService;
+using StatsPersonnelService = BuildTruckBack.Stats.Application.ACL.Services.IPersonnelContextService;
+using StatsPersonnelServiceImpl = BuildTruckBack.Stats.Infrastructure.ACL.PersonnelContextService;
+
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Any;
 using Swashbuckle.AspNetCore.SwaggerGen;
@@ -423,15 +436,28 @@ builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection(
 builder.Services.AddScoped<ICloudinaryImageService, CloudinaryImageService>();
 builder.Services.AddScoped<IMachineryCloudinaryService, MachineryCloudinaryService>();
 
+// ===== STATS MODULE =====
+// Repositories
+builder.Services.AddScoped<IStatsRepository, StatsRepository>();
+builder.Services.AddScoped<IStatsHistoryRepository, StatsHistoryRepository>();
 
+// Services  
+builder.Services.AddScoped<IStatsCommandService, StatsCommandService>();
+builder.Services.AddScoped<IStatsQueryService, StatsQueryService>();
 
+// ACL Services
+builder.Services.AddScoped<BuildTruckBack.Stats.Application.ACL.Services.IUserContextService, BuildTruckBack.Stats.Infrastructure.ACL.UserContextService>();
+builder.Services.AddScoped<BuildTruckBack.Stats.Application.ACL.Services.IPersonnelContextService, BuildTruckBack.Stats.Infrastructure.ACL.PersonnelContextService>();
+builder.Services.AddScoped<BuildTruckBack.Stats.Application.ACL.Services.IProjectContextService, BuildTruckBack.Stats.Infrastructure.ACL.ProjectContextService>();
+builder.Services.AddScoped<BuildTruckBack.Stats.Application.ACL.Services.IIncidentContextService, BuildTruckBack.Stats.Infrastructure.ACL.IncidentContextService>();
+builder.Services.AddScoped<BuildTruckBack.Stats.Application.ACL.Services.IMaterialContextService, BuildTruckBack.Stats.Infrastructure.ACL.MaterialContextService>();
+builder.Services.AddScoped<BuildTruckBack.Stats.Application.ACL.Services.IMachineryContextService, BuildTruckBack.Stats.Infrastructure.ACL.MachineryContextService>();
 
+// Personnel Facade 
+builder.Services.AddScoped<BuildTruckBack.Personnel.Application.Internal.OutboundServices.IPersonnelFacade, BuildTruckBack.Personnel.Application.Internal.OutboundServices.PersonnelFacade>();
+builder.Services.AddScoped<BuildTruckBack.Machinery.Application.Internal.OutboundServices.IMachineryFacade, BuildTruckBack.Machinery.Application.Internal.OutboundServices.MachineryFacade>();
 
 var app = builder.Build();
-
-
-
-
 
 
 // Verify if the database exists and create it if it doesn't
@@ -459,20 +485,3 @@ app.MapControllers();
 app.Run();
 
 
-// Schema filter for enums
-public class EnumSchemaFilter : ISchemaFilter
-{
-    public void Apply(OpenApiSchema schema, SchemaFilterContext context)
-    {
-        if (context.Type == typeof(Theme) || context.Type == typeof(Theme?) ||
-            context.Type == typeof(Plan) || context.Type == typeof(Plan?))
-        {
-            schema.Enum = Enum.GetNames(context.Type)
-                .Select(name => new OpenApiString(name.ToLower()))
-                .Cast<IOpenApiAny>()
-                .ToList();
-            schema.Type = "string";
-            schema.Format = null;
-        }
-    }
-}
