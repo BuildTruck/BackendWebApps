@@ -12,7 +12,6 @@ namespace BuildTruckBack.Materials.Interfaces.REST.Resources
         [Required][StringLength(100)] string Area,
         [Required][StringLength(50)] string UsageType,
         [Required][StringLength(100)] string Worker,
-        [StringLength(500)] string? Observations,
-        [StringLength(50)] string? Status = "PENDING"
+        [StringLength(500)] string? Observations
     );
 }

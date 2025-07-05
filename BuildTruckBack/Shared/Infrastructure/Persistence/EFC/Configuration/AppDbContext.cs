@@ -487,6 +487,7 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
         builder.Entity<BuildTruckBack.Materials.Domain.Model.Aggregates.MaterialUsage>().Property(mu => mu.Worker).HasMaxLength(100);
         builder.Entity<BuildTruckBack.Materials.Domain.Model.Aggregates.MaterialUsage>().Property(mu => mu.Observations).HasMaxLength(500);
 
+
         // Configure MaterialUsage Value Objects
         builder.Entity<BuildTruckBack.Materials.Domain.Model.Aggregates.MaterialUsage>().OwnsOne(mu => mu.Quantity, q =>
         {
@@ -500,11 +501,7 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
             ut.Property(mut => mut.Value).HasColumnName("UsageType").IsRequired().HasMaxLength(50);
         });
 
-        builder.Entity<BuildTruckBack.Materials.Domain.Model.Aggregates.MaterialUsage>().OwnsOne(mu => mu.Status, s =>
-        {
-            s.WithOwner().HasForeignKey("Id");
-            s.Property(ms => ms.Value).HasColumnName("Status").IsRequired().HasMaxLength(20);
-        });
+       
 
         // ===== MATERIALS FOREIGN KEY RELATIONSHIPS =====
 
