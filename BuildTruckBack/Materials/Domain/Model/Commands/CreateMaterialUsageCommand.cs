@@ -10,7 +10,6 @@ namespace BuildTruckBack.Materials.Domain.Model.Commands
         string Area,
         string UsageType,
         string Worker,
-        string Status,
         string Observations
     );
 }

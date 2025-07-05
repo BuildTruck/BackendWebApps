@@ -11,7 +11,6 @@ namespace BuildTruckBack.Materials.Interfaces.REST.Resources
         string Area,
         string UsageType,
         string Worker,
-        string Status,
         string? Observations
     );
 }
