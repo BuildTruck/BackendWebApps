@@ -17,7 +17,7 @@ namespace BuildTruckBack.Materials.Interfaces.REST.Transform
                 resource.Area,
                 resource.UsageType,
                 resource.Worker,
-                "PENDING", // Status por defecto
+                resource.Status ?? "PENDING",
                 resource.Observations ?? string.Empty
             );
         }
@@ -32,7 +32,7 @@ namespace BuildTruckBack.Materials.Interfaces.REST.Transform
                 resource.Area,
                 resource.UsageType,
                 resource.Worker,
-                "PENDING", // Status por defecto
+                resource.Status ?? "PENDING",
                 resource.Observations ?? string.Empty
             );
         }
@@ -48,7 +48,7 @@ namespace BuildTruckBack.Materials.Interfaces.REST.Transform
                 resource.Area,
                 resource.UsageType,
                 resource.Worker,
-                "PENDING",
+                resource.Status ?? "PENDING",
                 resource.Observations ?? string.Empty
             );
         }
@@ -62,7 +62,7 @@ namespace BuildTruckBack.Materials.Interfaces.REST.Transform
                 resource.Area,
                 resource.UsageType,
                 resource.Worker,
-                "PENDING",
+                resource.Status ?? "PENDING",
                 resource.Observations ?? string.Empty
             );
         }

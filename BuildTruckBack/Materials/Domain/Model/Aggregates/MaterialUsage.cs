@@ -54,5 +54,14 @@ namespace BuildTruckBack.Materials.Domain.Model.Aggregates
             Worker = worker ?? string.Empty;
             Observations = observations ?? string.Empty;
         }
+        public void SetStatus(MaterialStatus status)
+        {
+            Status = status ?? throw new ArgumentNullException(nameof(status));
+        }
+
+        public void SetStatus(string status)
+        {
+            Status = new MaterialStatus(status);
+        }
     }
 }

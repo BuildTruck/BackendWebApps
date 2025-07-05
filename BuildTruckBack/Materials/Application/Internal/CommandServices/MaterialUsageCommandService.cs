@@ -35,6 +35,10 @@ namespace BuildTruckBack.Materials.Application.Internal.CommandServices
                 command.Worker,
                 command.Observations
             );
+            if (!string.IsNullOrWhiteSpace(command.Status))
+            {
+                usage.SetStatus(command.Status);
+            }
 
             await _usageRepository.AddAsync(usage);
             await _unitOfWork.CompleteAsync();
@@ -55,6 +59,10 @@ namespace BuildTruckBack.Materials.Application.Internal.CommandServices
                 command.Worker,
                 command.Observations
             );
+            if (!string.IsNullOrWhiteSpace(command.Status))
+            {
+                usage.SetStatus(command.Status);
+            }
 
             await _unitOfWork.CompleteAsync();
             return usage;
