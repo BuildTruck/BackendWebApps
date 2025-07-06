@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Threading.Tasks;
 using BuildTruckBack.Incidents.Domain.Aggregates;
-using BuildTruckBack.Incidents.Domain.Commands;
 using BuildTruckBack.Incidents.Domain.Repositories;
 using BuildTruckBack.Shared.Domain.Repositories;
 using BuildTruckBack.Incidents.Application.ACL.Services;
+using BuildTruckBack.Incidents.Domain.Model.Commands;
 using BuildTruckBack.Incidents.Domain.ValueObjects;
 using BuildTruckBack.Notifications.Interfaces.ACL;
 using BuildTruckBack.Notifications.Domain.Model.ValueObjects;

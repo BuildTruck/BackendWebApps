@@ -6,6 +6,7 @@ using BuildTruckBack.Shared.Infrastructure.Persistence.EFC.Configuration.Extensi
 using EntityFrameworkCore.CreatedUpdatedDate.Extensions;
 using Microsoft.EntityFrameworkCore;
 using BuildTruckBack.Incidents.Domain.Aggregates;
+using BuildTruckBack.Incidents.Infrastructure.Persistence.EFC.Configuration;
 using BuildTruckBack.Notifications.Infrastructure.Persistence.EFC.Configuration;
 using BuildTruckBack.Stats.Domain.Model.Aggregates;
 using BuildTruckBack.Stats.Infrastructure.Persistence.EFC.Configuration;
@@ -51,6 +52,8 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
     public DbSet<BuildTruckBack.Notifications.Domain.Model.Aggregates.NotificationDelivery> NotificationDeliveries { get; set; }
     
     public DbSet<BuildTruckBack.Documentation.Domain.Model.Aggregates.Documentation> Documentation { get; set; }
+    
+    
     
     /// <summary>
     ///     On configuring  the database context
@@ -603,7 +606,8 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
         builder.ApplyConfiguration(new NotificationConfiguration());
         builder.ApplyConfiguration(new NotificationDeliveryConfiguration());
         builder.ApplyConfiguration(new NotificationPreferenceConfiguration());
-        
+        //Incidents
+        builder.ApplyConfiguration(new IncidentConfiguration());
         // ===== NAMING CONVENTION =====
         builder.UseSnakeCaseNamingConvention();
     }

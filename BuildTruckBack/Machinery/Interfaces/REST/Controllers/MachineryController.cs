@@ -125,22 +125,23 @@ public async Task<IActionResult> CreateMachinery([FromForm] CreateMachineryResou
     }
 
     /// <summary>
-    /// Get all machinery
+    /// Get machinery by project
     /// </summary>
-    /// <returns>List of all machinery</returns>
-    [HttpGet]
+    /// <param name="projectId">The project ID</param>
+    /// <returns>List of machinery for the specified project</returns>
+    [HttpGet("project/{projectId}")]
     [Authorize(Roles = "Supervisor,Manager,Admin")]
     [SwaggerOperation(
-        Summary = "Get all machinery",
-        Description = "Retrieves all machinery in the system",
-        OperationId = "GetAllMachinery")]
+        Summary = "Get machinery by project",
+        Description = "Retrieves all machinery for a specific project",
+        OperationId = "GetMachineryByProject")]
     [SwaggerResponse(StatusCodes.Status200OK, "Machinery retrieved successfully", typeof(IEnumerable<MachineryResource>))]
-    public async Task<IActionResult> GetAllMachinery()
+    public async Task<IActionResult> GetMachineryByProject(int projectId)
     {
         try
         {
-            var getAllMachineryQuery = new GetMachineryByProjectQuery(0); // Assuming 0 fetches all
-            var machinery = await machineryQueryService.Handle(getAllMachineryQuery);
+            var query = new GetMachineryByProjectQuery(projectId);
+            var machinery = await machineryQueryService.Handle(query);
 
             var machineryResources = machinery.Select(MachineryResourceAssembler.ToResource);
             return Ok(machineryResources);

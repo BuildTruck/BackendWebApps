@@ -11,7 +11,6 @@ using BuildTruckBack.Configurations.Infrastructure.Persistence.EFC.Repositories;
 // Users Context
 using BuildTruckBack.Users.Application.Internal.CommandServices;
 using BuildTruckBack.Users.Application.Internal.QueryServices;
-using BuildTruckBack.Users.Domain.Repositories;
 using BuildTruckBack.Users.Domain.Services;
 using BuildTruckBack.Users.Infrastructure.Persistence.EFC.Repositories;
 using BuildTruckBack.Users.Application.ACL.Services; 
@@ -98,8 +97,10 @@ using BuildTruckBack.Documentation.Infrastructure.Exports;
 
 // Incidents 
 using BuildTruckBack.Incidents.Application.Internal;
-using BuildTruckBack.Incidents.Domain.Commands;
+using BuildTruckBack.Incidents.Domain.Model.Commands;
 using BuildTruckBack.Incidents.Domain.Model.Queries;
+using BuildTruckBack.Incidents.Domain.Repositories;
+using BuildTruckBack.Incidents.Infrastructure.Persistence.EFC.Repositories;
 using BuildTruckBack.Notifications.Interfaces.WebSocket;
 //Stats
 using BuildTruckBack.Stats.Application.ACL.Services;
@@ -118,6 +119,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Any;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using DocumentationCloudinaryService = BuildTruckBack.Documentation.Infrastructure.ACL.CloudinaryService;
+using IUserRepository = BuildTruckBack.Users.Domain.Repositories.IUserRepository;
 
 
 // ===== LOAD ENVIRONMENT VARIABLES =====
@@ -410,6 +412,7 @@ builder.Services.AddScoped<DocumentationExportHandler>();
 
 
 // Incidents Bounded Context
+builder.Services.AddScoped<IIncidentRepository, IncidentRepository>();
 builder.Services.AddScoped<IIncidentFacade, IncidentFacade>();
 builder.Services.AddScoped<IIncidentCommandHandler, IncidentCommandHandler>();
 builder.Services.AddScoped<IIncidentQueryHandler, IncidentQueryHandler>();

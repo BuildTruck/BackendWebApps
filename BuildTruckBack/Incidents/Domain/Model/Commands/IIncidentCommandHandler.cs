@@ -1,6 +1,5 @@
 ﻿using System.Threading.Tasks;
-
-namespace BuildTruckBack.Incidents.Domain.Commands;
+namespace BuildTruckBack.Incidents.Domain.Model.Commands;
 
 public interface IIncidentCommandHandler
 {

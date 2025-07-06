@@ -2,21 +2,30 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using BuildTruckBack.Incidents.Domain.Aggregates;
 using BuildTruckBack.Incidents.Domain.Model.Queries;
+using BuildTruckBack.Incidents.Domain.Repositories;
 
 namespace BuildTruckBack.Incidents.Application.Internal
 {
     public class IncidentQueryHandler : IIncidentQueryHandler
     {
-        public Task<Incident?> HandleAsync(GetIncidentByIdQuery query)
+        private readonly IIncidentRepository _incidentRepository;
+
+        // ✅ Agregar constructor con dependency injection
+        public IncidentQueryHandler(IIncidentRepository incidentRepository)
         {
-            // Implementa la lógica para obtener un incidente por ID aquí
-            return Task.FromResult<Incident?>(null);
+            _incidentRepository = incidentRepository;
         }
 
-        public Task<IEnumerable<Incident>> HandleAsync(GetIncidentsByProjectIdQuery query)
+        public async Task<Incident?> HandleAsync(GetIncidentByIdQuery query)
         {
-            // Implementa la lógica para obtener incidentes por ID de proyecto aquí
-            return Task.FromResult<IEnumerable<Incident>>(new List<Incident>());
+            // ✅ Usar el repository real, no devolver null
+            return await _incidentRepository.FindByIdAsync(query.Id);
+        }
+
+        public async Task<IEnumerable<Incident>> HandleAsync(GetIncidentsByProjectIdQuery query)
+        {
+            // ✅ Usar el repository real, no devolver lista vacía
+            return await _incidentRepository.FindByProjectIdAsync(query.ProjectId);
         }
     }
 }
