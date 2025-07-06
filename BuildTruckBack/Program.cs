@@ -143,10 +143,22 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 // Add CORS Policy
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAllPolicy",
-        policy => policy.AllowAnyOrigin()
+    options.AddPolicy("SignalRCorsPolicy", policy =>
+    {
+        policy.WithOrigins(
+                // Desarrollo local (WebStorm/Vite/Vue)
+                "http://localhost:5173",      // Puerto estándar de Vite
+                "http://localhost:8080",      // Puerto común para Vue CLI
+                "http://localhost:3000",      // Alternativo para algunos entornos
+            
+                // Producción
+                "https://buildtruck-99bc0.web.app",  // Firebase Hosting
+                "https://buildtruck-99bc0.firebaseapp.com"  // Dominio alternativo Firebase
+            )
+            .AllowAnyHeader()
             .AllowAnyMethod()
-            .AllowAnyHeader());
+            .AllowCredentials();  // ← Crucial para SignalR + [Authorize]
+    });
 });
 
 if (connectionString == null) throw new InvalidOperationException("Connection string not found.");
@@ -492,34 +504,35 @@ builder.Services.AddScoped<BuildTruckBack.Notifications.Application.Internal.Out
 // External Facade
 builder.Services.AddScoped<BuildTruckBack.Notifications.Interfaces.ACL.INotificationContextFacade, BuildTruckBack.Notifications.Interfaces.ACL.Services.NotificationContextFacade>();
 
-// SignalR Hub
-builder.Services.AddSignalR();
-
 var app = builder.Build();
 
-
-// Verify if the database exists and create it if it doesn't
+// 1. Base de datos (esto está bien)
 using (var scope = app.Services.CreateScope())
 {
-    var services = scope.ServiceProvider;
-    var context = services.GetRequiredService<AppDbContext>();
-
+    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     context.Database.EnsureCreated();
 }
 
-
+// 2. Swagger (estático)
 app.UseSwagger();
 app.UseSwaggerUI();
 
+// 3. Middlewares CRÍTICOS en ORDEN ESPECÍFICO:
+app.UseHttpsRedirection();
 
-// Apply CORS Policyy
-app.UseCors("AllowAllPolicy");
+// ↓↓↓ ORDEN CLAVE ↓↓↓
+app.UseRouting(); // <-- Asegúrate de que esto esté presente
+
+app.UseCors("AllowAllPolicy"); // <- DEBE ir después de UseRouting y ANTES de auth
 
 app.UseAuthentication(); 
 app.UseAuthorization();
-app.UseHttpsRedirection();
-app.MapHub<NotificationHub>("/hubs/notifications");
+// ↑↑↑ ORDEN CLAVE ↑↑↑
+
+// 4. Endpoints
+app.MapHub<NotificationHub>("/hubs/notifications")
+    .RequireCors("AllowAllPolicy"); // <-- Específica política para SignalR
+
 app.MapControllers();
+
 app.Run();
-
-
