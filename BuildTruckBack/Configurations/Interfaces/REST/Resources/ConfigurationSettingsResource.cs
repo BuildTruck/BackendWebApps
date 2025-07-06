@@ -1,0 +1,28 @@
+using System.Text.Json.Serialization;
+using BuildTruckBack.Configurations.Domain.Model.ValueObjects;
+
+namespace BuildTruckBack.Configurations.Interfaces.REST.Resources;
+
+/// <summary>
+/// Resource for representing a configuration settings
+/// </summary>
+/// <remarks>Author: Your Name Here</remarks>
+public record ConfigurationSettingsResource(
+    int Id,
+    int UserId,
+    string Theme,
+    string Plan,
+    string NotificationsEnables,
+    string EmailNotification);
+
+
+/*
+{
+    public int Id { get; init; }
+    public int UserId { get; init; }
+    public Theme Theme { get; init; }
+    public Plan Plan { get; init; }
+    public string NotificationsEnable { get; init; } = "true";
+    public string EmailNotifications { get; init; } = "false";
+}
+*/

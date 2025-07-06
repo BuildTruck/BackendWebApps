@@ -1,11 +1,12 @@
 using DotNetEnv;
 
 // Configurations Context
+using BuildTruckBack.Configurations.Application.ACL;
 using BuildTruckBack.Configurations.Application.Internal.CommandServices;
-using BuildTruckBack.Configurations.Application.Internal.OutboundServices;
+using BuildTruckBack.Configurations.Application.Internal.QueryServices;
 using BuildTruckBack.Configurations.Domain.Repositories;
+using BuildTruckBack.Configurations.Domain.Services;
 using BuildTruckBack.Configurations.Infrastructure.Persistence.EFC.Repositories;
-using BuildTruckBack.Configurations.Domain.Model.Commands;
 
 // Users Context
 using BuildTruckBack.Users.Application.Internal.CommandServices;
@@ -40,7 +41,12 @@ using BuildTruckBack.Auth.Infrastructure.Tokens.JWT.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+
 using BuildTruckBack.Machinery.Application.ACL.Services;
+
+using BuildTruckBack.Configurations.Domain.Model.ValueObjects;
+using BuildTruckBack.Configurations.Interfaces.ACL;
+
 using BuildTruckBack.Machinery.Application.Internal.CommandServices;
 using BuildTruckBack.Machinery.Application.Internal.QueryServices;
 using BuildTruckBack.Machinery.Domain.Repositories;
@@ -90,14 +96,28 @@ using BuildTruckBack.Documentation.Infrastructure.Persistence.EFC.Repositories;
 using BuildTruckBack.Documentation.Infrastructure.ACL;
 using BuildTruckBack.Documentation.Infrastructure.Exports;
 
-
 // Incidents 
 using BuildTruckBack.Incidents.Application.Internal;
 using BuildTruckBack.Incidents.Domain.Commands;
 using BuildTruckBack.Incidents.Domain.Model.Queries;
-using Microsoft.Extensions.Options;
-using DocumentationCloudinaryService = BuildTruckBack.Documentation.Infrastructure.ACL.CloudinaryService;
+using BuildTruckBack.Notifications.Interfaces.WebSocket;
+//Stats
+using BuildTruckBack.Stats.Application.ACL.Services;
+using BuildTruckBack.Stats.Application.Internal.CommandServices;
+using BuildTruckBack.Stats.Application.Internal.QueryServices;
+using BuildTruckBack.Stats.Domain.Repositories;
+using BuildTruckBack.Stats.Domain.Services;
+using BuildTruckBack.Stats.Infrastructure.ACL;
+using BuildTruckBack.Stats.Infrastructure.Persistence.EFC.Repositories;
+using StatsUserService = BuildTruckBack.Stats.Application.ACL.Services.IUserContextService;
+using StatsUserServiceImpl = BuildTruckBack.Stats.Infrastructure.ACL.UserContextService;
+using StatsPersonnelService = BuildTruckBack.Stats.Application.ACL.Services.IPersonnelContextService;
+using StatsPersonnelServiceImpl = BuildTruckBack.Stats.Infrastructure.ACL.PersonnelContextService;
 
+using Microsoft.Extensions.Options;
+using Microsoft.OpenApi.Any;
+using Swashbuckle.AspNetCore.SwaggerGen;
+using DocumentationCloudinaryService = BuildTruckBack.Documentation.Infrastructure.ACL.CloudinaryService;
 
 
 // ===== LOAD ENVIRONMENT VARIABLES =====
@@ -110,6 +130,7 @@ OfficeOpenXml.ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonComm
 // ===== CONFIGURATION =====
 // Las variables de entorno se cargan automáticamente usando la sintaxis jerárquica
 builder.Configuration.AddEnvironmentVariables();
+
 
 // Add services to the container.
 builder.Services.AddRouting(options => options.LowercaseUrls = true);
@@ -247,9 +268,14 @@ if (cloudinarySettings == null || !cloudinarySettings.IsValid)
         "Cloudinary settings are missing or invalid. Please check your appsettings.json file.");
 }
 
-builder.Services.AddScoped<IConfigurationRepository, ConfigurationRepository>();
-builder.Services.AddScoped<IConfigurationCommandHandler, ConfigurationCommandService>();
-builder.Services.AddScoped<IConfigurationFacade, ConfigurationFacade>();
+// Configurations Bounded Context
+// Database configuration
+
+// Dependency injection for Configurations
+builder.Services.AddScoped<IConfigurationSettingsRepository, ConfigurationSettingsRepository>();
+builder.Services.AddScoped<IConfigurationSettingsCommandService, ConfigurationSettingsCommandService>();
+builder.Services.AddScoped<IConfigurationSettingsQueryService, ConfigurationSettingsQueryService>();
+builder.Services.AddScoped<IConfigurationSettingsFacade, ConfigurationSettingsFacade>();
 
 // Users Bounded Context
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -411,15 +437,62 @@ builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection(
 builder.Services.AddScoped<ICloudinaryImageService, CloudinaryImageService>();
 builder.Services.AddScoped<IMachineryCloudinaryService, MachineryCloudinaryService>();
 
+// ===== STATS MODULE =====
+// Repositories
+builder.Services.AddScoped<IStatsRepository, StatsRepository>();
+builder.Services.AddScoped<IStatsHistoryRepository, StatsHistoryRepository>();
 
+// Services  
+builder.Services.AddScoped<IStatsCommandService, StatsCommandService>();
+builder.Services.AddScoped<IStatsQueryService, StatsQueryService>();
 
+// ACL Services
+builder.Services.AddScoped<BuildTruckBack.Stats.Application.ACL.Services.IUserContextService, BuildTruckBack.Stats.Infrastructure.ACL.UserContextService>();
+builder.Services.AddScoped<BuildTruckBack.Stats.Application.ACL.Services.IPersonnelContextService, BuildTruckBack.Stats.Infrastructure.ACL.PersonnelContextService>();
+builder.Services.AddScoped<BuildTruckBack.Stats.Application.ACL.Services.IProjectContextService, BuildTruckBack.Stats.Infrastructure.ACL.ProjectContextService>();
+builder.Services.AddScoped<BuildTruckBack.Stats.Application.ACL.Services.IIncidentContextService, BuildTruckBack.Stats.Infrastructure.ACL.IncidentContextService>();
+builder.Services.AddScoped<BuildTruckBack.Stats.Application.ACL.Services.IMaterialContextService, BuildTruckBack.Stats.Infrastructure.ACL.MaterialContextService>();
+builder.Services.AddScoped<BuildTruckBack.Stats.Application.ACL.Services.IMachineryContextService, BuildTruckBack.Stats.Infrastructure.ACL.MachineryContextService>();
 
+// Personnel Facade 
+builder.Services.AddScoped<BuildTruckBack.Personnel.Application.Internal.OutboundServices.IPersonnelFacade, BuildTruckBack.Personnel.Application.Internal.OutboundServices.PersonnelFacade>();
+builder.Services.AddScoped<BuildTruckBack.Machinery.Application.Internal.OutboundServices.IMachineryFacade, BuildTruckBack.Machinery.Application.Internal.OutboundServices.MachineryFacade>();
+
+// ===== NOTIFICATIONS MODULE =====
+// Repositories
+builder.Services.AddScoped<BuildTruckBack.Notifications.Domain.Repositories.INotificationRepository, BuildTruckBack.Notifications.Infrastructure.Persistence.EFC.Repositories.NotificationRepository>();
+builder.Services.AddScoped<BuildTruckBack.Notifications.Domain.Repositories.INotificationPreferenceRepository, BuildTruckBack.Notifications.Infrastructure.Persistence.EFC.Repositories.NotificationPreferenceRepository>();
+builder.Services.AddScoped<BuildTruckBack.Notifications.Domain.Repositories.INotificationDeliveryRepository, BuildTruckBack.Notifications.Infrastructure.Persistence.EFC.Repositories.NotificationDeliveryRepository>();
+
+// Domain Services
+builder.Services.AddScoped<BuildTruckBack.Notifications.Domain.Services.INotificationCommandService, BuildTruckBack.Notifications.Application.Internal.CommandServices.NotificationCommandService>();
+builder.Services.AddScoped<BuildTruckBack.Notifications.Domain.Services.INotificationQueryService, BuildTruckBack.Notifications.Application.Internal.QueryServices.NotificationQueryService>();
+builder.Services.AddScoped<BuildTruckBack.Notifications.Domain.Services.INotificationPreferenceCommandService, BuildTruckBack.Notifications.Application.Internal.CommandServices.NotificationPreferenceCommandService>();
+builder.Services.AddScoped<BuildTruckBack.Notifications.Domain.Services.INotificationPreferenceQueryService, BuildTruckBack.Notifications.Application.Internal.QueryServices.NotificationPreferenceQueryService>();
+builder.Services.AddScoped<BuildTruckBack.Notifications.Domain.Services.INotificationDeliveryService, BuildTruckBack.Notifications.Application.Internal.CommandServices.NotificationDeliveryCommandService>();
+
+// ACL Services
+builder.Services.AddScoped<BuildTruckBack.Notifications.Application.ACL.Services.IProjectContextService, BuildTruckBack.Notifications.Infrastructure.ACL.ProjectContextService>();
+builder.Services.AddScoped<BuildTruckBack.Notifications.Application.ACL.Services.IUserContextService, BuildTruckBack.Notifications.Infrastructure.ACL.UserContextService>();
+builder.Services.AddScoped<BuildTruckBack.Notifications.Application.ACL.Services.IPersonnelContextService, BuildTruckBack.Notifications.Infrastructure.ACL.PersonnelContextService>();
+builder.Services.AddScoped<BuildTruckBack.Notifications.Application.ACL.Services.IMaterialContextService, BuildTruckBack.Notifications.Infrastructure.ACL.MaterialContextService>();
+builder.Services.AddScoped<BuildTruckBack.Notifications.Application.ACL.Services.IMachineryContextService, BuildTruckBack.Notifications.Infrastructure.ACL.MachineryContextService>();
+builder.Services.AddScoped<BuildTruckBack.Notifications.Application.ACL.Services.IIncidentContextService, BuildTruckBack.Notifications.Infrastructure.ACL.IncidentContextService>();
+builder.Services.AddScoped<BuildTruckBack.Notifications.Application.ACL.Services.IConfigurationContextService, BuildTruckBack.Notifications.Infrastructure.ACL.ConfigurationContextService>();
+builder.Services.AddScoped<BuildTruckBack.Notifications.Application.ACL.Services.ISharedEmailService, BuildTruckBack.Notifications.Infrastructure.ACL.SharedEmailService>();
+builder.Services.AddScoped<BuildTruckBack.Notifications.Application.ACL.Services.IWebSocketService, BuildTruckBack.Notifications.Infrastructure.ACL.WebSocketService>();
+builder.Services.AddHostedService<BuildTruckBack.Notifications.Infrastructure.Services.NotificationBackgroundService>();
+
+// Facade
+builder.Services.AddScoped<BuildTruckBack.Notifications.Application.Internal.OutboundServices.INotificationFacade, BuildTruckBack.Notifications.Application.Internal.OutboundServices.NotificationFacade>();
+
+// External Facade
+builder.Services.AddScoped<BuildTruckBack.Notifications.Interfaces.ACL.INotificationContextFacade, BuildTruckBack.Notifications.Interfaces.ACL.Services.NotificationContextFacade>();
+
+// SignalR Hub
+builder.Services.AddSignalR();
 
 var app = builder.Build();
-
-
-
-
 
 
 // Verify if the database exists and create it if it doesn't
@@ -442,7 +515,8 @@ app.UseCors("AllowAllPolicy");
 app.UseAuthentication(); 
 app.UseAuthorization();
 app.UseHttpsRedirection();
-
+app.MapHub<NotificationHub>("/hubs/notifications");
 app.MapControllers();
 app.Run();
+
 

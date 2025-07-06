@@ -35,7 +35,7 @@ namespace BuildTruckBack.Materials.Application.Internal.CommandServices
                 command.Worker,
                 command.Observations
             );
-
+            
             await _usageRepository.AddAsync(usage);
             await _unitOfWork.CompleteAsync();
             return usage;
@@ -55,7 +55,7 @@ namespace BuildTruckBack.Materials.Application.Internal.CommandServices
                 command.Worker,
                 command.Observations
             );
-
+           
             await _unitOfWork.CompleteAsync();
             return usage;
         }

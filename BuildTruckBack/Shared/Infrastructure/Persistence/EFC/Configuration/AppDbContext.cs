@@ -1,10 +1,14 @@
 using BuildTruckBack.Users.Domain.Model.Aggregates;
 using BuildTruckBack.Configurations.Domain.Model.Aggregates;
+using BuildTruckBack.Configurations.Infrastructure.Persistence.EFC.Configuration;
 using BuildTruckBack.Projects.Domain.Model.Aggregates;
 using BuildTruckBack.Shared.Infrastructure.Persistence.EFC.Configuration.Extensions;
 using EntityFrameworkCore.CreatedUpdatedDate.Extensions;
 using Microsoft.EntityFrameworkCore;
 using BuildTruckBack.Incidents.Domain.Aggregates;
+using BuildTruckBack.Notifications.Infrastructure.Persistence.EFC.Configuration;
+using BuildTruckBack.Stats.Domain.Model.Aggregates;
+using BuildTruckBack.Stats.Infrastructure.Persistence.EFC.Configuration;
 
 namespace BuildTruckBack.Shared.Infrastructure.Persistence.EFC.Configuration;
 
@@ -24,12 +28,12 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
     // ✅ Projects DbSet
     public DbSet<Project> Projects { get; set; }
 
-
     // ✅ Machinery DbSet
     public DbSet<Machinery.Domain.Model.Aggregates.Machinery> Machinery { get; set; }
     
-    public DbSet<BuildTruckBack.Configurations.Domain.Model.Aggregates.Configuration> Configurations { get; set; }
-
+    // ✅ Configurations DbSet
+    public DbSet<ConfigurationSettings> ConfigurationsSettings { get; set; }
+    
     // ✅ Personnel DbSet
     public DbSet<BuildTruckBack.Personnel.Domain.Model.Aggregates.Personnel> Personnel { get; set; }
 
@@ -37,7 +41,14 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
     public DbSet<BuildTruckBack.Materials.Domain.Model.Aggregates.Material> Materials { get; set; }
     public DbSet<BuildTruckBack.Materials.Domain.Model.Aggregates.MaterialEntry> MaterialEntries { get; set; }
     public DbSet<BuildTruckBack.Materials.Domain.Model.Aggregates.MaterialUsage> MaterialUsages { get; set; }
-
+    // ✅ Stats DbSets
+    public DbSet<ManagerStats> ManagerStats { get; set; }
+    public DbSet<StatsHistory> StatsHistory { get; set; }
+    
+    // ✅ Notifications DbSets
+    public DbSet<BuildTruckBack.Notifications.Domain.Model.Aggregates.Notification> Notifications { get; set; }
+    public DbSet<BuildTruckBack.Notifications.Domain.Model.Aggregates.NotificationPreference> NotificationPreferences { get; set; }
+    public DbSet<BuildTruckBack.Notifications.Domain.Model.Aggregates.NotificationDelivery> NotificationDeliveries { get; set; }
     
     public DbSet<BuildTruckBack.Documentation.Domain.Model.Aggregates.Documentation> Documentation { get; set; }
     
@@ -70,6 +81,17 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
     {
         base.OnModelCreating(builder);
 
+        // ===== IGNORE VALUE OBJECTS =====
+        // Ignorar todos los value objects para que EF no los trate como entidades
+        builder.Ignore<BuildTruckBack.Notifications.Domain.Model.ValueObjects.DeliveryStatus>();
+        builder.Ignore<BuildTruckBack.Notifications.Domain.Model.ValueObjects.NotificationType>();
+        builder.Ignore<BuildTruckBack.Notifications.Domain.Model.ValueObjects.NotificationChannel>();
+        builder.Ignore<BuildTruckBack.Notifications.Domain.Model.ValueObjects.NotificationContext>();
+        builder.Ignore<BuildTruckBack.Notifications.Domain.Model.ValueObjects.NotificationPriority>();
+        builder.Ignore<BuildTruckBack.Notifications.Domain.Model.ValueObjects.NotificationStatus>();
+        builder.Ignore<BuildTruckBack.Notifications.Domain.Model.ValueObjects.NotificationScope>();
+        builder.Ignore<BuildTruckBack.Notifications.Domain.Model.ValueObjects.UserRole>();
+        
         // ===== USERS CONTEXT CONFIGURATION =====
         builder.Entity<User>().HasKey(u => u.Id);
         builder.Entity<User>().Property(u => u.Id).IsRequired().ValueGeneratedOnAdd();
@@ -157,13 +179,25 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
         builder.Entity<Project>().Property(p => p.StartDate);
         
         // ===== CONFIGURATIONS CONTEXT CONFIGURATION =====
-        builder.Entity<Configurations.Domain.Model.Aggregates.Configuration>().HasKey(c => c.Id);
-        builder.Entity<Configurations.Domain.Model.Aggregates.Configuration>().Property(c => c.Id).IsRequired().ValueGeneratedOnAdd();
-        builder.Entity<Configurations.Domain.Model.Aggregates.Configuration>().Property(c => c.UserId).IsRequired();
-        builder.Entity<Configurations.Domain.Model.Aggregates.Configuration>().Property(c => c.Theme).IsRequired().HasMaxLength(10);
-        builder.Entity<Configurations.Domain.Model.Aggregates.Configuration>().Property(c => c.Plan).IsRequired().HasMaxLength(20);
-        builder.Entity<Configurations.Domain.Model.Aggregates.Configuration>().Property(c => c.NotificationsEnable).IsRequired();
-        builder.Entity<Configurations.Domain.Model.Aggregates.Configuration>().Property(c => c.EmailNotifications).IsRequired();
+        builder.Entity<ConfigurationSettings>().HasKey(c => c.Id);
+        builder.Entity<ConfigurationSettings>().ToTable("configurations");
+        builder.Entity<ConfigurationSettings>().Property(c => c.Id).ValueGeneratedOnAdd();
+        builder.Entity<ConfigurationSettings>().Property(c => c.UserId).HasColumnName("user_id").IsRequired();
+        builder.Entity<ConfigurationSettings>().Property(c => c.Themes).HasColumnName("theme").HasMaxLength(20).IsRequired().HasConversion<string>();
+        builder.Entity<ConfigurationSettings>().Property(c => c.Plans).HasColumnName("plan").HasMaxLength(20).IsRequired().HasConversion<string>();
+        builder.Entity<ConfigurationSettings>().Property(c => c.NotificationsEnable).HasColumnName("notifications_enable").IsRequired();
+        builder.Entity<ConfigurationSettings>().Property(c => c.EmailNotifications).HasColumnName("email_notifications").IsRequired();
+        builder.Entity<ConfigurationSettings>().Property(c => c.CreatedAt).HasColumnName("created_at").IsRequired();
+        builder.Entity<ConfigurationSettings>().Property(c => c.UpdatedAt).HasColumnName("updated_at").IsRequired();
+        builder.Entity<ConfigurationSettings>().HasIndex(c => c.UserId).IsUnique().HasDatabaseName("IX_Configurations_User_Id");
+        builder.Entity<ConfigurationSettings>().HasOne<User>()
+            .WithOne()
+            .HasForeignKey<ConfigurationSettings>(c => c.UserId)
+            .OnDelete(DeleteBehavior.Restrict)
+            .HasConstraintName("FK_Configurations_Users_User_Id");
+
+        // Apply global filters (if any)
+        // builder.ApplyGlobalFilters();
 
         // ===== FOREIGN KEY RELATIONSHIPS =====
         
@@ -183,14 +217,6 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
             .OnDelete(DeleteBehavior.SetNull) // Si se borra Supervisor, project.SupervisorId = null
             .HasConstraintName("FK_Projects_Users_SupervisorId");
         
-        // Configuration belongs to User
-        builder.Entity<Configurations.Domain.Model.Aggregates.Configuration>()
-            .HasOne<User>()
-            .WithMany()
-            .HasForeignKey(c => c.UserId)
-            .OnDelete(DeleteBehavior.Cascade)
-            .HasConstraintName("FK_Configurations_Users_UserId");
-
         // ===== INDEXES FOR PERFORMANCE =====
         
         // Index for manager queries
@@ -202,12 +228,7 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
         builder.Entity<Project>()
             .HasIndex(p => p.SupervisorId)
             .HasDatabaseName("IX_Projects_SupervisorId");
-        
-        // Index for user queries (Configurations)
-        builder.Entity<Configurations.Domain.Model.Aggregates.Configuration>()
-            .HasIndex(c => c.UserId)
-            .HasDatabaseName("IX_Configurations_UserId")
-            .IsUnique();
+
 
         // Business constraint: Solo un supervisor por proyecto activo
         // Note: Since State is a Value Object, we use a simpler approach
@@ -487,6 +508,7 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
         builder.Entity<BuildTruckBack.Materials.Domain.Model.Aggregates.MaterialUsage>().Property(mu => mu.Worker).HasMaxLength(100);
         builder.Entity<BuildTruckBack.Materials.Domain.Model.Aggregates.MaterialUsage>().Property(mu => mu.Observations).HasMaxLength(500);
 
+
         // Configure MaterialUsage Value Objects
         builder.Entity<BuildTruckBack.Materials.Domain.Model.Aggregates.MaterialUsage>().OwnsOne(mu => mu.Quantity, q =>
         {
@@ -500,11 +522,7 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
             ut.Property(mut => mut.Value).HasColumnName("UsageType").IsRequired().HasMaxLength(50);
         });
 
-        builder.Entity<BuildTruckBack.Materials.Domain.Model.Aggregates.MaterialUsage>().OwnsOne(mu => mu.Status, s =>
-        {
-            s.WithOwner().HasForeignKey("Id");
-            s.Property(ms => ms.Value).HasColumnName("Status").IsRequired().HasMaxLength(20);
-        });
+       
 
         // ===== MATERIALS FOREIGN KEY RELATIONSHIPS =====
 
@@ -578,9 +596,15 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
         builder.Entity<BuildTruckBack.Materials.Domain.Model.Aggregates.MaterialUsage>()
             .HasIndex(mu => mu.Date)
             .HasDatabaseName("IX_MaterialUsages_Date");
-
+        //Stats tables
+        builder.ApplyConfiguration(new ManagerStatsConfiguration());
+        builder.ApplyConfiguration(new StatsHistoryConfiguration());
+        //Stats tables
+        builder.ApplyConfiguration(new NotificationConfiguration());
+        builder.ApplyConfiguration(new NotificationDeliveryConfiguration());
+        builder.ApplyConfiguration(new NotificationPreferenceConfiguration());
+        
         // ===== NAMING CONVENTION =====
-
         builder.UseSnakeCaseNamingConvention();
     }
 }

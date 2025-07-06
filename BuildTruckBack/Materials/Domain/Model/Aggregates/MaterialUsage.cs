@@ -14,8 +14,7 @@ namespace BuildTruckBack.Materials.Domain.Model.Aggregates
         public UsageType UsageType { get; private set; } = null!;
         public string Area { get; private set; } = string.Empty;
         public string Worker { get; private set; } = string.Empty;
-
-        public MaterialStatus Status { get; private set; } = null!;
+        
         public string Observations { get; private set; } = string.Empty;
 
         // Constructor para EF Core
@@ -23,7 +22,7 @@ namespace BuildTruckBack.Materials.Domain.Model.Aggregates
         {
             Quantity = new MaterialQuantity(0);
             UsageType = UsageType.Construction;
-            Status = MaterialStatus.Pending;
+            
         }
 
         public MaterialUsage(int projectId, int materialId, DateTime date,
@@ -38,11 +37,10 @@ namespace BuildTruckBack.Materials.Domain.Model.Aggregates
             Area = area ?? string.Empty;
             Worker = worker ?? string.Empty;
             Observations = observations ?? string.Empty;
-            Status = MaterialStatus.Pending;
+            
         }
 
-        public void Approve() => Status = MaterialStatus.Confirmed;
-        public void Reject() => Status = MaterialStatus.Cancelled;
+       
 
         public void UpdateDetails(DateTime date, MaterialQuantity quantity, UsageType usageType,
             string area, string worker, string observations)
@@ -54,5 +52,8 @@ namespace BuildTruckBack.Materials.Domain.Model.Aggregates
             Worker = worker ?? string.Empty;
             Observations = observations ?? string.Empty;
         }
+        
+
+        
     }
 }
