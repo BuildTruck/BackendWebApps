@@ -3,7 +3,7 @@ using System;
                     using System.Threading.Tasks;
                     using BuildTruckBack.Incidents.Application.ACL.Services;
                     using BuildTruckBack.Incidents.Domain.Aggregates;
-                    using BuildTruckBack.Incidents.Domain.Commands;
+                    using BuildTruckBack.Incidents.Domain.Model.Commands;
                     using BuildTruckBack.Incidents.Domain.ValueObjects;
                     using BuildTruckBack.Shared.Infrastructure.Persistence.EFC.Configuration;
                     

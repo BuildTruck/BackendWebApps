@@ -1,9 +1,8 @@
 using Microsoft.AspNetCore.Http;
 using System;
-
+namespace BuildTruckBack.Incidents.Application.REST.Resources;
 public class UpdateIncidentDto
 {
-    public int Id { get; set; }
     public int? ProjectId { get; set; }
     public string Title { get; set; }
     public string Description { get; set; }

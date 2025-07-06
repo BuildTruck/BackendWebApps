@@ -1,4 +1,4 @@
-﻿namespace BuildTruckBack.Incidents.Domain.Commands;
+﻿namespace BuildTruckBack.Incidents.Domain.Model.Commands;
 
 public record CreateIncidentCommand(
     int? ProjectId,
