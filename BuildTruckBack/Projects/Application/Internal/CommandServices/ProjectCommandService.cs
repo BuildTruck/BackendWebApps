@@ -5,7 +5,8 @@ using BuildTruckBack.Projects.Application.ACL.Services;
 using BuildTruckBack.Projects.Infrastructure.Persistence.EFC.Repositories;
 using BuildTruckBack.Shared.Domain.Repositories;
 using Microsoft.AspNetCore.Http;
-
+using BuildTruckBack.Notifications.Interfaces.ACL;
+using BuildTruckBack.Notifications.Domain.Model.ValueObjects;
 namespace BuildTruckBack.Projects.Application.Internal.CommandServices;
 
 /// <summary>
@@ -20,16 +21,18 @@ public class ProjectCommandService : IProjectCommandService
     private readonly IUserContextService _userContextService;
     private readonly ICloudinaryService _cloudinaryService;
     private readonly IUnitOfWork _unitOfWork;
-
+    private readonly INotificationContextFacade _notificationFacade;
     public ProjectCommandService(
         ProjectRepository projectRepository,
         IUserContextService userContextService,
         ICloudinaryService cloudinaryService,
+        INotificationContextFacade notificationFacade, 
         IUnitOfWork unitOfWork)
     {
         _projectRepository = projectRepository;
         _userContextService = userContextService;
         _cloudinaryService = cloudinaryService;
+        _notificationFacade = notificationFacade;        
         _unitOfWork = unitOfWork;
     }
 
@@ -112,7 +115,19 @@ public class ProjectCommandService : IProjectCommandService
             // 8. Save to database
             await _projectRepository.AddAsync(project);
             await _unitOfWork.CompleteAsync();
-
+            
+            // 🔔 NOTIFICAR CREACIÓN DEL PROYECTO
+            await _notificationFacade.CreateNotificationForUserAsync(
+                userId: project.ManagerId,
+                type: NotificationType.ProjectCreated,
+                context: NotificationContext.Projects,
+                title: "📋 Nuevo Proyecto Creado",
+                message: $"El proyecto '{project.Name}' ha sido creado exitosamente.",
+                priority: NotificationPriority.Normal,
+                actionUrl: $"/projects/{project.Id}",
+                relatedProjectId: project.Id
+            );
+            
             // 9. Update supervisor assignment via ACL (after project has ID)
             if (finalSupervisorId.HasValue)
             {

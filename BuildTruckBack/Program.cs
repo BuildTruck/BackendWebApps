@@ -100,6 +100,7 @@ using BuildTruckBack.Documentation.Infrastructure.Exports;
 using BuildTruckBack.Incidents.Application.Internal;
 using BuildTruckBack.Incidents.Domain.Commands;
 using BuildTruckBack.Incidents.Domain.Model.Queries;
+using BuildTruckBack.Notifications.Interfaces.WebSocket;
 //Stats
 using BuildTruckBack.Stats.Application.ACL.Services;
 using BuildTruckBack.Stats.Application.Internal.CommandServices;
@@ -457,6 +458,40 @@ builder.Services.AddScoped<BuildTruckBack.Stats.Application.ACL.Services.IMachin
 builder.Services.AddScoped<BuildTruckBack.Personnel.Application.Internal.OutboundServices.IPersonnelFacade, BuildTruckBack.Personnel.Application.Internal.OutboundServices.PersonnelFacade>();
 builder.Services.AddScoped<BuildTruckBack.Machinery.Application.Internal.OutboundServices.IMachineryFacade, BuildTruckBack.Machinery.Application.Internal.OutboundServices.MachineryFacade>();
 
+// ===== NOTIFICATIONS MODULE =====
+// Repositories
+builder.Services.AddScoped<BuildTruckBack.Notifications.Domain.Repositories.INotificationRepository, BuildTruckBack.Notifications.Infrastructure.Persistence.EFC.Repositories.NotificationRepository>();
+builder.Services.AddScoped<BuildTruckBack.Notifications.Domain.Repositories.INotificationPreferenceRepository, BuildTruckBack.Notifications.Infrastructure.Persistence.EFC.Repositories.NotificationPreferenceRepository>();
+builder.Services.AddScoped<BuildTruckBack.Notifications.Domain.Repositories.INotificationDeliveryRepository, BuildTruckBack.Notifications.Infrastructure.Persistence.EFC.Repositories.NotificationDeliveryRepository>();
+
+// Domain Services
+builder.Services.AddScoped<BuildTruckBack.Notifications.Domain.Services.INotificationCommandService, BuildTruckBack.Notifications.Application.Internal.CommandServices.NotificationCommandService>();
+builder.Services.AddScoped<BuildTruckBack.Notifications.Domain.Services.INotificationQueryService, BuildTruckBack.Notifications.Application.Internal.QueryServices.NotificationQueryService>();
+builder.Services.AddScoped<BuildTruckBack.Notifications.Domain.Services.INotificationPreferenceCommandService, BuildTruckBack.Notifications.Application.Internal.CommandServices.NotificationPreferenceCommandService>();
+builder.Services.AddScoped<BuildTruckBack.Notifications.Domain.Services.INotificationPreferenceQueryService, BuildTruckBack.Notifications.Application.Internal.QueryServices.NotificationPreferenceQueryService>();
+builder.Services.AddScoped<BuildTruckBack.Notifications.Domain.Services.INotificationDeliveryService, BuildTruckBack.Notifications.Application.Internal.CommandServices.NotificationDeliveryCommandService>();
+
+// ACL Services
+builder.Services.AddScoped<BuildTruckBack.Notifications.Application.ACL.Services.IProjectContextService, BuildTruckBack.Notifications.Infrastructure.ACL.ProjectContextService>();
+builder.Services.AddScoped<BuildTruckBack.Notifications.Application.ACL.Services.IUserContextService, BuildTruckBack.Notifications.Infrastructure.ACL.UserContextService>();
+builder.Services.AddScoped<BuildTruckBack.Notifications.Application.ACL.Services.IPersonnelContextService, BuildTruckBack.Notifications.Infrastructure.ACL.PersonnelContextService>();
+builder.Services.AddScoped<BuildTruckBack.Notifications.Application.ACL.Services.IMaterialContextService, BuildTruckBack.Notifications.Infrastructure.ACL.MaterialContextService>();
+builder.Services.AddScoped<BuildTruckBack.Notifications.Application.ACL.Services.IMachineryContextService, BuildTruckBack.Notifications.Infrastructure.ACL.MachineryContextService>();
+builder.Services.AddScoped<BuildTruckBack.Notifications.Application.ACL.Services.IIncidentContextService, BuildTruckBack.Notifications.Infrastructure.ACL.IncidentContextService>();
+builder.Services.AddScoped<BuildTruckBack.Notifications.Application.ACL.Services.IConfigurationContextService, BuildTruckBack.Notifications.Infrastructure.ACL.ConfigurationContextService>();
+builder.Services.AddScoped<BuildTruckBack.Notifications.Application.ACL.Services.ISharedEmailService, BuildTruckBack.Notifications.Infrastructure.ACL.SharedEmailService>();
+builder.Services.AddScoped<BuildTruckBack.Notifications.Application.ACL.Services.IWebSocketService, BuildTruckBack.Notifications.Infrastructure.ACL.WebSocketService>();
+builder.Services.AddHostedService<BuildTruckBack.Notifications.Infrastructure.Services.NotificationBackgroundService>();
+
+// Facade
+builder.Services.AddScoped<BuildTruckBack.Notifications.Application.Internal.OutboundServices.INotificationFacade, BuildTruckBack.Notifications.Application.Internal.OutboundServices.NotificationFacade>();
+
+// External Facade
+builder.Services.AddScoped<BuildTruckBack.Notifications.Interfaces.ACL.INotificationContextFacade, BuildTruckBack.Notifications.Interfaces.ACL.Services.NotificationContextFacade>();
+
+// SignalR Hub
+builder.Services.AddSignalR();
+
 var app = builder.Build();
 
 
@@ -480,7 +515,7 @@ app.UseCors("AllowAllPolicy");
 app.UseAuthentication(); 
 app.UseAuthorization();
 app.UseHttpsRedirection();
-
+app.MapHub<NotificationHub>("/hubs/notifications");
 app.MapControllers();
 app.Run();
 

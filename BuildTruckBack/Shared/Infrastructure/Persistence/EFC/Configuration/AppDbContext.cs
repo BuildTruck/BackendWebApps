@@ -6,6 +6,7 @@ using BuildTruckBack.Shared.Infrastructure.Persistence.EFC.Configuration.Extensi
 using EntityFrameworkCore.CreatedUpdatedDate.Extensions;
 using Microsoft.EntityFrameworkCore;
 using BuildTruckBack.Incidents.Domain.Aggregates;
+using BuildTruckBack.Notifications.Infrastructure.Persistence.EFC.Configuration;
 using BuildTruckBack.Stats.Domain.Model.Aggregates;
 using BuildTruckBack.Stats.Infrastructure.Persistence.EFC.Configuration;
 
@@ -44,6 +45,11 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
     public DbSet<ManagerStats> ManagerStats { get; set; }
     public DbSet<StatsHistory> StatsHistory { get; set; }
     
+    // ✅ Notifications DbSets
+    public DbSet<BuildTruckBack.Notifications.Domain.Model.Aggregates.Notification> Notifications { get; set; }
+    public DbSet<BuildTruckBack.Notifications.Domain.Model.Aggregates.NotificationPreference> NotificationPreferences { get; set; }
+    public DbSet<BuildTruckBack.Notifications.Domain.Model.Aggregates.NotificationDelivery> NotificationDeliveries { get; set; }
+    
     public DbSet<BuildTruckBack.Documentation.Domain.Model.Aggregates.Documentation> Documentation { get; set; }
     
     /// <summary>
@@ -75,6 +81,17 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
     {
         base.OnModelCreating(builder);
 
+        // ===== IGNORE VALUE OBJECTS =====
+        // Ignorar todos los value objects para que EF no los trate como entidades
+        builder.Ignore<BuildTruckBack.Notifications.Domain.Model.ValueObjects.DeliveryStatus>();
+        builder.Ignore<BuildTruckBack.Notifications.Domain.Model.ValueObjects.NotificationType>();
+        builder.Ignore<BuildTruckBack.Notifications.Domain.Model.ValueObjects.NotificationChannel>();
+        builder.Ignore<BuildTruckBack.Notifications.Domain.Model.ValueObjects.NotificationContext>();
+        builder.Ignore<BuildTruckBack.Notifications.Domain.Model.ValueObjects.NotificationPriority>();
+        builder.Ignore<BuildTruckBack.Notifications.Domain.Model.ValueObjects.NotificationStatus>();
+        builder.Ignore<BuildTruckBack.Notifications.Domain.Model.ValueObjects.NotificationScope>();
+        builder.Ignore<BuildTruckBack.Notifications.Domain.Model.ValueObjects.UserRole>();
+        
         // ===== USERS CONTEXT CONFIGURATION =====
         builder.Entity<User>().HasKey(u => u.Id);
         builder.Entity<User>().Property(u => u.Id).IsRequired().ValueGeneratedOnAdd();
@@ -582,8 +599,12 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
         //Stats tables
         builder.ApplyConfiguration(new ManagerStatsConfiguration());
         builder.ApplyConfiguration(new StatsHistoryConfiguration());
+        //Stats tables
+        builder.ApplyConfiguration(new NotificationConfiguration());
+        builder.ApplyConfiguration(new NotificationDeliveryConfiguration());
+        builder.ApplyConfiguration(new NotificationPreferenceConfiguration());
+        
         // ===== NAMING CONVENTION =====
-
         builder.UseSnakeCaseNamingConvention();
     }
 }

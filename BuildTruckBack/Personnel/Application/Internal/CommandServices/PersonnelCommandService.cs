@@ -4,7 +4,8 @@ using BuildTruckBack.Personnel.Domain.Model.Commands;
 using BuildTruckBack.Personnel.Domain.Repositories;
 using BuildTruckBack.Personnel.Domain.Services;
 using BuildTruckBack.Shared.Domain.Repositories;
-
+using BuildTruckBack.Notifications.Interfaces.ACL;
+using BuildTruckBack.Notifications.Domain.Model.ValueObjects;
 namespace BuildTruckBack.Personnel.Application.Internal.CommandServices;
 
 public class PersonnelCommandService : IPersonnelCommandService
@@ -13,17 +14,19 @@ public class PersonnelCommandService : IPersonnelCommandService
     private readonly IUnitOfWork _unitOfWork;
     private readonly IProjectContextService _projectContextService;
     private readonly ICloudinaryService _cloudinaryService;
-
+    private readonly INotificationContextFacade _notificationFacade;
     public PersonnelCommandService(
         IPersonnelRepository personnelRepository,
         IUnitOfWork unitOfWork,
         IProjectContextService projectContextService,
-        ICloudinaryService cloudinaryService)
+        ICloudinaryService cloudinaryService,
+        INotificationContextFacade notificationFacade) 
     {
         _personnelRepository = personnelRepository;
         _unitOfWork = unitOfWork;
         _projectContextService = projectContextService;
         _cloudinaryService = cloudinaryService;
+        _notificationFacade = notificationFacade;        
     }
 
     public async Task<Domain.Model.Aggregates.Personnel?> Handle(CreatePersonnelCommand command)
@@ -82,6 +85,18 @@ public class PersonnelCommandService : IPersonnelCommandService
         try
         {
             await _personnelRepository.AddAsync(personnel);
+            // 🔔 NOTIFICAR PERSONAL AGREGADO
+            await _notificationFacade.CreateNotificationForProjectAsync(
+                projectId: personnel.ProjectId,
+                type: NotificationType.PersonnelAdded,
+                context: NotificationContext.Personnel,
+                title: "👷 Personal Agregado",
+                message: $"Se agregó a {personnel.GetFullName()} al proyecto.",
+                priority: NotificationPriority.Normal,
+                actionUrl: $"/personnel/{personnel.Id}",
+                relatedEntityId: personnel.Id,
+                relatedEntityType: "Personnel"
+            );
             await _unitOfWork.CompleteAsync();
             return personnel;
         }

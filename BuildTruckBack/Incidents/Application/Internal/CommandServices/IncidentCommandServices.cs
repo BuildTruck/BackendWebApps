@@ -6,6 +6,8 @@ using BuildTruckBack.Incidents.Domain.Repositories;
 using BuildTruckBack.Shared.Domain.Repositories;
 using BuildTruckBack.Incidents.Application.ACL.Services;
 using BuildTruckBack.Incidents.Domain.ValueObjects;
+using BuildTruckBack.Notifications.Interfaces.ACL;
+using BuildTruckBack.Notifications.Domain.Model.ValueObjects;
 
 namespace BuildTruckBack.Incidents.Application.Internal.CommandServices;
 
@@ -16,19 +18,22 @@ public class IncidentCommandService : IIncidentCommandHandler
     private readonly IUserRepository _userRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICloudinaryService _cloudinaryService;
-
+    private readonly INotificationContextFacade _notificationFacade;
+    
     public IncidentCommandService(
         IIncidentRepository incidentRepository,
         IProjectRepository projectRepository,
         IUserRepository userRepository,
         IUnitOfWork unitOfWork,
-        ICloudinaryService cloudinaryService)
+        ICloudinaryService cloudinaryService,
+        INotificationContextFacade notificationFacade)  
     {
         _incidentRepository = incidentRepository;
         _projectRepository = projectRepository;
         _userRepository = userRepository;
         _unitOfWork = unitOfWork;
         _cloudinaryService = cloudinaryService;
+        _notificationFacade = notificationFacade;       
     }
 
     public async Task<int> HandleAsync(CreateIncidentCommand command)
@@ -60,6 +65,33 @@ public class IncidentCommandService : IIncidentCommandHandler
 
         await _incidentRepository.AddAsync(incident);
         await _unitOfWork.CompleteAsync();
+        
+
+        var priority = incident.Severity switch
+        {
+            IncidentSeverity.High => NotificationPriority.Critical,
+            _ => NotificationPriority.Normal
+        };
+
+        var notificationType = incident.Severity == IncidentSeverity.High 
+            ? NotificationType.CriticalIncident 
+            : NotificationType.IncidentReported;
+
+        if (incident.ProjectId.HasValue)
+        {
+            await _notificationFacade.CreateNotificationForProjectAsync(
+                projectId: incident.ProjectId.Value,
+                type: notificationType,
+                context: NotificationContext.Incidents,
+                title: incident.Severity == IncidentSeverity.High ? "🚨 Incidente Crítico" : "⚠️ Nuevo Incidente",
+                message: $"Se reportó un incidente: {incident.Title}",
+                priority: priority,
+                actionUrl: $"/incidents/{incident.Id}",
+                relatedEntityId: incident.Id,
+                relatedEntityType: "Incident"
+            );
+        }
+        
         return incident.Id;
     }
 

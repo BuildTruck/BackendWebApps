@@ -6,6 +6,8 @@ using BuildTruckBack.Materials.Domain.Model.ValueObjects;
 using BuildTruckBack.Materials.Domain.Repositories;
 using BuildTruckBack.Materials.Domain.Services;
 using BuildTruckBack.Shared.Domain.Repositories;
+using BuildTruckBack.Notifications.Interfaces.ACL;
+using BuildTruckBack.Notifications.Domain.Model.ValueObjects;
 
 namespace BuildTruckBack.Materials.Application.Internal.CommandServices
 {
@@ -16,11 +18,15 @@ namespace BuildTruckBack.Materials.Application.Internal.CommandServices
     {
         private readonly IMaterialRepository _materialRepository;
         private readonly IUnitOfWork _unitOfWork;
-
-        public MaterialCommandService(IMaterialRepository materialRepository, IUnitOfWork unitOfWork)
+        private readonly INotificationContextFacade _notificationFacade;
+        public MaterialCommandService(
+            IMaterialRepository materialRepository, 
+            IUnitOfWork unitOfWork,
+            INotificationContextFacade notificationFacade)  
         {
             _materialRepository = materialRepository;
             _unitOfWork = unitOfWork;
+            _notificationFacade = notificationFacade;        
         }
 
         public async Task<Material?> Handle(CreateMaterialCommand command)
@@ -36,6 +42,19 @@ namespace BuildTruckBack.Materials.Application.Internal.CommandServices
 
             await _materialRepository.AddAsync(material);
             await _unitOfWork.CompleteAsync();
+            
+            await _notificationFacade.CreateNotificationForProjectAsync(
+                projectId: material.ProjectId,
+                type: NotificationType.MaterialAdded,
+                context: NotificationContext.Materials,
+                title: "📦 Material Agregado",
+                message: $"Se agregó el material '{material.Name.Value}' al proyecto.",
+                priority: NotificationPriority.Normal,
+                actionUrl: $"/materials/{material.Id}",
+                relatedEntityId: material.Id,
+                relatedEntityType: "Material"
+            );
+            
             return material;
         }
 

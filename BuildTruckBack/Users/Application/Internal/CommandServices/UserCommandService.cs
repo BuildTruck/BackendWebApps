@@ -1,11 +1,17 @@
 using BuildTruckBack.Users.Domain.Model.Aggregates;
 using BuildTruckBack.Users.Domain.Model.Commands;
-using BuildTruckBack.Users.Domain.Model.ValueObjects;
+// using BuildTruckBack.Users.Domain.Model.ValueObjects;  ← ELIMINAR ESTA LÍNEA
+using UsersUserRole = BuildTruckBack.Users.Domain.Model.ValueObjects.UserRole;  // ← AGREGAR
+using PersonName = BuildTruckBack.Users.Domain.Model.ValueObjects.PersonName;   // ← AGREGAR
+using EmailAddress = BuildTruckBack.Users.Domain.Model.ValueObjects.EmailAddress; // ← AGREGAR
 using BuildTruckBack.Users.Domain.Repositories;
 using BuildTruckBack.Users.Domain.Services;
 using BuildTruckBack.Shared.Domain.Repositories;
-using BuildTruckBack.Users.Application.ACL.Services;  // ✅ ACL import
-using BuildTruckBack.Shared.Infrastructure.ExternalServices.Email.Services; // ✅ Para password changed
+using BuildTruckBack.Users.Application.ACL.Services;
+using BuildTruckBack.Shared.Infrastructure.ExternalServices.Email.Services;
+using BuildTruckBack.Notifications.Interfaces.ACL;
+using BuildTruckBack.Notifications.Domain.Model.ValueObjects;
+using NotificationUserRole = BuildTruckBack.Notifications.Domain.Model.ValueObjects.UserRole;
 
 namespace BuildTruckBack.Users.Application.Internal.CommandServices;
 
@@ -21,11 +27,13 @@ namespace BuildTruckBack.Users.Application.Internal.CommandServices;
 public class UserCommandService(
     IUserRepository userRepository,
     IUnitOfWork unitOfWork,
-    IEmailService userEmailService,          // ✅ ACL Email Service for Users domain
+    IEmailService userEmailService,
     IGenericEmailService genericEmailService,
-    IImageService imageService)  // ✅ Direct access for legacy operations
+    IImageService imageService,
+    INotificationContextFacade notificationFacade) 
     : IUserCommandService
 {
+    private readonly INotificationContextFacade _notificationFacade = notificationFacade;
     /**
      * <summary>
      *     Handle create user command
@@ -37,7 +45,7 @@ public class UserCommandService(
     {
         // ✅ Crear Value Objects para validación
         var personName = new PersonName(command.Name, command.LastName);
-        var userRole = new UserRole(command.Role);
+        var userRole = new UsersUserRole(command.Role);
         
         // ✅ Generar email corporativo usando Value Object
         var corporateEmail = EmailAddress.GenerateCorporateEmail(personName);
@@ -60,7 +68,27 @@ public class UserCommandService(
         {
             await userRepository.AddAsync(user);
             await unitOfWork.CompleteAsync();
-            
+            try
+            {
+                Console.WriteLine($"🔍 DEBUG - Enviando notificación para rol: '{user.Role.Role}'");
+                Console.WriteLine($"🔍 DEBUG - NotificationUserRole.Admin.Value: '{NotificationUserRole.Admin.Value}'");
+    
+                await _notificationFacade.CreateNotificationForRoleAsync(
+                    role: NotificationUserRole.Admin,
+                    type: NotificationType.UserRegistered,
+                    context: NotificationContext.System,
+                    title: "👤 Nuevo Usuario Registrado",
+                    message: $"Se registró el usuario {user.FullName} con rol {user.Role.Role}.",
+                    priority: NotificationPriority.Normal,
+                    actionUrl: $"/users/{user.Id}",
+                    relatedEntityId: user.Id,
+                    relatedEntityType: "User"
+                );
+            }
+            catch (Exception notificationEx)
+            {
+                Console.WriteLine($"🔔 ❌ Error enviando notificación de nuevo usuario: {notificationEx.Message}");
+            }
             // ✅ Enviar email de bienvenida usando ACL - más limpio y orientado al dominio
             try 
             {
@@ -348,7 +376,27 @@ public class UserCommandService(
             // ✅ Save changes
             userRepository.Update(user);
             await unitOfWork.CompleteAsync();
-
+            if (command.Role != null && command.Role != user.Role.Role)
+            {
+                try
+                {
+                    await _notificationFacade.CreateNotificationForRoleAsync(
+                        role: NotificationUserRole.Admin,  // ← CAMBIAR AQUÍ
+                        type: NotificationType.UserRegistered,
+                        context: NotificationContext.System,
+                        title: "🔄 Cambio de Rol de Usuario",
+                        message: $"El usuario {user.FullName} cambió de rol a {user.Role.Role}.",
+                        priority: NotificationPriority.Normal,
+                        actionUrl: $"/users/{user.Id}",
+                        relatedEntityId: user.Id,
+                        relatedEntityType: "User"
+                    );
+                }
+                catch (Exception notificationEx)
+                {
+                    Console.WriteLine($"🔔 ❌ Error enviando notificación de cambio de rol: {notificationEx.Message}");
+                }
+            }
             Console.WriteLine($"✏️ ✅ User {user.FullName} (ID: {user.Id}) updated successfully");
             return user;
         }
