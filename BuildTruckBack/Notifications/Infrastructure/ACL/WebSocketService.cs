@@ -15,6 +15,12 @@ public class WebSocketService : IWebSocketService
 
     public async Task SendToUserAsync(int userId, Notification notification)
     {
+        Console.WriteLine($"🔔 [WebSocketService] SendToUserAsync called");
+        Console.WriteLine($"🔔 [WebSocketService] UserId: {userId}");
+        Console.WriteLine($"🔔 [WebSocketService] NotificationId: {notification.Id}");
+        Console.WriteLine($"🔔 [WebSocketService] Title: {notification.Content.Title}");
+        Console.WriteLine($"🔔 [WebSocketService] Priority: {notification.Priority.Value}");
+    
         var notificationData = new
         {
             id = notification.Id,
@@ -30,7 +36,12 @@ public class WebSocketService : IWebSocketService
             isRead = notification.IsRead
         };
 
+        Console.WriteLine($"🔔 [WebSocketService] Data to send: {System.Text.Json.JsonSerializer.Serialize(notificationData)}");
+        Console.WriteLine($"🔔 [WebSocketService] Sending to group: user_{userId}");
+    
         await _hubContext.Clients.Group($"user_{userId}").SendAsync("NewNotification", notificationData);
+    
+        Console.WriteLine($"🔔 [WebSocketService] Message sent successfully");
     }
 
     public async Task SendToGroupAsync(string groupName, Notification notification)
