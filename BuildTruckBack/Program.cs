@@ -154,7 +154,8 @@ builder.Services.AddCors(options =>
                 // Producción
                 "https://buildtruck-99bc0.web.app",  
                 "https://buildtruck-99bc0.firebaseapp.com",
-                "https://buildtruck.netlify.app"
+                "https://buildtruck.netlify.app",
+                "https://knights-xl-translator-hb.trycloudflare.com"
             )
             .AllowAnyHeader()
             .AllowAnyMethod()
