@@ -5,6 +5,8 @@ using BuildTruckBack.Materials.Domain.Model.Commands;
 using BuildTruckBack.Materials.Domain.Model.ValueObjects;
 using BuildTruckBack.Materials.Domain.Repositories;
 using BuildTruckBack.Materials.Domain.Services;
+using BuildTruckBack.Notifications.Domain.Model.ValueObjects;
+using BuildTruckBack.Notifications.Interfaces.ACL;
 using BuildTruckBack.Shared.Domain.Repositories;
 
 namespace BuildTruckBack.Materials.Application.Internal.CommandServices
@@ -16,7 +18,7 @@ namespace BuildTruckBack.Materials.Application.Internal.CommandServices
     {
         private readonly IMaterialUsageRepository _usageRepository;
         private readonly IUnitOfWork _unitOfWork;
-
+        private readonly INotificationContextFacade _notificationFacade;
         public MaterialUsageCommandService(IMaterialUsageRepository usageRepository, IUnitOfWork unitOfWork)
         {
             _usageRepository = usageRepository;
@@ -38,6 +40,15 @@ namespace BuildTruckBack.Materials.Application.Internal.CommandServices
             
             await _usageRepository.AddAsync(usage);
             await _unitOfWork.CompleteAsync();
+            await _notificationFacade.CreateNotificationForProjectAsync(
+                usage.ProjectId,
+                NotificationType.MaterialUsed,
+                NotificationContext.Materials,
+                "Material Utilizado",
+                $"Se utilizó {usage.Quantity} unidades en {usage.UsageType} para {usage.Observations}",
+                NotificationPriority.Low
+            );
+            
             return usage;
         }
 

@@ -47,7 +47,7 @@ namespace BuildTruckBack.Materials.Application.Internal.CommandServices
                 projectId: material.ProjectId,
                 type: NotificationType.MaterialAdded,
                 context: NotificationContext.Materials,
-                title: "📦 Material Agregado",
+                title: "Material Agregado",
                 message: $"Se agregó el material '{material.Name.Value}' al proyecto.",
                 priority: NotificationPriority.Normal,
                 actionUrl: $"/materials/{material.Id}",
@@ -73,6 +73,28 @@ namespace BuildTruckBack.Materials.Application.Internal.CommandServices
             );
 
             await _unitOfWork.CompleteAsync();
+            if (material.Stock <= material.MinimumStock && material.Stock > 0)
+            {
+                await _notificationFacade.CreateNotificationForProjectAsync(
+                    material.ProjectId,
+                    NotificationType.LowStock,
+                    NotificationContext.Materials,
+                    "Stock Bajo",
+                    $"Stock bajo para {material.Name}: {material.Stock} unidades restantes",
+                    NotificationPriority.High
+                );
+            }
+            else if (material.Stock == 0)
+            {
+                await _notificationFacade.CreateNotificationForProjectAsync(
+                    material.ProjectId,
+                    NotificationType.CriticalStock,
+                    NotificationContext.Materials,
+                    "Stock Crítico",
+                    $"¡Stock agotado para {material.Name}!",
+                    NotificationPriority.Critical
+                );
+            }
             return material;
         }
 

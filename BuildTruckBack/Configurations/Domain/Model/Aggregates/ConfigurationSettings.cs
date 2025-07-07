@@ -20,6 +20,8 @@ public class ConfigurationSettings
     
     public bool NotificationsEnable { get; set; } = true;
     public bool EmailNotifications { get; set; } = false;
+    
+    public TutorialProgress TutorialsCompleted { get; set; } = new TutorialProgress();
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
@@ -27,13 +29,14 @@ public class ConfigurationSettings
     //[ForeignKey("UserId")]
     //public User User { get; set; }
 
-    public ConfigurationSettings(int userId, Theme themes, Plan plans, bool notificationsEnable, bool emailNotifications)
+    public ConfigurationSettings(int userId, Theme themes, Plan plans, bool notificationsEnable, bool emailNotifications, TutorialProgress tutorialsCompleted = null)
     {
         UserId = userId;
         Themes = themes;
         Plans = plans;
         NotificationsEnable = notificationsEnable;
         EmailNotifications = emailNotifications;
+        TutorialsCompleted = tutorialsCompleted ?? new TutorialProgress();
     }
     
     // Constructors

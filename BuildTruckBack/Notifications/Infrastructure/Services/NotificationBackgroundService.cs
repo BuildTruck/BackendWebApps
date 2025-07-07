@@ -44,7 +44,7 @@ public class NotificationBackgroundService : BackgroundService
             }
 
             // Esperar 24 horas hasta la próxima ejecución
-            await Task.Delay(TimeSpan.FromHours(2), stoppingToken);
+            await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
         }
     }
 
@@ -108,7 +108,7 @@ public class NotificationBackgroundService : BackgroundService
                                 userId: managerId,
                                 type: NotificationType.ProjectStatusChanged,
                                 context: NotificationContext.Projects,
-                                title: "📊 Revisión Semanal de Proyecto",
+                                title: "Revisión Semanal de Proyecto",
                                 message: $"Es momento de revisar el progreso del proyecto '{projectName}'.",
                                 priority: NotificationPriority.Normal,
                                 actionUrl: $"/projects/{projectId}",
@@ -120,7 +120,7 @@ public class NotificationBackgroundService : BackgroundService
                 }
             }
 
-            _logger.LogInformation("✅ Proyectos verificados: {Count} alertas generadas", alertCount);
+            _logger.LogInformation("Proyectos verificados: {Count} alertas generadas", alertCount);
         }
         catch (Exception ex)
         {
@@ -136,7 +136,7 @@ public class NotificationBackgroundService : BackgroundService
             var materialService = serviceProvider.GetRequiredService<IMaterialContextService>();
             var projectService = serviceProvider.GetRequiredService<IProjectContextService>();
 
-            _logger.LogInformation("📦 Verificando stock de materiales...");
+            _logger.LogInformation("Verificando stock de materiales...");
 
             var activeProjects = await projectService.GetAllActiveProjectsAsync();
             var lowStockCount = 0;

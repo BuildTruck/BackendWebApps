@@ -121,13 +121,20 @@ public class ProjectCommandService : IProjectCommandService
                 userId: project.ManagerId,
                 type: NotificationType.ProjectCreated,
                 context: NotificationContext.Projects,
-                title: "📋 Nuevo Proyecto Creado",
+                title: "Nuevo Proyecto Creado",
                 message: $"El proyecto '{project.Name}' ha sido creado exitosamente.",
                 priority: NotificationPriority.Normal,
                 actionUrl: $"/projects/{project.Id}",
                 relatedProjectId: project.Id
             );
-            
+            await _notificationFacade.CreateNotificationForRoleAsync(
+                UserRole.Admin,
+                NotificationType.ProjectCreated,
+                NotificationContext.Projects,
+                "Nuevo Proyecto Creado",
+                $"Se ha creado el proyecto '{project.Name}' asignado al manager {command.ManagerId}",
+                NotificationPriority.Low
+            );
             // 9. Update supervisor assignment via ACL (after project has ID)
             if (finalSupervisorId.HasValue)
             {
@@ -284,8 +291,16 @@ public class ProjectCommandService : IProjectCommandService
             // 10. Save changes
             _projectRepository.Update(project);
             await _unitOfWork.CompleteAsync();
-
+            await _notificationFacade.CreateNotificationForUserAsync(
+                project.ManagerId,
+                NotificationType.ProjectStatusChanged,
+                NotificationContext.Projects,
+                "Proyecto Actualizado",
+                $"El proyecto '{project.Name}' ha sido actualizado",
+                NotificationPriority.Low
+            );
             return project;
+            
         }
         catch (Exception ex)
         {

@@ -1,5 +1,6 @@
 using BuildTruckBack.Users.Domain.Model.Aggregates;
 using BuildTruckBack.Configurations.Domain.Model.Aggregates;
+using BuildTruckBack.Configurations.Domain.Model.ValueObjects;
 using BuildTruckBack.Configurations.Infrastructure.Persistence.EFC.Configuration;
 using BuildTruckBack.Projects.Domain.Model.Aggregates;
 using BuildTruckBack.Shared.Infrastructure.Persistence.EFC.Configuration.Extensions;
@@ -181,7 +182,7 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
         builder.Entity<Project>().Property(p => p.ImageUrl).HasMaxLength(500);
         builder.Entity<Project>().Property(p => p.StartDate);
         
-        // ===== CONFIGURATIONS CONTEXT CONFIGURATION =====
+// ===== CONFIGURATIONS CONTEXT CONFIGURATION =====
         builder.Entity<ConfigurationSettings>().HasKey(c => c.Id);
         builder.Entity<ConfigurationSettings>().ToTable("configurations");
         builder.Entity<ConfigurationSettings>().Property(c => c.Id).ValueGeneratedOnAdd();
@@ -192,6 +193,15 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
         builder.Entity<ConfigurationSettings>().Property(c => c.EmailNotifications).HasColumnName("email_notifications").IsRequired();
         builder.Entity<ConfigurationSettings>().Property(c => c.CreatedAt).HasColumnName("created_at").IsRequired();
         builder.Entity<ConfigurationSettings>().Property(c => c.UpdatedAt).HasColumnName("updated_at").IsRequired();
+        builder.Entity<ConfigurationSettings>().Property(c => c.TutorialsCompleted)
+            .HasColumnName("tutorials_completed")
+            .HasMaxLength(1000)
+            .IsRequired()
+            .HasConversion(
+                v => v.ToJsonString(),
+                v => new TutorialProgress(v)
+            );
+
         builder.Entity<ConfigurationSettings>().HasIndex(c => c.UserId).IsUnique().HasDatabaseName("IX_Configurations_User_Id");
         builder.Entity<ConfigurationSettings>().HasOne<User>()
             .WithOne()

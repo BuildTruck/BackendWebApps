@@ -90,7 +90,7 @@ public class PersonnelCommandService : IPersonnelCommandService
                 projectId: personnel.ProjectId,
                 type: NotificationType.PersonnelAdded,
                 context: NotificationContext.Personnel,
-                title: "👷 Personal Agregado",
+                title: "Personal Agregado",
                 message: $"Se agregó a {personnel.GetFullName()} al proyecto.",
                 priority: NotificationPriority.Normal,
                 actionUrl: $"/personnel/{personnel.Id}",
@@ -153,7 +153,14 @@ public class PersonnelCommandService : IPersonnelCommandService
 
             _personnelRepository.Update(personnel);
             await _unitOfWork.CompleteAsync();
-
+            await _notificationFacade.CreateNotificationForProjectAsync(
+                personnel.ProjectId,
+                NotificationType.PersonnelAdded,
+                NotificationContext.Personnel,
+                "Personal Actualizado",
+                $"Se actualizó la información de {personnel.GetFullName()}",
+                NotificationPriority.Low
+            );
             return personnel;
         }
         catch (Exception ex)
@@ -247,7 +254,14 @@ public class PersonnelCommandService : IPersonnelCommandService
                     // Log but don't fail the operation
                 }
             }
-
+            await _notificationFacade.CreateNotificationForProjectAsync(
+                personnel.ProjectId,
+                NotificationType.PersonnelRemoved,
+                NotificationContext.Personnel,
+                "Personal Removido",
+                $"Se removió {personnel.GetFullName()}  del proyecto",
+                NotificationPriority.Normal
+            );
             return true;
         }
         catch (Exception ex)

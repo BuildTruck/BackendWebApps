@@ -11,6 +11,5 @@ public record CreateConfigurationSettingsCommand(
     Theme Themes,
     Plan Plans,
     bool NotificationsEnables,
-    bool EmailNotification)
-{
-}
+    bool EmailNotification,
+    TutorialProgress TutorialsCompleted);

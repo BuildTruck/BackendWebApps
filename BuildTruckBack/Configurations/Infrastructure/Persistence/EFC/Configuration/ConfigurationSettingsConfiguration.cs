@@ -1,4 +1,5 @@
 using BuildTruckBack.Configurations.Domain.Model.Aggregates;
+using BuildTruckBack.Configurations.Domain.Model.ValueObjects;
 using BuildTruckBack.Users.Domain.Model.Aggregates;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -23,6 +24,17 @@ public class ConfigurationSettingsConfiguration : IEntityTypeConfiguration<Confi
         builder.Property(c => c.EmailNotifications).HasColumnName("email_notifications").IsRequired();
         builder.Property(c => c.CreatedAt).HasColumnName("created_at").IsRequired();
         builder.Property(c => c.UpdatedAt).HasColumnName("updated_at").IsRequired();
+    
+        // ← CAMBIAR esto:
+        builder.Property(c => c.TutorialsCompleted)
+            .HasColumnName("tutorials_completed")
+            .HasMaxLength(1000)
+            .IsRequired()
+            .HasConversion(
+                v => v.ToJsonString(),
+                v => new TutorialProgress(v)
+            );
+
         builder.HasIndex(c => c.UserId).IsUnique().HasDatabaseName("ix_configurations_user_id");
 
         // Foreign key relationship: 1 User -> 1 ConfigurationSettings

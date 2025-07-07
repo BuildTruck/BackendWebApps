@@ -13,7 +13,9 @@ public record ConfigurationSettingsResource(
     string Theme,
     string Plan,
     string NotificationsEnables,
-    string EmailNotification);
+    string EmailNotification,
+    string TutorialsCompleted
+        );
 
 
 /*

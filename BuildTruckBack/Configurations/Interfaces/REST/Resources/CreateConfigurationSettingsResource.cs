@@ -32,6 +32,9 @@ public record CreateConfigurationSettingsResource
     [RegularExpression("^(true|false)$", ErrorMessage = "EmailNotifications must be 'true' or 'false'.")]
     public string EmailNotifications { get; init; } = "false";
     
+    [Required]
+    [RegularExpression(@"^\{.*\}$", ErrorMessage = "TutorialsCompleted must be a valid JSON object.")]
+    public string TutorialsCompleted { get; init; } = "{}";
     public List<string> GetValidationErrors()
     {
         var errors = new List<string>();

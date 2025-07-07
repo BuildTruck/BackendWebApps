@@ -48,7 +48,18 @@ public class MachineryCommandService : IMachineryCommandService
 
     public async Task<Domain.Model.Aggregates.Machinery> Handle(UpdateMachineryCommand command, IFormFile? imageFile = null)
     {
-        return await _updateMachineryCommandHandler.Handle(command, imageFile);
+        var machinery = await _updateMachineryCommandHandler.Handle(command, imageFile);;
+        
+        await _notificationFacade.CreateNotificationForProjectAsync(
+            machinery.ProjectId,
+            NotificationType.MachineryStatusChanged,
+            NotificationContext.Machinery,
+            "Estado de Maquinaria Actualizado",
+            $"El estado de {machinery.Name} cambió a {machinery.Status}",
+            NotificationPriority.Normal
+        );
+
+        return machinery;
     }
 
     public async Task Handle(DeleteMachineryCommand command)
