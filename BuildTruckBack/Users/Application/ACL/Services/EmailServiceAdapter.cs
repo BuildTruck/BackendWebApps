@@ -134,10 +134,12 @@ public class EmailServiceAdapter : IEmailService
         {
             _logger.LogInformation("Sending password reset email for user {UserId} via ACL", user.Id);
 
-            // ✅ URL fija de tu deployment
             var subject = "Restablecer contraseña - BuildTruck";
             var resetUrl = $"https://buildtruck-99bc0.web.app/reset-password?token={resetToken}&email={Uri.EscapeDataString(user.Email)}";
         
+            // ✅ CAMBIO: Determinar email de destino
+            var destinationEmail = GetBestEmailForPasswordReset(user);
+            
             var body = $@"
             <!DOCTYPE html>
             <html>
@@ -158,6 +160,13 @@ public class EmailServiceAdapter : IEmailService
                     
                     <p>Has solicitado restablecer tu contraseña en BuildTruck.</p>
                     
+                    {(destinationEmail != user.Email ? $@"
+                    <div style='background: #e0f2fe; border-left: 4px solid #0284c7; padding: 15px; margin: 20px 0;'>
+                        <h4 style='margin-top: 0; color: #0c4a6e;'>📮 Información importante:</h4>
+                        <p style='margin: 5px 0;'>Este email se envió a tu dirección personal: <strong>{destinationEmail}</strong></p>
+                        <p style='margin: 5px 0;'>Para iniciar sesión usa tu email corporativo: <strong>{user.Email}</strong></p>
+                    </div>" : "")}
+                    
                     <div style='text-align: center; margin: 30px 0;'>
                         <a href='{resetUrl}' style='background-color: #f97316; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; display: inline-block;'>🔐 Restablecer Contraseña</a>
                     </div>
@@ -167,7 +176,7 @@ public class EmailServiceAdapter : IEmailService
                         <ul style='margin: 10px 0; padding-left: 20px;'>
                             <li>Este enlace expirará en <strong>1 hora</strong> por seguridad</li>
                             <li>Si no solicitaste este cambio, puedes ignorar este email</li>
-                            <li>Tu contraseña actual seguirá funcionando hasta que la cambies</li>
+                            <li>Para iniciar sesión, <strong>siempre usa tu email corporativo: {user.Email}</strong></li>
                         </ul>
                     </div>
                     
@@ -185,15 +194,23 @@ public class EmailServiceAdapter : IEmailService
             </body>
             </html>";
 
-            // ✅ Delegate to generic email service
-            await _genericEmailService.SendEmailAsync(user.Email, subject, body);
+            // ✅ CAMBIO: Enviar al email más apropiado
+            await _genericEmailService.SendEmailAsync(destinationEmail, subject, body);
 
-            _logger.LogInformation("✅ Password reset email sent successfully for user {UserId}", user.Id);
+            _logger.LogInformation("✅ Password reset email sent successfully for user {UserId} to {Email}", 
+                user.Id, destinationEmail);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "❌ Failed to send password reset email for user {UserId} via ACL", user.Id);
             throw new InvalidOperationException($"Failed to send password reset email to {user.FullName}: {ex.Message}");
         }
+    }
+    private static string GetBestEmailForPasswordReset(User user)
+    {
+        // ✅ Si tiene email personal, usarlo. Si no, usar el corporativo
+        return !string.IsNullOrWhiteSpace(user.PersonalEmail) 
+            ? user.PersonalEmail 
+            : user.Email;
     }
 }
