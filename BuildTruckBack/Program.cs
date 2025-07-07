@@ -143,21 +143,21 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 // Add CORS Policy
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("SignalRCorsPolicy", policy =>
+    options.AddPolicy("AllowAllPolicy", policy =>
     {
         policy.WithOrigins(
-                // Desarrollo local (WebStorm/Vite/Vue)
-                "http://localhost:5173",      // Puerto estándar de Vite
-                "http://localhost:8080",      // Puerto común para Vue CLI
-                "http://localhost:3000",      // Alternativo para algunos entornos
+                // Desarrollo local
+                "http://localhost:5173",      
+                "http://localhost:8080",      
+                "http://localhost:3000",      
             
                 // Producción
-                "https://buildtruck-99bc0.web.app",  // Firebase Hosting
-                "https://buildtruck-99bc0.firebaseapp.com"  // Dominio alternativo Firebase
+                "https://buildtruck-99bc0.web.app",  
+                "https://buildtruck-99bc0.firebaseapp.com"  
             )
             .AllowAnyHeader()
             .AllowAnyMethod()
-            .AllowCredentials();  // ← Crucial para SignalR + [Authorize]
+            .AllowCredentials();  // Para SignalR
     });
 });
 
@@ -504,35 +504,32 @@ builder.Services.AddScoped<BuildTruckBack.Notifications.Application.Internal.Out
 // External Facade
 builder.Services.AddScoped<BuildTruckBack.Notifications.Interfaces.ACL.INotificationContextFacade, BuildTruckBack.Notifications.Interfaces.ACL.Services.NotificationContextFacade>();
 
+builder.Services.AddSignalR();
+
 var app = builder.Build();
 
-// 1. Base de datos (esto está bien)
+// 1. Base de datos
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     context.Database.EnsureCreated();
 }
 
-// 2. Swagger (estático)
+// 2. Swagger
 app.UseSwagger();
 app.UseSwaggerUI();
 
-// 3. Middlewares CRÍTICOS en ORDEN ESPECÍFICO:
+// 3. ORDEN CORRECTO DE MIDDLEWARES:
 app.UseHttpsRedirection();
+app.UseRouting(); 
 
-// ↓↓↓ ORDEN CLAVE ↓↓↓
-app.UseRouting(); // <-- Asegúrate de que esto esté presente
-
-app.UseCors("AllowAllPolicy"); // <- DEBE ir después de UseRouting y ANTES de auth
+app.UseCors("AllowAllPolicy"); // DEBE ir aquí
 
 app.UseAuthentication(); 
 app.UseAuthorization();
-// ↑↑↑ ORDEN CLAVE ↑↑↑
 
 // 4. Endpoints
-app.MapHub<NotificationHub>("/hubs/notifications")
-    .RequireCors("AllowAllPolicy"); // <-- Específica política para SignalR
-
+app.MapHub<NotificationHub>("/hubs/notifications");
 app.MapControllers();
 
 app.Run();
