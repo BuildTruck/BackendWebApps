@@ -50,8 +50,8 @@ public interface IUserFacade
     /// <param name="email">Corporate email address</param>
     /// <param name="resetToken">Password reset token</param>
     /// <returns>Success status</returns>
-    Task<bool> SendPasswordResetEmailAsync(string email, string resetToken);
-
+    Task SendPasswordResetEmailAsync(int userId, string email, string fullName, string resetToken);
+    
     /// <summary>
     /// Get user's profile image URL for display
     /// </summary>
@@ -59,4 +59,6 @@ public interface IUserFacade
     /// <param name="size">Image size (default 200px)</param>
     /// <returns>Optimized image URL or default avatar</returns>
     Task<string> GetUserProfileImageUrlAsync(int userId, int size = 200);
+
+    Task<bool> ResetUserPasswordAsync(int userId, string newPassword);
 }

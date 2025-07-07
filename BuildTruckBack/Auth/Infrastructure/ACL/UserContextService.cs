@@ -160,4 +160,83 @@ public class UserContextService : IUserContextService
             return null;
         }
     }
+    
+    // Agregar estos métodos a tu UserContextService.cs existente
+
+public async Task<AuthenticatedUser?> GetUserByEmailAsync(string email)
+{
+    try
+    {
+        _logger.LogDebug("Getting user by email: {Email}", email);
+        
+        var user = await _userFacade.FindByEmailAsync(email);
+        
+        if (user == null)
+        {
+            _logger.LogWarning("User not found with email: {Email}", email);
+            return null;
+        }
+
+        // Verificar que el usuario esté activo
+        if (!user.IsActive)
+        {
+            _logger.LogWarning("User found but is inactive: {Email}", email);
+            return null;
+        }
+
+        _logger.LogDebug("User found: {UserId} - {Email}", user.Id, user.Email);
+        
+        // Convertir Users.User a Auth.AuthenticatedUser
+        return new AuthenticatedUser(user);
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, "Error getting user by email: {Email}", email);
+        return null;
+    }
+}
+
+    public async Task SendPasswordResetEmailAsync(AuthenticatedUser user, string resetToken)
+    {
+        try
+        {
+            _logger.LogInformation("Sending password reset email for user: {UserId} - {Email}", user.Id, user.Email);
+            
+            // Usar el facade para enviar el email
+            await _userFacade.SendPasswordResetEmailAsync(user.Id, user.Email, user.FullName, resetToken);
+            
+            _logger.LogInformation("Password reset email sent successfully for user: {UserId}", user.Id);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error sending password reset email for user: {UserId}", user.Id);
+            throw; // Re-throw para que el caller pueda manejar el error
+        }
+    }
+
+    public async Task<bool> ResetUserPasswordAsync(int userId, string newPassword)
+    {
+        try
+        {
+            _logger.LogInformation("Resetting password for user: {UserId}", userId);
+            
+            var result = await _userFacade.ResetUserPasswordAsync(userId, newPassword);
+            
+            if (result)
+            {
+                _logger.LogInformation("Password reset successfully for user: {UserId}", userId);
+            }
+            else
+            {
+                _logger.LogWarning("Failed to reset password for user: {UserId}", userId);
+            }
+            
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error resetting password for user: {UserId}", userId);
+            return false;
+        }
+    }
 }

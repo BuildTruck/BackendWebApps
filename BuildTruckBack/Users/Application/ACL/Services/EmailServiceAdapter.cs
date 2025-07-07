@@ -126,27 +126,64 @@ public class EmailServiceAdapter : IEmailService
     /// <summary>
     /// Send password reset email with token (Domain-specific logic)
     /// </summary>
+    // En tu EmailServiceAdapter.cs, método SendPasswordResetEmailAsync:
+
     public async Task SendPasswordResetEmailAsync(User user, string resetToken)
     {
         try
         {
             _logger.LogInformation("Sending password reset email for user {UserId} via ACL", user.Id);
 
-            // ✅ Domain-specific email content for password reset
+            // ✅ URL fija de tu deployment
             var subject = "Restablecer contraseña - BuildTruck";
-            var resetUrl = $"https://buildtruck.pe/reset-password?token={resetToken}&email={Uri.EscapeDataString(user.Email)}";
+            var resetUrl = $"https://buildtruck-99bc0.web.app/reset-password?token={resetToken}&email={Uri.EscapeDataString(user.Email)}";
         
             var body = $@"
-            <h2>Solicitud de restablecimiento de contraseña</h2>
-            <p>Hola {user.FullName},</p>
-            <p>Has solicitado restablecer tu contraseña en BuildTruck.</p>
-            <p>Haz clic en el siguiente enlace para crear una nueva contraseña:</p>
-            <p><a href='{resetUrl}' style='background-color: #f97316; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;'>Restablecer Contraseña</a></p>
-            <p>Este enlace expirará en 1 hora por seguridad.</p>
-            <p>Si no solicitaste este cambio, puedes ignorar este email.</p>
-            <br>
-            <p>Saludos,<br>Equipo BuildTruck</p>
-        ";
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset='UTF-8'>
+                <title>Restablecer Contraseña - BuildTruck</title>
+            </head>
+            <body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;'>
+                <div style='background: linear-gradient(135deg, #f97316, #ea580c); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;'>
+                    <h1 style='color: white; margin: 0; font-size: 28px;'>🚛 BuildTruck</h1>
+                    <p style='color: white; margin: 10px 0 0 0; font-size: 16px;'>Restablecer Contraseña</p>
+                </div>
+                
+                <div style='background: white; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 10px 10px;'>
+                    <h2 style='color: #f97316; margin-top: 0;'>Solicitud de restablecimiento de contraseña</h2>
+                    
+                    <p>Hola <strong>{user.FullName}</strong>,</p>
+                    
+                    <p>Has solicitado restablecer tu contraseña en BuildTruck.</p>
+                    
+                    <div style='text-align: center; margin: 30px 0;'>
+                        <a href='{resetUrl}' style='background-color: #f97316; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; display: inline-block;'>🔐 Restablecer Contraseña</a>
+                    </div>
+                    
+                    <div style='background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0;'>
+                        <h4 style='margin-top: 0; color: #92400e;'>⏰ Importante:</h4>
+                        <ul style='margin: 10px 0; padding-left: 20px;'>
+                            <li>Este enlace expirará en <strong>1 hora</strong> por seguridad</li>
+                            <li>Si no solicitaste este cambio, puedes ignorar este email</li>
+                            <li>Tu contraseña actual seguirá funcionando hasta que la cambies</li>
+                        </ul>
+                    </div>
+                    
+                    <p>Si el botón no funciona, copia y pega este enlace en tu navegador:</p>
+                    <p style='word-break: break-all; background: #f3f4f6; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px;'>{resetUrl}</p>
+                    
+                    <hr style='border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;'>
+                    
+                    <p style='color: #6b7280; font-size: 14px; text-align: center;'>
+                        Saludos,<br>
+                        <strong>Equipo BuildTruck</strong><br>
+                        Este email fue enviado automáticamente, no responder.
+                    </p>
+                </div>
+            </body>
+            </html>";
 
             // ✅ Delegate to generic email service
             await _genericEmailService.SendEmailAsync(user.Email, subject, body);

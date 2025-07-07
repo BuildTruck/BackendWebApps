@@ -155,27 +155,28 @@ public class UserFacade : IUserFacade
     /// <summary>
     /// Send password reset email (for Auth context)
     /// </summary>
-    public async Task<bool> SendPasswordResetEmailAsync(string email, string resetToken)
+    public async Task SendPasswordResetEmailAsync(int userId, string email, string fullName, string resetToken)
     {
         try
         {
-            var user = await FindByEmailAsync(email);
+            _logger.LogInformation("📧 Sending password reset email for user: {UserId} - {Email}", userId, email);
+
+            var user = await _userRepository.FindByIdAsync(userId);
             if (user == null)
             {
-                _logger.LogWarning("❌ User not found for password reset: {Email}", email);
-                return false;
+                _logger.LogWarning("❌ User not found for password reset: {UserId}", userId);
+                throw new InvalidOperationException($"User with ID {userId} not found");
             }
 
             // ✅ Use ACL Email Service to send reset email
             await _emailService.SendPasswordResetEmailAsync(user, resetToken);
-            
-            _logger.LogInformation("✅ Password reset email sent to: {Email}", email);
-            return true;
+        
+            _logger.LogInformation("✅ Password reset email sent successfully for user: {UserId}", userId);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "❌ Error sending password reset email: {Email}", email);
-            return false;
+            _logger.LogError(ex, "❌ Error sending password reset email for user: {UserId}", userId);
+            throw; // Re-throw para que el caller pueda manejar el error
         }
     }
 
@@ -202,7 +203,47 @@ public class UserFacade : IUserFacade
             return GenerateDefaultAvatar(userId, size);
         }
     }
+    /// <summary>
+    /// Reset user password with new password (for Auth context)
+    /// </summary>
+    public async Task<bool> ResetUserPasswordAsync(int userId, string newPassword)
+    {
+        try
+        {
+            _logger.LogInformation("🔐 Resetting password for user: {UserId}", userId);
 
+            var user = await _userRepository.FindByIdAsync(userId);
+            if (user == null)
+            {
+                _logger.LogWarning("❌ User not found for password reset: {UserId}", userId);
+                return false;
+            }
+
+            if (!user.IsActive)
+            {
+                _logger.LogWarning("❌ Cannot reset password for inactive user: {UserId}", userId);
+                return false;
+            }
+
+            // ✅ Hash the new password using BCrypt
+            var hashedPassword = BCrypt.Net.BCrypt.HashPassword(newPassword);
+        
+            // ✅ Update user password using the correct domain method
+            user.UpdatePasswordHash(hashedPassword);
+        
+            // ✅ Save changes
+            _userRepository.Update(user);
+            await _unitOfWork.CompleteAsync();
+
+            _logger.LogInformation("✅ Password reset successfully for user: {UserId}", userId);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "❌ Error resetting password for user: {UserId}", userId);
+            return false;
+        }
+    }
     /// <summary>
     /// Generate default avatar for unknown users
     /// </summary>

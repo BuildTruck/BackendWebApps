@@ -46,4 +46,27 @@ public interface IUserContextService
     /// <param name="size">Image size in pixels (default: 200)</param>
     /// <returns>Profile image URL or null if not available</returns>
     Task<string?> GetUserProfileImageUrlAsync(int userId, int size = 200);
+
+    /// <summary>
+    /// Get user information by email address
+    /// </summary>
+    /// <param name="email">Corporate email address</param>
+    /// <returns>AuthenticatedUser if found, null otherwise</returns>
+    Task<AuthenticatedUser?> GetUserByEmailAsync(string email);
+
+    /// <summary>
+    /// Send password reset email to user
+    /// </summary>
+    /// <param name="user">User to send email to</param>
+    /// <param name="resetToken">Password reset token</param>
+    /// <returns>Task representing the async operation</returns>
+    Task SendPasswordResetEmailAsync(AuthenticatedUser user, string resetToken);
+
+    /// <summary>
+    /// Reset user password with new password
+    /// </summary>
+    /// <param name="userId">User identifier</param>
+    /// <param name="newPassword">New plain text password</param>
+    /// <returns>True if password was reset successfully, false otherwise</returns>
+    Task<bool> ResetUserPasswordAsync(int userId, string newPassword);
 }
