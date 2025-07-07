@@ -221,4 +221,142 @@ public class TokenService
             return true;
         }
     }
+    
+    // Agregar estos métodos a tu TokenService.cs existente
+
+/// <summary>
+/// Generate JWT token specifically for password reset
+/// </summary>
+/// <param name="userId">User ID</param>
+/// <param name="email">User email</param>
+/// <returns>Password reset token (expires in 1 hour)</returns>
+public string GeneratePasswordResetToken(int userId, string email)
+{
+    try
+    {
+        _logger.LogDebug("Generating password reset token for user: {UserId} - {Email}", userId, email);
+
+        var now = DateTime.UtcNow;
+        var expires = now.AddHours(1); // ⚠️ Solo 1 hora para seguridad
+
+        // Claims específicos para password reset
+        var claims = new List<Claim>
+        {
+            new(JwtRegisteredClaimNames.Sub, userId.ToString()),
+            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new(JwtRegisteredClaimNames.Iat, new DateTimeOffset(now).ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64),
+            new(JwtRegisteredClaimNames.Email, email),
+            
+            // Claims importantes para reset
+            new("user_id", userId.ToString()),
+            new("email", email),
+            new("purpose", "password_reset"), // 🔥 Claim crucial para identificar el propósito
+            new("reset_timestamp", now.ToString("O")) // Para auditoría
+        };
+
+        // Create token descriptor
+        var tokenDescriptor = new SecurityTokenDescriptor
+        {
+            Subject = new ClaimsIdentity(claims),
+            Expires = expires,
+            NotBefore = now,
+            IssuedAt = now,
+            Issuer = _tokenSettings.Issuer,
+            Audience = _tokenSettings.Audience,
+            SigningCredentials = _signingCredentials
+        };
+
+        // Generate token
+        var token = _tokenHandler.CreateToken(tokenDescriptor);
+        var tokenString = _tokenHandler.WriteToken(token);
+
+        _logger.LogInformation("Password reset token generated for user: {UserId}, expires at: {Expires:yyyy-MM-dd HH:mm:ss} UTC", 
+            userId, expires);
+
+        return tokenString;
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, "Error generating password reset token for user: {UserId}", userId);
+        throw;
+    }
+}
+
+/// <summary>
+/// Validate password reset token and extract user information
+/// </summary>
+/// <param name="token">Password reset token</param>
+/// <returns>Tuple with (isValid, userId, email) or (false, 0, null) if invalid</returns>
+public (bool IsValid, int UserId, string? Email) ValidatePasswordResetToken(string token)
+{
+    try
+    {
+        _logger.LogDebug("Validating password reset token");
+
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            _logger.LogWarning("Password reset token validation failed: token is null or empty");
+            return (false, 0, null);
+        }
+
+        var key = Encoding.UTF8.GetBytes(_tokenSettings.SecretKey);
+        
+        var tokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = _tokenSettings.ValidateIssuerSigningKey,
+            IssuerSigningKey = new SymmetricSecurityKey(key),
+            ValidateIssuer = _tokenSettings.ValidateIssuer,
+            ValidIssuer = _tokenSettings.Issuer,
+            ValidateAudience = _tokenSettings.ValidateAudience,
+            ValidAudience = _tokenSettings.Audience,
+            ValidateLifetime = true, // ⚠️ Siempre validar expiración para reset tokens
+            RequireExpirationTime = true,
+            RequireSignedTokens = true,
+            ClockSkew = TimeSpan.Zero // ⚠️ Sin tolerancia para reset tokens
+        };
+
+        var principal = _tokenHandler.ValidateToken(token, tokenValidationParameters, out SecurityToken validatedToken);
+        
+        // Verificar que es específicamente un token de password reset
+        var purposeClaim = principal.FindFirst("purpose")?.Value;
+        if (purposeClaim != "password_reset")
+        {
+            _logger.LogWarning("Token validation failed: not a password reset token");
+            return (false, 0, null);
+        }
+
+        // Extraer información del usuario
+        var userIdClaim = principal.FindFirst("user_id")?.Value;
+        var emailClaim = principal.FindFirst("email")?.Value;
+
+        if (!int.TryParse(userIdClaim, out var userId) || string.IsNullOrWhiteSpace(emailClaim))
+        {
+            _logger.LogWarning("Token validation failed: missing or invalid user claims");
+            return (false, 0, null);
+        }
+
+        _logger.LogInformation("Password reset token validation successful for user: {UserId}", userId);
+        return (true, userId, emailClaim);
+    }
+    catch (SecurityTokenExpiredException ex)
+    {
+        _logger.LogWarning("Password reset token validation failed: token expired - {Message}", ex.Message);
+        return (false, 0, null);
+    }
+    catch (SecurityTokenInvalidSignatureException ex)
+    {
+        _logger.LogWarning("Password reset token validation failed: invalid signature - {Message}", ex.Message);
+        return (false, 0, null);
+    }
+    catch (SecurityTokenException ex)
+    {
+        _logger.LogWarning("Password reset token validation failed: {Message}", ex.Message);
+        return (false, 0, null);
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, "Unexpected error during password reset token validation");
+        return (false, 0, null);
+    }
+}
 }

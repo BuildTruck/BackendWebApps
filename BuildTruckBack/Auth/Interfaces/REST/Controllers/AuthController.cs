@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using BuildTruckBack.Auth.Domain.Model.Commands;
 using BuildTruckBack.Auth.Domain.Model.Queries;
 using BuildTruckBack.Auth.Domain.Services;
 using BuildTruckBack.Auth.Interfaces.REST.Resources;
@@ -148,7 +149,127 @@ public class AuthController : ControllerBase
                 AuthResourceAssembler.ToErrorResponse("An error occurred while retrieving user information"));
         }
     }
+    /// <summary>
+    /// Request password reset email
+    /// </summary>
+    /// <param name="request">Email address for password reset</param>
+    /// <returns>Success message</returns>
+    /// <response code="200">Reset email sent successfully (always returned for security)</response>
+    /// <response code="400">Invalid request data</response>
+    /// <response code="500">Internal server error</response>
+    [HttpPost("forgot-password")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(PasswordResetResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+    {
+        try
+        {
+            _logger.LogInformation("Password reset request for email: {Email}", request.Email);
 
+            // Validate model state
+            if (!ModelState.IsValid)
+            {
+                _logger.LogWarning("Invalid forgot password request for email: {Email}", request.Email);
+                return BadRequest(AuthResourceAssembler.ToErrorResponse("Invalid request data"));
+            }
+
+            // Get client information
+            var ipAddress = GetClientIpAddress();
+            var userAgent = GetClientUserAgent();
+
+            // Create command
+            var command = new SendPasswordResetCommand(request.Email, ipAddress, userAgent);
+
+            // Execute command (always returns true for security)
+            var result = await _authCommandService.HandleSendPasswordResetAsync(command);
+
+            _logger.LogInformation("Password reset request processed for email: {Email}", request.Email);
+
+            // Always return success for security (don't reveal if email exists)
+            var response = new PasswordResetResponse
+            {
+                Message = "Si el email está registrado, recibirás un enlace para restablecer tu contraseña.",
+                Success = true
+            };
+
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error processing forgot password request for email: {Email}", request.Email);
+            
+            // Still return success for security
+            var response = new PasswordResetResponse
+            {
+                Message = "Si el email está registrado, recibirás un enlace para restablecer tu contraseña.",
+                Success = true
+            };
+            
+            return Ok(response);
+        }
+    }
+
+    /// <summary>
+    /// Reset password with token
+    /// </summary>
+    /// <param name="request">Reset password data with token</param>
+    /// <returns>Success or error message</returns>
+    /// <response code="200">Password reset successfully</response>
+    /// <response code="400">Invalid request data or expired token</response>
+    /// <response code="500">Internal server error</response>
+    [HttpPost("reset-password")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(PasswordResetResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+    {
+        try
+        {
+            _logger.LogInformation("Password reset attempt for email: {Email}", request.Email);
+
+            // Validate model state
+            if (!ModelState.IsValid)
+            {
+                _logger.LogWarning("Invalid reset password request for email: {Email}", request.Email);
+                return BadRequest(AuthResourceAssembler.ToErrorResponse("Datos de solicitud inválidos"));
+            }
+
+            // Get client information
+            var ipAddress = GetClientIpAddress();
+            var userAgent = GetClientUserAgent();
+
+            // Create command
+            var command = new ResetPasswordCommand(request.Token, request.Email, request.NewPassword, ipAddress, userAgent);
+
+            // Execute command
+            var result = await _authCommandService.HandleResetPasswordAsync(command);
+
+            if (!result)
+            {
+                _logger.LogWarning("Password reset failed for email: {Email}", request.Email);
+                return BadRequest(AuthResourceAssembler.ToErrorResponse("Token inválido, expirado o datos incorrectos"));
+            }
+
+            _logger.LogInformation("Password reset successful for email: {Email}", request.Email);
+
+            var response = new PasswordResetResponse
+            {
+                Message = "Contraseña restablecida exitosamente. Ahora puedes iniciar sesión con tu nueva contraseña.",
+                Success = true
+            };
+
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during password reset for email: {Email}", request.Email);
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                AuthResourceAssembler.ToErrorResponse("Error interno del servidor"));
+        }
+    }
     #region Private Helper Methods
 
     private string? GetClientIpAddress()
