@@ -18,7 +18,8 @@ public static class ConfigurationSettingsResourceFromEntityAssembler
             configurationSettings.Themes.ToString(),
             configurationSettings.Plans.ToString(),
             configurationSettings.NotificationsEnable.ToString().ToLower(),
-            configurationSettings.EmailNotifications.ToString().ToLower()
+            configurationSettings.EmailNotifications.ToString().ToLower(),
+            configurationSettings.TutorialsCompleted.ToJsonString()
         );
         /*{
             Id = entity.Id,

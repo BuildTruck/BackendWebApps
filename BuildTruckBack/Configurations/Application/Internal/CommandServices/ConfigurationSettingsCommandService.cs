@@ -3,6 +3,8 @@ using BuildTruckBack.Configurations.Domain.Model.Commands;
 using BuildTruckBack.Configurations.Domain.Model.ValueObjects;
 using BuildTruckBack.Configurations.Domain.Repositories;
 using BuildTruckBack.Configurations.Domain.Services;
+using BuildTruckBack.Notifications.Domain.Model.ValueObjects;
+using BuildTruckBack.Notifications.Interfaces.ACL;
 using BuildTruckBack.Shared.Domain.Repositories;
 
 namespace BuildTruckBack.Configurations.Application.Internal.CommandServices;
@@ -15,11 +17,13 @@ public class ConfigurationSettingsCommandService : IConfigurationSettingsCommand
 {
     private readonly IConfigurationSettingsRepository _configurationSettingsRepository;
     private readonly IUnitOfWork _unitOfWork;
-
-    public ConfigurationSettingsCommandService(IConfigurationSettingsRepository configurationSettingsRepository, IUnitOfWork unitOfWork)
+    private readonly INotificationContextFacade _notificationFacade;
+    public ConfigurationSettingsCommandService(IConfigurationSettingsRepository configurationSettingsRepository, IUnitOfWork unitOfWork,
+        INotificationContextFacade notificationFacade)
     {
         _configurationSettingsRepository = configurationSettingsRepository;
         _unitOfWork = unitOfWork;
+        _notificationFacade = notificationFacade;
     }
 
     public async Task<ConfigurationSettings> Handle(CreateConfigurationSettingsCommand command)
@@ -40,7 +44,8 @@ public class ConfigurationSettingsCommandService : IConfigurationSettingsCommand
             command.Themes,
             command.Plans,
             command.NotificationsEnables,
-            command.EmailNotification
+            command.EmailNotification,
+            command.TutorialsCompleted ?? new TutorialProgress()
         );
         
         /*{
@@ -54,6 +59,31 @@ public class ConfigurationSettingsCommandService : IConfigurationSettingsCommand
 
         await _configurationSettingsRepository.AddAsync(configurationSettings);
         await _unitOfWork.CompleteAsync();
+        try
+        {
+            await _notificationFacade.CreateNotificationForUserAsync(
+                configurationSettings.UserId,
+                NotificationType.SystemNotification,
+                NotificationContext.System,
+                "Configuración Creada",
+                "Tu configuración del sistema ha sido creada exitosamente.",
+                NotificationPriority.Low
+            );
+
+            await _notificationFacade.CreateNotificationForRoleAsync(
+                UserRole.Admin,
+                NotificationType.UserRegistered,
+                NotificationContext.System,
+                "Nueva Configuración de Usuario",
+                $"Usuario {configurationSettings.UserId} ha creado su configuración del sistema.",
+                NotificationPriority.Low
+            );
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error sending notifications: {ex.Message}");
+        }
+        
         return configurationSettings;
     }
 
@@ -76,10 +106,28 @@ public class ConfigurationSettingsCommandService : IConfigurationSettingsCommand
         configurationSettings.Plans = command.Plans;
         configurationSettings.NotificationsEnable = command.NotificationsEnables;
         configurationSettings.EmailNotifications = command.EmailNotification;
+        configurationSettings.TutorialsCompleted = command.TutorialsCompleted;
         configurationSettings.UpdatedAt = DateTime.UtcNow;
 
         await _configurationSettingsRepository.UpdateAsync(configurationSettings);
         await _unitOfWork.CompleteAsync();
+        
+        try
+        {
+            await _notificationFacade.CreateNotificationForUserAsync(
+                configurationSettings.UserId,
+                NotificationType.SystemNotification,
+                NotificationContext.System,
+                "Configuración Actualizada",
+                "Tu configuración del sistema ha sido actualizada exitosamente.",
+                NotificationPriority.Low
+            );
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error sending notifications: {ex.Message}");
+        }
+        
         return configurationSettings;
     }
 }

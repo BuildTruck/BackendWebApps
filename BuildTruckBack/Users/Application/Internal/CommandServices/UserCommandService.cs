@@ -77,12 +77,20 @@ public class UserCommandService(
                     role: NotificationUserRole.Admin,
                     type: NotificationType.UserRegistered,
                     context: NotificationContext.System,
-                    title: "👤 Nuevo Usuario Registrado",
+                    title: "Nuevo Usuario Registrado",
                     message: $"Se registró el usuario {user.FullName} con rol {user.Role.Role}.",
                     priority: NotificationPriority.Normal,
                     actionUrl: $"/users/{user.Id}",
                     relatedEntityId: user.Id,
                     relatedEntityType: "User"
+                );
+                await _notificationFacade.CreateNotificationForUserAsync(
+                    user.Id,
+                    NotificationType.SystemNotification,
+                    NotificationContext.System,
+                    "Bienvenido a BuildTruck",
+                    "Tu cuenta ha sido creada exitosamente. ¡Bienvenido!",
+                    NotificationPriority.Normal
                 );
             }
             catch (Exception notificationEx)

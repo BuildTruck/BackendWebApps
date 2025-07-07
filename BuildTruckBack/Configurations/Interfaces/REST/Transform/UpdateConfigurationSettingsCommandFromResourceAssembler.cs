@@ -30,6 +30,7 @@ public static class UpdateConfigurationSettingsCommandFromResourceAssembler
             theme,
             plan,
             NotificationsEnables: ParseToBoolean(resource.NotificationsEnable),
-            EmailNotification: ParseToBoolean(resource.EmailNotifications));
+            EmailNotification: ParseToBoolean(resource.EmailNotifications),
+            TutorialsCompleted: new TutorialProgress(resource.TutorialsCompleted)); 
     }
 }
