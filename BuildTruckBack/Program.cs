@@ -155,7 +155,8 @@ builder.Services.AddCors(options =>
                 "https://buildtruck-99bc0.web.app",  
                 "https://buildtruck-99bc0.firebaseapp.com",
                 "https://buildtruck.netlify.app",
-                "https://a160c5e0-b357-45c1-952c-1a8cc886f536.cfargotunnel.com"
+                "https://a160c5e0-b357-45c1-952c-1a8cc886f536.cfargotunnel.com",
+                "https://guitars-talk-seasonal-annoying.trycloudflare.com"
             )
             .AllowAnyHeader()
             .AllowAnyMethod()
