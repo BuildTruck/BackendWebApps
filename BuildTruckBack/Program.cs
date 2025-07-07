@@ -503,6 +503,8 @@ builder.Services.AddScoped<BuildTruckBack.Notifications.Application.Internal.Out
 
 // External Facade
 builder.Services.AddScoped<BuildTruckBack.Notifications.Interfaces.ACL.INotificationContextFacade, BuildTruckBack.Notifications.Interfaces.ACL.Services.NotificationContextFacade>();
+// En la sección de NOTIFICATIONS MODULE, agrega:
+builder.Services.AddScoped<BuildTruckBack.Notifications.Application.ACL.Services.IWebSocketService, BuildTruckBack.Notifications.Infrastructure.ACL.WebSocketService>();
 
 builder.Services.AddSignalR();
 
