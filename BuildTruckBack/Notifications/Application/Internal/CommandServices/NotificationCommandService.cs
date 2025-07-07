@@ -1,3 +1,4 @@
+using BuildTruckBack.Notifications.Application.ACL.Services;
 using BuildTruckBack.Notifications.Domain.Model.Aggregates;
 using BuildTruckBack.Notifications.Domain.Model.Commands;
 using BuildTruckBack.Notifications.Domain.Model.ValueObjects;
@@ -10,16 +11,19 @@ namespace BuildTruckBack.Notifications.Application.Internal.CommandServices;
 public class NotificationCommandService : INotificationCommandService
 {
     private readonly INotificationRepository _notificationRepository;
-    private readonly INotificationDeliveryService _deliveryService;  // ← CAMBIAR A ESTO
+    private readonly INotificationDeliveryService _deliveryService; 
+    private readonly IWebSocketService _webSocketService;
     private readonly IUnitOfWork _unitOfWork;
 
     public NotificationCommandService(
         INotificationRepository notificationRepository,
-        INotificationDeliveryService deliveryService,  // ← CAMBIAR A ESTO
+        INotificationDeliveryService deliveryService, 
+        IWebSocketService webSocketService,
         IUnitOfWork unitOfWork)
     {
         _notificationRepository = notificationRepository;
-        _deliveryService = deliveryService;  // ← CAMBIAR A ESTO
+        _deliveryService = deliveryService; 
+        _webSocketService = webSocketService;
         _unitOfWork = unitOfWork;
     }
 
@@ -48,7 +52,15 @@ public class NotificationCommandService : INotificationCommandService
 
         await _notificationRepository.AddAsync(notification);
         await _unitOfWork.CompleteAsync();
-        
+        try
+        {
+            await _webSocketService.SendToUserAsync(notification.UserId, notification);
+            Console.WriteLine($"🔊 WebSocket enviado para notificación {notification.Id}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Error enviando WebSocket: {ex.Message}");
+        }
         await CreateDeliveriesForNotification(notification);
 
         return notification.Id;
