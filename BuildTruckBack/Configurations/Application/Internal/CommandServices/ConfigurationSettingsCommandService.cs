@@ -112,21 +112,6 @@ public class ConfigurationSettingsCommandService : IConfigurationSettingsCommand
         await _configurationSettingsRepository.UpdateAsync(configurationSettings);
         await _unitOfWork.CompleteAsync();
         
-        try
-        {
-            await _notificationFacade.CreateNotificationForUserAsync(
-                configurationSettings.UserId,
-                NotificationType.SystemNotification,
-                NotificationContext.System,
-                "Configuración Actualizada",
-                "Tu configuración del sistema ha sido actualizada exitosamente.",
-                NotificationPriority.Low
-            );
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error sending notifications: {ex.Message}");
-        }
         
         return configurationSettings;
     }
