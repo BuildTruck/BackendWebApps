@@ -114,9 +114,13 @@ public class ProjectsController : ControllerBase
     }
 
     /// <summary>
-    /// Get projects by manager ID
-    /// GET /api/v1/projects/by-manager/{id}
+    /// Retrieves all projects assigned to a specific manager.
     /// </summary>
+    /// <param name="id">The manager's user ID.</param>
+    /// <returns>A list of project summary resources.</returns>
+    /// <response code="200">Projects retrieved successfully.</response>
+    /// <response code="400">The provided manager ID is invalid.</response>
+    /// <response code="500">Unexpected server error.</response>
     [HttpGet("by-manager/{id}")]
     [ProducesResponseType(typeof(List<ProjectSummaryResource>), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(string), (int)HttpStatusCode.BadRequest)]
