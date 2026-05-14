@@ -55,7 +55,11 @@ jobs:
             # ── 4. Build and start containers ────────────
             echo ""
             echo "🔨 [4/5] Building and starting containers..."
-            docker compose up -d --build
+            docker compose up -d --build 2>&1 | tee /tmp/compose-up.log
+            if grep -q "ERROR\|exit code" /tmp/compose-up.log; then
+              echo "❌ Build failed! Check logs above."
+              exit 1
+            fi
             echo "✅ Containers started"
 
             # ── 5. Cleanup ────────────────────────────────

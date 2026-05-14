@@ -16,6 +16,8 @@ using BuildTruckProjectService.Users.Application.Internal.OutboundServices;
 using BuildTruckProjectService.Users.Infrastructure.Http;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using System.Text;
@@ -142,7 +144,12 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ProjectServiceDbContext>();
-    context.Database.EnsureCreated();
+    try
+    {
+        var creator = context.GetService<Microsoft.EntityFrameworkCore.Storage.IRelationalDatabaseCreator>();
+        creator.CreateTables();
+    }
+    catch { }
 }
 
 app.UseSwagger();

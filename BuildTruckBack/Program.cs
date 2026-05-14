@@ -17,6 +17,8 @@ using BuildTruckBack.Shared.Infrastructure.Interfaces.ASP.Configuration;
 using BuildTruckBack.Shared.Infrastructure.Persistence.EFC.Configuration;
 using BuildTruckBack.Shared.Infrastructure.Persistence.EFC.Repositories;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.OpenApi;
 using BuildTruckBack.Shared.Infrastructure.ExternalServices.Email.Configuration;
 using BuildTruckBack.Shared.Infrastructure.ExternalServices.Email.Services;
@@ -455,7 +457,12 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    context.Database.EnsureCreated();
+    try
+    {
+        var creator = context.GetService<IRelationalDatabaseCreator>();
+        creator.CreateTables();
+    }
+    catch { }
 }
 
 // 2. Swagger
