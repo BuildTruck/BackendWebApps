@@ -49,14 +49,16 @@ jobs:
             # ── 3. Stop running containers ───────────────
             echo ""
             echo "🛑 [3/5] Stopping running containers..."
-            docker compose down
+            docker compose down --remove-orphans
+            docker rm -f buildtruck-mysql buildtruck-backend buildtruck-user-service buildtruck-project-service 2>/dev/null || true
+            docker network rm backendwebapps_buildtruck-network 2>/dev/null || true
             echo "✅ Containers stopped"
 
             # ── 4. Build and start containers ────────────
             echo ""
             echo "🔨 [4/5] Building and starting containers..."
             docker compose up -d --build 2>&1 | tee /tmp/compose-up.log
-            if grep -q "ERROR\|exit code" /tmp/compose-up.log; then
+            if grep -q "^.*ERROR\|exit code [^0]" /tmp/compose-up.log; then
               echo "❌ Build failed! Check logs above."
               exit 1
             fi
@@ -65,7 +67,7 @@ jobs:
             # ── 5. Cleanup ────────────────────────────────
             echo ""
             echo "🧹 [5/5] Cleaning up unused Docker resources..."
-            docker system prune -f
+            docker image prune -f
             echo "✅ Cleanup done"
 
             # ── Summary ───────────────────────────────────
