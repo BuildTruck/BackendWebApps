@@ -25,7 +25,7 @@ using BuildTruckUserService.Users.Infrastructure.Persistence.EFC.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using System.Text;
 
 using AuthUserContextService = BuildTruckUserService.Auth.Application.ACL.Services.IUserContextService;
@@ -81,7 +81,7 @@ builder.Services.AddDbContext<UserServiceDbContext>(options =>
 builder.Services.Configure<TokenSettings>(builder.Configuration.GetSection("TokenSettings"));
 
 var tokenSettings = builder.Configuration.GetSection("TokenSettings").Get<TokenSettings>();
-if (opciotokenSettings == null || !tokenSettings.IsValid())
+if (tokenSettings == null || !tokenSettings.IsValid())
     throw new InvalidOperationException("JWT TokenSettings are missing or invalid");
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -113,21 +113,11 @@ builder.Services.AddSwaggerGen(options =>
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         In = ParameterLocation.Header,
-        Description = "Please enter token",
+        Description = "JWT token — paste without 'Bearer ' prefix",
         Name = "Authorization",
         Type = SecuritySchemeType.Http,
         BearerFormat = "JWT",
         Scheme = "bearer"
-    });
-    options.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference { Id = "Bearer", Type = ReferenceType.SecurityScheme }
-            },
-            Array.Empty<string>()
-        }
     });
     options.EnableAnnotations();
 });

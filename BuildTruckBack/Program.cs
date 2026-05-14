@@ -17,7 +17,7 @@ using BuildTruckBack.Shared.Infrastructure.Interfaces.ASP.Configuration;
 using BuildTruckBack.Shared.Infrastructure.Persistence.EFC.Configuration;
 using BuildTruckBack.Shared.Infrastructure.Persistence.EFC.Repositories;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using BuildTruckBack.Shared.Infrastructure.ExternalServices.Email.Configuration;
 using BuildTruckBack.Shared.Infrastructure.ExternalServices.Email.Services;
 using BuildTruckBack.Shared.Infrastructure.ExternalServices.Cloudinary.Configuration;
@@ -104,7 +104,6 @@ using StatsPersonnelService = BuildTruckBack.Stats.Application.ACL.Services.IPer
 using StatsPersonnelServiceImpl = BuildTruckBack.Stats.Infrastructure.ACL.PersonnelContextService;
 
 using Microsoft.Extensions.Options;
-using Microsoft.OpenApi.Any;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using DocumentationCloudinaryService = BuildTruckBack.Documentation.Infrastructure.ACL.CloudinaryService;
 
@@ -194,46 +193,20 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
-    options.SwaggerDoc("v1",
-        new OpenApiInfo
-        {
-            Title = "BuildTruckBack.API",
-            Version = "v1",
-            Description = "BuildTruck Platform API",
-            TermsOfService = new Uri("https://buildtruck.com/tos"),
-            Contact = new OpenApiContact
-            {
-                Name = "BuildTruck Team",
-                Email = "contact@buildtruck.com"
-            },
-            License = new OpenApiLicense
-            {
-                Name = "Apache 2.0",
-                Url = new Uri("https://www.apache.org/licenses/LICENSE-2.0.html")
-            }
-        });
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "BuildTruckBack.API",
+        Version = "v1",
+        Description = "BuildTruck Platform API"
+    });
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         In = ParameterLocation.Header,
-        Description = "Please enter token",
+        Description = "JWT token — paste without 'Bearer ' prefix",
         Name = "Authorization",
         Type = SecuritySchemeType.Http,
         BearerFormat = "JWT",
         Scheme = "bearer"
-    });
-    options.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Id = "Bearer",
-                    Type = ReferenceType.SecurityScheme
-                }
-            },
-            Array.Empty<string>()
-        }
     });
     options.EnableAnnotations();
 });
