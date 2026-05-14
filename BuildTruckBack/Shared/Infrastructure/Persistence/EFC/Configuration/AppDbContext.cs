@@ -1,4 +1,3 @@
-using BuildTruckBack.Users.Domain.Model.Aggregates;
 using BuildTruckBack.Configurations.Domain.Model.Aggregates;
 using BuildTruckBack.Configurations.Domain.Model.ValueObjects;
 using BuildTruckBack.Configurations.Infrastructure.Persistence.EFC.Configuration;
@@ -22,9 +21,6 @@ namespace BuildTruckBack.Shared.Infrastructure.Persistence.EFC.Configuration;
 /// </param>
 public class AppDbContext(DbContextOptions options) : DbContext(options)
 {
-    // ✅ Users DbSet
-    public DbSet<User> Users { get; set; }
-    
     public DbSet<Incident> Incidents { get; set; }
     
     // ✅ Projects DbSet
@@ -96,46 +92,6 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
         builder.Ignore<BuildTruckBack.Notifications.Domain.Model.ValueObjects.NotificationScope>();
         builder.Ignore<BuildTruckBack.Notifications.Domain.Model.ValueObjects.UserRole>();
         
-        // ===== USERS CONTEXT CONFIGURATION =====
-        builder.Entity<User>().HasKey(u => u.Id);
-        builder.Entity<User>().Property(u => u.Id).IsRequired().ValueGeneratedOnAdd();
-        
-        // Configure PersonName Value Object
-        builder.Entity<User>().OwnsOne(u => u.Name, n =>
-        {
-            n.WithOwner().HasForeignKey("Id");
-            n.Property(p => p.FirstName).HasColumnName("FirstName").IsRequired().HasMaxLength(50);
-            n.Property(p => p.LastName).HasColumnName("LastName").IsRequired().HasMaxLength(50);
-        });
-
-        // Configure CorporateEmail Value Object
-        builder.Entity<User>().OwnsOne(u => u.CorporateEmail, e =>
-        {
-            e.WithOwner().HasForeignKey("Id");
-            e.Property(a => a.Address).HasColumnName("Email").IsRequired().HasMaxLength(100);
-        });
-
-        // Configure UserRole Value Object
-        builder.Entity<User>().OwnsOne(u => u.Role, r =>
-        {
-            r.WithOwner().HasForeignKey("Id");
-            r.Property(p => p.Role).HasColumnName("Role").IsRequired().HasMaxLength(20);
-        });
-
-        // Configure ContactInfo Value Object
-        builder.Entity<User>().OwnsOne(u => u.ContactInfo, c =>
-        {
-            c.WithOwner().HasForeignKey("Id");
-            c.Property(p => p.PersonalEmailAddress).HasColumnName("PersonalEmail").HasMaxLength(100);
-            c.Property(p => p.Phone).HasColumnName("Phone").HasMaxLength(20);
-        });
-
-        // Other User properties
-        builder.Entity<User>().Property(u => u.PasswordHash).IsRequired().HasMaxLength(500);
-        builder.Entity<User>().Property(u => u.ProfileImageUrl).HasMaxLength(500);
-        builder.Entity<User>().Property(u => u.IsActive).IsRequired().HasDefaultValue(true);
-        builder.Entity<User>().Property(u => u.LastLogin);
-
         // ===== PROJECTS CONTEXT CONFIGURATION =====
         builder.Entity<Project>().HasKey(p => p.Id);
         builder.Entity<Project>().Property(p => p.Id).IsRequired().ValueGeneratedOnAdd();
@@ -203,33 +159,8 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
             );
 
         builder.Entity<ConfigurationSettings>().HasIndex(c => c.UserId).IsUnique().HasDatabaseName("IX_Configurations_User_Id");
-        builder.Entity<ConfigurationSettings>().HasOne<User>()
-            .WithOne()
-            .HasForeignKey<ConfigurationSettings>(c => c.UserId)
-            .OnDelete(DeleteBehavior.Restrict)
-            .HasConstraintName("FK_Configurations_Users_User_Id");
+        // FK Configurations->Users exists in MySQL but not registered in EF (owned by UserServiceDbContext)
 
-        // Apply global filters (if any)
-        // builder.ApplyGlobalFilters();
-
-        // ===== FOREIGN KEY RELATIONSHIPS =====
-        
-        // Manager relationship: 1 Manager -> N Projects
-        builder.Entity<Project>()
-            .HasOne<User>() // No navigation property, solo FK
-            .WithMany() // No navigation property en User
-            .HasForeignKey(p => p.ManagerId)
-            .OnDelete(DeleteBehavior.Restrict) // No borrar User si tiene Projects
-            .HasConstraintName("FK_Projects_Users_ManagerId");
-
-        // Supervisor relationship: 1 Supervisor -> 1 Project (at a time)
-        builder.Entity<Project>()
-            .HasOne<User>() // No navigation property, solo FK
-            .WithMany() // No navigation property en User  
-            .HasForeignKey(p => p.SupervisorId)
-            .OnDelete(DeleteBehavior.SetNull) // Si se borra Supervisor, project.SupervisorId = null
-            .HasConstraintName("FK_Projects_Users_SupervisorId");
-        
         // ===== INDEXES FOR PERFORMANCE =====
         
         // Index for manager queries

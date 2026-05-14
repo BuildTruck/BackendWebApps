@@ -48,11 +48,7 @@ public class NotificationPreferenceConfiguration : IEntityTypeConfiguration<Noti
         builder.HasIndex(np => np.UserId);
         builder.HasIndex(np => new { np.UserId, np.Context })
             .IsUnique();
-        builder.HasOne<BuildTruckBack.Users.Domain.Model.Aggregates.User>()
-            .WithMany()
-            .HasForeignKey(np => np.UserId)  // ✅ Esta propiedad SÍ existe
-            .OnDelete(DeleteBehavior.Cascade)
-            .HasConstraintName("FK_NotificationPreferences_Users_UserId");
+        // FK NotificationPreferences->Users exists in MySQL but not registered in EF (owned by UserServiceDbContext)
     }
     
 }

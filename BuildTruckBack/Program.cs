@@ -8,12 +8,7 @@ using BuildTruckBack.Configurations.Domain.Repositories;
 using BuildTruckBack.Configurations.Domain.Services;
 using BuildTruckBack.Configurations.Infrastructure.Persistence.EFC.Repositories;
 
-// Users Context
-using BuildTruckBack.Users.Application.Internal.CommandServices;
-using BuildTruckBack.Users.Application.Internal.QueryServices;
-using BuildTruckBack.Users.Domain.Services;
-using BuildTruckBack.Users.Infrastructure.Persistence.EFC.Repositories;
-using BuildTruckBack.Users.Application.ACL.Services; 
+// Users Context (only facade contract — implementation calls UserService via HTTP)
 using BuildTruckBack.Users.Application.Internal.OutboundServices;
 
 // Shared Context
@@ -28,15 +23,8 @@ using BuildTruckBack.Shared.Infrastructure.ExternalServices.Email.Services;
 using BuildTruckBack.Shared.Infrastructure.ExternalServices.Cloudinary.Configuration;
 using BuildTruckBack.Shared.Infrastructure.ExternalServices.Cloudinary.Services;
 
-// Auth Context (with alias to avoid conflicts)
-using AuthUserContextService = BuildTruckBack.Auth.Application.ACL.Services.IUserContextService;
-using BuildTruckBack.Auth.Application.Internal.CommandServices;
-using BuildTruckBack.Auth.Application.Internal.QueryServices;
-using BuildTruckBack.Auth.Application.Internal.OutboundServices;
-using BuildTruckBack.Auth.Domain.Services;
-using BuildTruckBack.Auth.Infrastructure.ACL;
-using BuildTruckBack.Auth.Infrastructure.Tokens.JWT.Configuration;
-using BuildTruckBack.Auth.Infrastructure.Tokens.JWT.Services;
+// JWT validation (monolith validates tokens issued by UserService)
+using BuildTruckBack.Shared.Infrastructure.Tokens.JWT;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
@@ -119,7 +107,6 @@ using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Any;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using DocumentationCloudinaryService = BuildTruckBack.Documentation.Infrastructure.ACL.CloudinaryService;
-using IUserRepository = BuildTruckBack.Users.Domain.Repositories.IUserRepository;
 
 
 // ===== LOAD ENVIRONMENT VARIABLES =====
@@ -253,6 +240,14 @@ builder.Services.AddSwaggerGen(options =>
 
 // ===== DEPENDENCY INJECTION =====
 
+// HTTP Client for UserService (microservice communication)
+builder.Services.AddHttpClient("UserService", client =>
+{
+    client.BaseAddress = new Uri(
+        builder.Configuration["UserService:BaseUrl"] ?? "http://buildtruck-user-service:8080");
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
+
 // Shared Bounded Context - Infrastructure
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
@@ -274,9 +269,6 @@ builder.Services.Configure<CloudinarySettings>(
 // Register Cloudinary Image Service (Shared)
 builder.Services.AddScoped<ICloudinaryImageService, CloudinaryImageService>();
 
-// Register Users Domain Image Service (ACL)
-builder.Services.AddScoped<IImageService, ImageServiceAdapter>();
-
 // Validar configuración de Cloudinary al inicio
 var cloudinarySettings = builder.Configuration.GetSection("CloudinarySettings").Get<CloudinarySettings>();
 if (cloudinarySettings == null || !cloudinarySettings.IsValid)
@@ -294,21 +286,8 @@ builder.Services.AddScoped<IConfigurationSettingsCommandService, ConfigurationSe
 builder.Services.AddScoped<IConfigurationSettingsQueryService, ConfigurationSettingsQueryService>();
 builder.Services.AddScoped<IConfigurationSettingsFacade, ConfigurationSettingsFacade>();
 
-// Users Bounded Context
-builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<IUserCommandService, UserCommandService>();
-builder.Services.AddScoped<IUserQueryService, UserQueryService>();
-builder.Services.AddScoped<IUserFacade, UserFacade>();
-
-// Users ACL Services
-builder.Services.AddScoped<BuildTruckBack.Users.Application.ACL.Services.IEmailService, EmailServiceAdapter>();
-
-// Auth Bounded Context
-builder.Services.AddScoped<AuthUserContextService, BuildTruckBack.Auth.Infrastructure.ACL.UserContextService>();
-builder.Services.AddScoped<TokenService>();
-builder.Services.AddScoped<IAuthCommandService, AuthCommandService>();
-builder.Services.AddScoped<IAuthQueryService, AuthQueryService>();
-builder.Services.AddScoped<IAuthFacade, AuthFacade>();
+// Users — IUserFacade delegates to BuildTruckUserService via HTTP
+builder.Services.AddScoped<IUserFacade, BuildTruckBack.Users.Infrastructure.Http.HttpUserFacade>();
 
 // Projects Bounded Context
 builder.Services.AddScoped<ProjectRepository>();

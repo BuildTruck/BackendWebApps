@@ -1,21 +1,15 @@
-// BuildTruckBack.Stats.Infrastructure.ACL.UserContextService
 namespace BuildTruckBack.Stats.Infrastructure.ACL;
 
 using BuildTruckBack.Stats.Application.ACL.Services;
 using BuildTruckBack.Users.Application.Internal.OutboundServices;
 using Microsoft.Extensions.Logging;
 
-/// <summary>
-/// ACL Service implementation for Users bounded context (only user-related operations)
-/// </summary>
 public class UserContextService : IUserContextService
 {
     private readonly IUserFacade _userFacade;
     private readonly ILogger<UserContextService> _logger;
 
-    public UserContextService(
-        IUserFacade userFacade,
-        ILogger<UserContextService> logger)
+    public UserContextService(IUserFacade userFacade, ILogger<UserContextService> logger)
     {
         _userFacade = userFacade ?? throw new ArgumentNullException(nameof(userFacade));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -26,7 +20,7 @@ public class UserContextService : IUserContextService
         try
         {
             var user = await _userFacade.FindByIdAsync(userId);
-            return user != null && user.Role.ToString().ToLower() == "manager" && user.IsActive;
+            return user != null && user.Role.Equals("manager", StringComparison.OrdinalIgnoreCase) && user.IsActive;
         }
         catch (Exception ex)
         {
@@ -45,15 +39,15 @@ public class UserContextService : IUserContextService
             return new Dictionary<string, object>
             {
                 ["Id"] = user.Id,
-                ["Name"] = user.Name.FirstName,
-                ["LastName"] = user.Name.LastName,
+                ["Name"] = user.FirstName,
+                ["LastName"] = user.LastName,
                 ["FullName"] = user.FullName,
-                ["Email"] = user.CorporateEmail.Address,
-                ["PersonalEmail"] = user.ContactInfo.PersonalEmailAddress ?? "N/A",
-                ["Phone"] = user.ContactInfo.Phone ?? "N/A",
-                ["Role"] = user.Role.ToString(),
+                ["Email"] = user.Email,
+                ["PersonalEmail"] = (object?)user.PersonalEmail ?? "N/A",
+                ["Phone"] = (object?)user.Phone ?? "N/A",
+                ["Role"] = user.Role,
                 ["IsActive"] = user.IsActive,
-                ["LastLogin"] = user.LastLogin
+                ["LastLogin"] = (object?)user.LastLogin ?? "N/A"
             };
         }
         catch (Exception ex)

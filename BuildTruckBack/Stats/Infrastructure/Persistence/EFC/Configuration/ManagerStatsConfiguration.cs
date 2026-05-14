@@ -1,5 +1,4 @@
 namespace BuildTruckBack.Stats.Infrastructure.Persistence.EFC.Configuration;
-using BuildTruckBack.Users.Domain.Model.Aggregates;
 using BuildTruckBack.Stats.Domain.Model.Aggregates;
 using BuildTruckBack.Stats.Domain.Model.ValueObjects;
 using Microsoft.EntityFrameworkCore;
@@ -348,11 +347,7 @@ public class ManagerStatsConfiguration : IEntityTypeConfiguration<ManagerStats>
         builder.Property(s => s.ManagerId)
             .IsRequired()
             .HasComment("References Users.Id");
-        builder.HasOne<User>()
-            .WithMany()
-            .HasForeignKey(s => s.ManagerId)
-            .OnDelete(DeleteBehavior.Restrict)
-            .HasConstraintName("FK_ManagerStats_Users_ManagerId");
+        // FK ManagerStats->Users exists in MySQL but not registered in EF (owned by UserServiceDbContext)
         // Audit fields (CreatedDate, UpdatedDate handled by IEntityWithCreatedUpdatedDate)
     }
 }

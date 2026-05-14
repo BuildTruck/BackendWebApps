@@ -1,3 +1,5 @@
+using System.Net.Http.Json;
+using System.Text.Json;
 using BuildTruckBack.Notifications.Application.ACL.Services;
 using BuildTruckBack.Users.Application.Internal.OutboundServices;
 
@@ -6,10 +8,12 @@ namespace BuildTruckBack.Notifications.Infrastructure.ACL;
 public class UserContextService : IUserContextService
 {
     private readonly IUserFacade _userFacade;
+    private readonly IHttpClientFactory _httpClientFactory;
 
-    public UserContextService(IUserFacade userFacade)
+    public UserContextService(IUserFacade userFacade, IHttpClientFactory httpClientFactory)
     {
         _userFacade = userFacade;
+        _httpClientFactory = httpClientFactory;
     }
 
     public async Task<bool> UserExistsAsync(int userId)
@@ -27,13 +31,13 @@ public class UserContextService : IUserContextService
     public async Task<string> GetUserEmailAsync(int userId)
     {
         var user = await _userFacade.FindByIdAsync(userId);
-        return user?.PersonalEmail ?? string.Empty;
+        return user?.PersonalEmail ?? user?.Email ?? string.Empty;
     }
 
     public async Task<string> GetUserRoleAsync(int userId)
     {
         var user = await _userFacade.FindByIdAsync(userId);
-        return user?.Role.Role ?? string.Empty;
+        return user?.Role ?? string.Empty;
     }
 
     public async Task<bool> IsUserActiveAsync(int userId)
@@ -42,42 +46,28 @@ public class UserContextService : IUserContextService
         return user?.IsActive ?? false;
     }
 
-    public async Task<IEnumerable<int>> GetAdminUsersAsync()
-    {
-        return await GetUsersByRoleAsync("Admin");
-    }
-
-    public async Task<IEnumerable<int>> GetManagerUsersAsync()
-    {
-        return await GetUsersByRoleAsync("Manager");
-    }
-
-    public async Task<IEnumerable<int>> GetSupervisorUsersAsync()
-    {
-        return await GetUsersByRoleAsync("Supervisor");
-    }
+    public async Task<IEnumerable<int>> GetAdminUsersAsync() => await GetUsersByRoleAsync("Admin");
+    public async Task<IEnumerable<int>> GetManagerUsersAsync() => await GetUsersByRoleAsync("Manager");
+    public async Task<IEnumerable<int>> GetSupervisorUsersAsync() => await GetUsersByRoleAsync("Supervisor");
 
     private async Task<IEnumerable<int>> GetUsersByRoleAsync(string role)
     {
-        var userIds = new List<int>();
-        var maxUserId = 1000;
-
-        for (int i = 1; i <= maxUserId; i++)
+        try
         {
-            try
-            {
-                var userRole = await GetUserRoleAsync(i);
-                if (userRole == role && await IsUserActiveAsync(i))
-                {
-                    userIds.Add(i);
-                }
-            }
-            catch
-            {
-                // Continue if user doesn't exist
-            }
-        }
+            var client = _httpClientFactory.CreateClient("UserService");
+            var response = await client.GetAsync(
+                $"/api/v1/users?role={Uri.EscapeDataString(role)}&activeOnly=true");
 
-        return userIds;
+            if (!response.IsSuccessStatusCode) return [];
+
+            var users = await response.Content.ReadFromJsonAsync<IEnumerable<UserDto>>(
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            return users?.Select(u => u.Id) ?? [];
+        }
+        catch
+        {
+            return [];
+        }
     }
 }
