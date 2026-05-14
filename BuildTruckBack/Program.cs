@@ -456,7 +456,8 @@ using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     var creator = (Microsoft.EntityFrameworkCore.Storage.IRelationalDatabaseCreator)
-        context.Database.GetService<Microsoft.EntityFrameworkCore.Storage.IDatabaseCreator>();
+        context.Database.GetInfrastructure()
+            .GetRequiredService<Microsoft.EntityFrameworkCore.Storage.IDatabaseCreator>();
     creator.CreateTables();
 }
 
