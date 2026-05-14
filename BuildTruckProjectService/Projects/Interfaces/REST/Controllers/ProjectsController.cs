@@ -157,9 +157,16 @@ public class ProjectsController : ControllerBase
     }
 
     /// <summary>
-    /// Update an existing project
-    /// PUT /api/v1/projects/{id}/update
+    /// Updates an existing project by its ID.
     /// </summary>
+    /// <param name="id">The ID of the project to update.</param>
+    /// <param name="resource">The updated project data submitted via form.</param>
+    /// <returns>The updated project resource.</returns>
+    /// <response code="200">Project updated successfully.</response>
+    /// <response code="400">Validation, business rule failure, or no changes detected.</response>
+    /// <response code="403">User is not authorized to update this project.</response>
+    /// <response code="404">Project with the given ID was not found.</response>
+    /// <response code="500">Unexpected server error.</response>
     [HttpPut("{id}/update")]
     [ProducesResponseType(typeof(ProjectResource), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(string), (int)HttpStatusCode.BadRequest)]
