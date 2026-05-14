@@ -38,3 +38,18 @@ Main deployment responsibilities include:
 
 This setup allows the frontend application and development team to interact with the backend services from a deployed environment.
 
+## API Execution and Validation
+
+The backend services can be validated using tools such as Postman. The main execution flow includes authenticating a user, storing the JWT token, and using it to access protected endpoints.
+
+Recommended validation flow:
+
+1. Authenticate with the User Service using the login endpoint.
+2. Store the returned JWT token.
+3. Validate the authenticated user endpoint.
+4. Execute project creation and project query endpoints.
+5. Review responses, status codes, and returned JSON structures.
+
+This process helps verify that the deployed Web Services are available and working correctly in the cloud environment.
+
+
