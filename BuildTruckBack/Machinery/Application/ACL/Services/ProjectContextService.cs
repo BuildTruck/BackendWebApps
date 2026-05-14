@@ -1,13 +1,14 @@
-using BuildTruckBack.Machinery.Domain.Repositories;
-using BuildTruckBack.Projects.Domain.Model.Aggregates;
 using BuildTruckBack.Machinery.Application.ACL.Services;
+using BuildTruckBack.Projects.Application.Internal.OutboundServices;
+
 namespace BuildTruckBack.Machinery.Application.ACL.Services;
 
-public class ProjectContextService(IProjectRepository projectRepository) : IProjectContextService
-{   
-    public async Task<Project?> GetProjectByIdAsync(string projectId)
-    {
-        return await projectRepository.FindByIdAsync(projectId);
-    }
+public class ProjectContextService(IProjectFacade projectFacade) : IProjectContextService
+{
+    public Task<ProjectInfo?> GetProjectByIdAsync(int projectId) =>
+        projectFacade.GetProjectByIdAsync(projectId);
+
+    public Task<bool> ExistsAsync(int projectId) =>
+        projectFacade.ExistsByIdAsync(projectId);
 }
 

@@ -1,6 +1,5 @@
 using BuildTruckBack.Configurations.Domain.Model.Aggregates;
 using BuildTruckBack.Configurations.Domain.Model.ValueObjects;
-using BuildTruckBack.Users.Domain.Model.Aggregates;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -36,12 +35,6 @@ public class ConfigurationSettingsConfiguration : IEntityTypeConfiguration<Confi
             );
 
         builder.HasIndex(c => c.UserId).IsUnique().HasDatabaseName("ix_configurations_user_id");
-
-        // Foreign key relationship: 1 User -> 1 ConfigurationSettings
-        builder.HasOne<User>()
-            .WithOne()
-            .HasForeignKey<ConfigurationSettings>(c => c.UserId)
-            .OnDelete(DeleteBehavior.Restrict)
-            .HasConstraintName("FK_Configurations_Users_User_Id");
+        // FK Configurations->Users exists in MySQL but not registered in EF (owned by UserServiceDbContext)
     }
 }

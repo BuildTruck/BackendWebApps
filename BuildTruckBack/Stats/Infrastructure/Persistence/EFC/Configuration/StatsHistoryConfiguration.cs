@@ -1,5 +1,4 @@
 namespace BuildTruckBack.Stats.Infrastructure.Persistence.EFC.Configuration;
-using BuildTruckBack.Users.Domain.Model.Aggregates;
 using BuildTruckBack.Stats.Domain.Model.Aggregates;
 using BuildTruckBack.Stats.Domain.Model.ValueObjects;
 using Microsoft.EntityFrameworkCore;
@@ -190,15 +189,10 @@ public class StatsHistoryConfiguration : IEntityTypeConfiguration<StatsHistory>
         // Para el diagrama:
         builder.Property(h => h.ManagerId)
             .HasComment("References Users.Id");
-        
+        // FK StatsHistory->Users exists in MySQL but not registered in EF (owned by UserServiceDbContext)
+
         builder.Property(h => h.ManagerStatsId)
             .HasComment("References ManagerStats.Id");
-        
-        builder.HasOne<User>()
-            .WithMany()
-            .HasForeignKey(h => h.ManagerId)
-            .OnDelete(DeleteBehavior.Restrict)
-            .HasConstraintName("FK_StatsHistory_Users_ManagerId");
     
         // FK to ManagerStats table
         builder.HasOne<ManagerStats>()

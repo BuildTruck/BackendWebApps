@@ -112,17 +112,9 @@ public class NotificationConfiguration : IEntityTypeConfiguration<Notification>
         builder.HasIndex(n => n.RelatedProjectId);
         builder.HasIndex(n => n.CreatedDate);
         
-        builder.HasOne<BuildTruckBack.Users.Domain.Model.Aggregates.User>()
-            .WithMany()
-            .HasForeignKey(n => n.UserId)
-            .OnDelete(DeleteBehavior.Restrict)
-            .HasConstraintName("FK_Notifications_Users_UserId");
+        // FK Notifications->Users exists in MySQL but not registered in EF (owned by UserServiceDbContext)
 
-        builder.HasOne<BuildTruckBack.Projects.Domain.Model.Aggregates.Project>()
-            .WithMany()
-            .HasForeignKey(n => n.RelatedProjectId)
-            .OnDelete(DeleteBehavior.SetNull)
-            .HasConstraintName("FK_Notifications_Projects_RelatedProjectId");
+        // FK Notifications->Projects exists in MySQL but not registered in EF (owned by ProjectServiceDbContext)
     }
     
 }
