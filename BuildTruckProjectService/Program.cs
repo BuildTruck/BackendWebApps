@@ -144,8 +144,12 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ProjectServiceDbContext>();
-    var creator = context.GetService<Microsoft.EntityFrameworkCore.Storage.IRelationalDatabaseCreator>();
-    creator.CreateTables();
+    try
+    {
+        var creator = context.GetService<Microsoft.EntityFrameworkCore.Storage.IRelationalDatabaseCreator>();
+        creator.CreateTables();
+    }
+    catch { }
 }
 
 app.UseSwagger();

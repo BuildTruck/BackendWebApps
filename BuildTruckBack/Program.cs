@@ -457,8 +457,12 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    var creator = context.GetService<IRelationalDatabaseCreator>();
-    creator.CreateTables();
+    try
+    {
+        var creator = context.GetService<IRelationalDatabaseCreator>();
+        creator.CreateTables();
+    }
+    catch { }
 }
 
 // 2. Swagger
