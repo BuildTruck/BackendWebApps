@@ -24,6 +24,8 @@ using BuildTruckUserService.Users.Domain.Services;
 using BuildTruckUserService.Users.Infrastructure.Persistence.EFC.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using System.Text;
@@ -162,7 +164,8 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<UserServiceDbContext>();
-    context.Database.EnsureCreated();
+    var creator = context.GetService<Microsoft.EntityFrameworkCore.Storage.IRelationalDatabaseCreator>();
+    creator.CreateTables();
     await DatabaseSeeder.SeedAsync(context);
 }
 
