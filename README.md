@@ -52,4 +52,20 @@ Recommended validation flow:
 
 This process helps verify that the deployed Web Services are available and working correctly in the cloud environment.
 
+## Monitoring and Collaboration
+
+The backend deployment is supported by cloud monitoring tools that help the team review service activity, logs, and infrastructure behavior. Logs and runtime events are useful for validating authentication attempts, endpoint execution, database queries, and possible runtime errors.
+
+Team collaboration is managed through GitHub, where changes are tracked using commits. This allows the team to review implementation progress, identify contributions, and maintain a clear history of backend changes during each Sprint.
+
+Useful collaboration evidence includes:
+
+- GitHub commit history.
+- GitHub Insights Pulse.
+- GitHub Insights Contributors.
+- CloudWatch logs and alarms.
+- Swagger/OpenAPI documentation.
+- Postman execution evidence.
+
+
 
