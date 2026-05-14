@@ -10,10 +10,11 @@ using System.Net;
 namespace BuildTruckProjectService.Projects.Interfaces.REST.Controllers;
 
 /// <summary>
-/// REST Controller for Project operations
+/// Handles HTTP requests for project management operations.
 /// </summary>
 /// <remarks>
-/// Handles the 4 main project endpoints with proper authorization and validation
+/// Provides endpoints to create, retrieve, update, and delete projects.
+/// All endpoints require a valid JWT bearer token.
 /// </remarks>
 [ApiController]
 [Route("api/v1/projects")]
@@ -38,9 +39,14 @@ public class ProjectsController : ControllerBase
     }
 
     /// <summary>
-    /// Create a new project
-    /// POST /api/v1/projects/create
+    /// Creates a new project.
     /// </summary>
+    /// <param name="resource">The project data submitted via form.</param>
+    /// <returns>The created project resource.</returns>
+    /// <response code="201">Project created successfully.</response>
+    /// <response code="400">Validation or business rule failure.</response>
+    /// <response code="403">User is not authorized to create a project.</response>
+    /// <response code="500">Unexpected server error.</response>
     [HttpPost("create")]
     [ProducesResponseType(typeof(ProjectResource), (int)HttpStatusCode.Created)]
     [ProducesResponseType(typeof(string), (int)HttpStatusCode.BadRequest)]
