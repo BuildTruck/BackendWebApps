@@ -18,6 +18,22 @@ jobs:
           script: |
             cd /home/ec2-user/buildtruck
             git pull origin main
+
+            # Generate .env from GitHub Secrets
+            cat > .env << 'EOF'
+            JWT_SECRET_KEY=${{ secrets.JWT_SECRET }}
+            JWT_ISSUER=BuildTruckBack
+            JWT_AUDIENCE=BuildTruckBack-Users
+            TokenSettings__SecretKey=${{ secrets.JWT_SECRET }}
+            MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}
+            SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}
+            EmailSettings__SmtpPassword=${{ secrets.SMTP_PASSWORD }}
+            CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_SECRET }}
+            CloudinarySettings__ApiSecret=${{ secrets.CLOUDINARY_SECRET }}
+            UserService__BaseUrl=http://buildtruck-user-service:8080
+            ProjectService__BaseUrl=http://buildtruck-project-service:8080
+            EOF
+
             docker-compose down
             docker-compose up -d --build
             docker system prune -f
