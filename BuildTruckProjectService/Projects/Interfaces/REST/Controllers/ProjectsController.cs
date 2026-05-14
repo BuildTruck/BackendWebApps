@@ -349,9 +349,15 @@ public class ProjectsController : ControllerBase
         }
     }
     /// <summary>
-    /// Get project by supervisor ID
-    /// GET /api/v1/projects/by-supervisor/{supervisorId}
+    /// Retrieves the active project assigned to a specific supervisor.
     /// </summary>
+    /// <param name="supervisorId">The supervisor's user ID.</param>
+    /// <returns>The most recent project resource associated with the supervisor.</returns>
+    /// <response code="200">Project retrieved successfully.</response>
+    /// <response code="400">The provided supervisor ID is invalid.</response>
+    /// <response code="403">Requesting user is not authorized to view this supervisor's project.</response>
+    /// <response code="404">No project found for the given supervisor.</response>
+    /// <response code="500">Unexpected server error.</response>
     [HttpGet("by-supervisor/{supervisorId}")]
     [ProducesResponseType(typeof(ProjectResource), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(string), (int)HttpStatusCode.BadRequest)]
