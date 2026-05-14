@@ -49,9 +49,9 @@ jobs:
             # ── 3. Stop running containers ───────────────
             echo ""
             echo "🛑 [3/5] Stopping running containers..."
-            docker compose down --remove-orphans
-            docker rm -f buildtruck-mysql buildtruck-backend buildtruck-user-service buildtruck-project-service 2>/dev/null || true
-            docker network rm backendwebapps_buildtruck-network 2>/dev/null || true
+            docker compose down -v --remove-orphans 2>/dev/null || true
+            docker rm -f buildtruck-mysql 2>/dev/null || true
+            docker volume rm backendwebapps_mysql_data 2>/dev/null || true
             echo "✅ Containers stopped"
 
             # ── 4. Build and start containers ────────────
