@@ -16,10 +16,21 @@ jobs:
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            echo "=========================================="
+            echo "🚀 Starting BuildTruck Deploy"
+            echo "📅 $(date)"
+            echo "=========================================="
+
+            # ── 1. Pull latest code ──────────────────────
+            echo ""
+            echo "📥 [1/5] Pulling latest code from main..."
             cd /home/ec2-user/buildtruck/BackendWebApps
             git pull origin main
+            echo "✅ Code updated successfully"
 
-            # Generate .env from GitHub Secrets
+            # ── 2. Generate .env ─────────────────────────
+            echo ""
+            echo "🔐 [2/5] Generating .env from secrets..."
             cat > .env << 'EOF'
             JWT_SECRET_KEY=${{ secrets.JWT_SECRET }}
             JWT_ISSUER=BuildTruckBack
@@ -33,7 +44,32 @@ jobs:
             UserService__BaseUrl=http://buildtruck-user-service:8080
             ProjectService__BaseUrl=http://buildtruck-project-service:8080
             EOF
+            echo "✅ .env generated"
 
-            docker-compose down
-            docker-compose up -d --build
+            # ── 3. Stop running containers ───────────────
+            echo ""
+            echo "🛑 [3/5] Stopping running containers..."
+            docker compose down
+            echo "✅ Containers stopped"
+
+            # ── 4. Build and start containers ────────────
+            echo ""
+            echo "🔨 [4/5] Building and starting containers..."
+            docker compose up -d --build
+            echo "✅ Containers started"
+
+            # ── 5. Cleanup ────────────────────────────────
+            echo ""
+            echo "🧹 [5/5] Cleaning up unused Docker resources..."
             docker system prune -f
+            echo "✅ Cleanup done"
+
+            # ── Summary ───────────────────────────────────
+            echo ""
+            echo "=========================================="
+            echo "📊 Container status:"
+            docker compose ps
+            echo "=========================================="
+            echo "✅ Deploy completed successfully!"
+            echo "🌐 API available at: http://${{ secrets.EC2_HOST }}"
+            echo "=========================================="
