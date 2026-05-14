@@ -1,6 +1,5 @@
 using BuildTruckBack.Incidents.Domain.Aggregates;
 using BuildTruckBack.Incidents.Domain.ValueObjects;
-using BuildTruckBack.Projects.Domain.Model.Aggregates; // ✅ Agregar este using
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -86,11 +85,6 @@ public class IncidentConfiguration : IEntityTypeConfiguration<Incident>
         builder.HasIndex(i => i.OccurredAt)
             .HasDatabaseName("IX_Incidents_OccurredAt");
 
-        // ✅ Foreign Key a Projects
-        builder.HasOne<Project>()
-            .WithMany()
-            .HasForeignKey(i => i.ProjectId)
-            .OnDelete(DeleteBehavior.SetNull) // Si se elimina el proyecto, los incidents quedan huérfanos
-            .HasConstraintName("FK_Incidents_Projects_ProjectId");
+        // FK Incidents->Projects exists in MySQL but not registered in EF (owned by ProjectServiceDbContext)
     }
 }

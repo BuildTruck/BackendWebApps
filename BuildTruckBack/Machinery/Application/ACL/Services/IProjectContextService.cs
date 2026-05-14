@@ -1,8 +1,9 @@
-using BuildTruckBack.Projects.Domain.Model.Aggregates;
+using BuildTruckBack.Projects.Application.Internal.OutboundServices;
 
 namespace BuildTruckBack.Machinery.Application.ACL.Services;
 
 public interface IProjectContextService
 {
-    Task<Project?> GetProjectByIdAsync(string projectId);
+    Task<ProjectInfo?> GetProjectByIdAsync(int projectId);
+    Task<bool> ExistsAsync(int projectId);
 }

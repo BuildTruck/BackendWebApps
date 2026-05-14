@@ -1,7 +1,6 @@
 using BuildTruckBack.Configurations.Domain.Model.Aggregates;
 using BuildTruckBack.Configurations.Domain.Model.ValueObjects;
 using BuildTruckBack.Configurations.Infrastructure.Persistence.EFC.Configuration;
-using BuildTruckBack.Projects.Domain.Model.Aggregates;
 using BuildTruckBack.Shared.Infrastructure.Persistence.EFC.Configuration.Extensions;
 using EntityFrameworkCore.CreatedUpdatedDate.Extensions;
 using Microsoft.EntityFrameworkCore;
@@ -22,9 +21,6 @@ namespace BuildTruckBack.Shared.Infrastructure.Persistence.EFC.Configuration;
 public class AppDbContext(DbContextOptions options) : DbContext(options)
 {
     public DbSet<Incident> Incidents { get; set; }
-    
-    // ✅ Projects DbSet
-    public DbSet<Project> Projects { get; set; }
 
     // ✅ Machinery DbSet
     public DbSet<Machinery.Domain.Model.Aggregates.Machinery> Machinery { get; set; }
@@ -92,52 +88,6 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
         builder.Ignore<BuildTruckBack.Notifications.Domain.Model.ValueObjects.NotificationScope>();
         builder.Ignore<BuildTruckBack.Notifications.Domain.Model.ValueObjects.UserRole>();
         
-        // ===== PROJECTS CONTEXT CONFIGURATION =====
-        builder.Entity<Project>().HasKey(p => p.Id);
-        builder.Entity<Project>().Property(p => p.Id).IsRequired().ValueGeneratedOnAdd();
-
-        // Configure ProjectName Value Object
-        builder.Entity<Project>().OwnsOne(p => p.Name, n =>
-        {
-            n.WithOwner().HasForeignKey("Id");
-            n.Property(pn => pn.Name).HasColumnName("Name").IsRequired().HasMaxLength(100);
-        });
-
-        // Configure ProjectDescription Value Object
-        builder.Entity<Project>().OwnsOne(p => p.Description, d =>
-        {
-            d.WithOwner().HasForeignKey("Id");
-            d.Property(pd => pd.Description).HasColumnName("Description").IsRequired().HasMaxLength(1000);
-        });
-
-        // Configure ProjectLocation Value Object
-        builder.Entity<Project>().OwnsOne(p => p.Location, l =>
-        {
-            l.WithOwner().HasForeignKey("Id");
-            l.Property(pl => pl.Location).HasColumnName("Location").IsRequired().HasMaxLength(200);
-        });
-
-        // Configure ProjectState Value Object
-        builder.Entity<Project>().OwnsOne(p => p.State, s =>
-        {
-            s.WithOwner().HasForeignKey("Id");
-            s.Property(ps => ps.State).HasColumnName("State").IsRequired().HasMaxLength(20);
-        });
-
-        // Configure ProjectCoordinates Value Object
-        builder.Entity<Project>().OwnsOne(p => p.Coordinates, c =>
-        {
-            c.WithOwner().HasForeignKey("Id");
-            c.Property(pc => pc.Latitude).HasColumnName("Latitude").HasPrecision(10, 8);
-            c.Property(pc => pc.Longitude).HasColumnName("Longitude").HasPrecision(11, 8);
-        });
-
-        // Other Project properties
-        builder.Entity<Project>().Property(p => p.ManagerId).IsRequired();
-        builder.Entity<Project>().Property(p => p.SupervisorId);
-        builder.Entity<Project>().Property(p => p.ImageUrl).HasMaxLength(500);
-        builder.Entity<Project>().Property(p => p.StartDate);
-        
 // ===== CONFIGURATIONS CONTEXT CONFIGURATION =====
         builder.Entity<ConfigurationSettings>().HasKey(c => c.Id);
         builder.Entity<ConfigurationSettings>().ToTable("configurations");
@@ -160,26 +110,6 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
 
         builder.Entity<ConfigurationSettings>().HasIndex(c => c.UserId).IsUnique().HasDatabaseName("IX_Configurations_User_Id");
         // FK Configurations->Users exists in MySQL but not registered in EF (owned by UserServiceDbContext)
-
-        // ===== INDEXES FOR PERFORMANCE =====
-        
-        // Index for manager queries
-        builder.Entity<Project>()
-            .HasIndex(p => p.ManagerId)
-            .HasDatabaseName("IX_Projects_ManagerId");
-
-        // Index for supervisor queries  
-        builder.Entity<Project>()
-            .HasIndex(p => p.SupervisorId)
-            .HasDatabaseName("IX_Projects_SupervisorId");
-
-
-        // Business constraint: Solo un supervisor por proyecto activo
-        // Note: Since State is a Value Object, we use a simpler approach
-        builder.Entity<Project>()
-            .HasIndex(p => p.SupervisorId)
-            .HasDatabaseName("IX_Projects_SupervisorId_Business")
-            .HasFilter("supervisor_id IS NOT NULL");
 
         // ===== PERSONNEL CONTEXT CONFIGURATION =====
         builder.Entity<BuildTruckBack.Personnel.Domain.Model.Aggregates.Personnel>().HasKey(p => p.Id);
@@ -235,13 +165,7 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
         // Ignore computed property
         builder.Entity<BuildTruckBack.Personnel.Domain.Model.Aggregates.Personnel>().Ignore(p => p.MonthlyAttendance);
 
-        // Personnel belongs to Project
-        builder.Entity<BuildTruckBack.Personnel.Domain.Model.Aggregates.Personnel>()
-            .HasOne<Project>()
-            .WithMany()
-            .HasForeignKey(p => p.ProjectId)
-            .OnDelete(DeleteBehavior.Restrict)
-            .HasConstraintName("FK_Personnel_Projects_ProjectId");
+        // FK Personnel->Projects exists in MySQL but not registered in EF (owned by ProjectServiceDbContext)
 
         // Index for project queries
         builder.Entity<BuildTruckBack.Personnel.Domain.Model.Aggregates.Personnel>()
@@ -282,12 +206,7 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
     builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>().Property(m => m.UpdatedAt).IsRequired();
     builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>().Property(m => m.RegisterDate).IsRequired();
 
-    // Machinery-Project Relationship
-    builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>()
-        .HasOne<Project>()
-        .WithMany()
-        .HasForeignKey(m => m.ProjectId)
-        .OnDelete(DeleteBehavior.Cascade);  // Delete machinery when project is deleted
+    // FK Machinery->Projects exists in MySQL but not registered in EF (owned by ProjectServiceDbContext)
 
     // Ensure LicensePlate is unique per project
     builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>()
@@ -314,13 +233,7 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
         builder.Entity<BuildTruckBack.Documentation.Domain.Model.Aggregates.Documentation>().Property(d => d.CreatedBy).IsRequired();
         builder.Entity<BuildTruckBack.Documentation.Domain.Model.Aggregates.Documentation>().Property(d => d.IsDeleted).IsRequired().HasDefaultValue(false);
 
-        // Documentation belongs to Project
-        builder.Entity<BuildTruckBack.Documentation.Domain.Model.Aggregates.Documentation>()
-            .HasOne<Project>()
-            .WithMany()
-            .HasForeignKey(d => d.ProjectId)
-            .OnDelete(DeleteBehavior.Restrict)
-            .HasConstraintName("FK_Documentation_Projects_ProjectId");
+        // FK Documentation->Projects exists in MySQL but not registered in EF (owned by ProjectServiceDbContext)
 
         // Documentation indexes
         builder.Entity<BuildTruckBack.Documentation.Domain.Model.Aggregates.Documentation>()
@@ -470,21 +383,9 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
 
         // ===== MATERIALS FOREIGN KEY RELATIONSHIPS =====
 
-        // Material belongs to Project
-        builder.Entity<BuildTruckBack.Materials.Domain.Model.Aggregates.Material>()
-            .HasOne<Project>()
-            .WithMany()
-            .HasForeignKey(m => m.ProjectId)
-            .OnDelete(DeleteBehavior.Restrict)
-            .HasConstraintName("FK_Materials_Projects_ProjectId");
+        // FK Materials->Projects exists in MySQL but not registered in EF (owned by ProjectServiceDbContext)
 
-        // MaterialEntry belongs to Project and Material
-        builder.Entity<BuildTruckBack.Materials.Domain.Model.Aggregates.MaterialEntry>()
-            .HasOne<Project>()
-            .WithMany()
-            .HasForeignKey(me => me.ProjectId)
-            .OnDelete(DeleteBehavior.Restrict)
-            .HasConstraintName("FK_MaterialEntries_Projects_ProjectId");
+        // MaterialEntry belongs to Material
 
         builder.Entity<BuildTruckBack.Materials.Domain.Model.Aggregates.MaterialEntry>()
             .HasOne<BuildTruckBack.Materials.Domain.Model.Aggregates.Material>()
@@ -493,13 +394,7 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
             .OnDelete(DeleteBehavior.Restrict)
             .HasConstraintName("FK_MaterialEntries_Materials_MaterialId");
 
-        // MaterialUsage belongs to Project and Material
-        builder.Entity<BuildTruckBack.Materials.Domain.Model.Aggregates.MaterialUsage>()
-            .HasOne<Project>()
-            .WithMany()
-            .HasForeignKey(mu => mu.ProjectId)
-            .OnDelete(DeleteBehavior.Restrict)
-            .HasConstraintName("FK_MaterialUsages_Projects_ProjectId");
+        // FK MaterialUsages->Projects exists in MySQL but not registered in EF (owned by ProjectServiceDbContext)
 
         builder.Entity<BuildTruckBack.Materials.Domain.Model.Aggregates.MaterialUsage>()
             .HasOne<BuildTruckBack.Materials.Domain.Model.Aggregates.Material>()

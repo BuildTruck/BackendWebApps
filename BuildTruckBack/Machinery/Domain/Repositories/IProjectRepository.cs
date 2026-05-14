@@ -1,9 +1,9 @@
-using BuildTruckBack.Projects.Domain.Model.Aggregates;
-using BuildTruckBack.Shared.Domain.Repositories;
+using BuildTruckBack.Projects.Application.Internal.OutboundServices;
 
 namespace BuildTruckBack.Machinery.Domain.Repositories;
 
-public interface IProjectRepository: IBaseRepository<Project>
+public interface IProjectRepository
 {
-    Task<Project?> FindByIdAsync(string id);
+    Task<ProjectInfo?> FindByIdAsync(int id);
+    Task<bool> ExistsAsync(int id);
 }

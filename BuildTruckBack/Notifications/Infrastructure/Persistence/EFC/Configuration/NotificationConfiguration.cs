@@ -114,11 +114,7 @@ public class NotificationConfiguration : IEntityTypeConfiguration<Notification>
         
         // FK Notifications->Users exists in MySQL but not registered in EF (owned by UserServiceDbContext)
 
-        builder.HasOne<BuildTruckBack.Projects.Domain.Model.Aggregates.Project>()
-            .WithMany()
-            .HasForeignKey(n => n.RelatedProjectId)
-            .OnDelete(DeleteBehavior.SetNull)
-            .HasConstraintName("FK_Notifications_Projects_RelatedProjectId");
+        // FK Notifications->Projects exists in MySQL but not registered in EF (owned by ProjectServiceDbContext)
     }
     
 }

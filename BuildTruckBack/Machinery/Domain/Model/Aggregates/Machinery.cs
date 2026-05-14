@@ -1,7 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using BuildTruckBack.Machinery.Domain.Model.ValueObjects;
-using BuildTruckBack.Projects.Domain.Model.Aggregates;
 
 namespace BuildTruckBack.Machinery.Domain.Model.Aggregates;
 
