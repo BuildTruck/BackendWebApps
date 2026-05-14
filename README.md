@@ -13,3 +13,28 @@ The backend is organized into the following services:
 - **BuildTruck Project Service API**: manages project creation, project assignment, project status, manager/supervisor relationships, and project queries.
 
 This structure supports the growth of the platform and allows the team to document, deploy, and validate each service independently.
+
+## API Documentation
+
+The backend services are documented using Swagger/OpenAPI. This allows developers to inspect available endpoints, request parameters, response structures, authentication requirements, and supported HTTP methods.
+
+Deployed Swagger documentation:
+
+- BuildTruck Core API: https://buildtruck-api.duckdns.org/swagger/index.html
+- BuildTruck User Service API: https://buildtruck-api.duckdns.org/user-service/swagger/index.html
+- BuildTruck Project Service API: https://buildtruck-api.duckdns.org/project-service/swagger/index.html
+
+## Deployment Notes
+
+The backend is deployed in a cloud environment and exposes the services through a public API domain. The deployment uses a reverse proxy configuration to route requests to the corresponding backend service.
+
+Main deployment responsibilities include:
+
+- Exposing the Core API and microservices through public routes.
+- Providing Swagger/OpenAPI documentation for each service.
+- Supporting authentication using JWT tokens.
+- Centralizing service access through a shared backend domain.
+- Enabling monitoring and log review through cloud infrastructure tools.
+
+This setup allows the frontend application and development team to interact with the backend services from a deployed environment.
+
