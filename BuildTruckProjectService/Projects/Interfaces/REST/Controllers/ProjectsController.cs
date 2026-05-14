@@ -253,9 +253,17 @@ public class ProjectsController : ControllerBase
     }
 
     /// <summary>
-    /// Delete a project
-    /// DELETE /api/v1/projects/{id}
+    /// Deletes a project by its ID.
     /// </summary>
+    /// <param name="id">The ID of the project to delete.</param>
+    /// <param name="force">If true, forces deletion even when the project has active data.</param>
+    /// <param name="reason">Optional reason for the deletion, stored for audit purposes.</param>
+    /// <returns>A confirmation message with deletion metadata.</returns>
+    /// <response code="200">Project deleted successfully.</response>
+    /// <response code="400">Invalid ID, command validation failure, or delete operation failed.</response>
+    /// <response code="403">User is not authorized to delete this project.</response>
+    /// <response code="404">Project with the given ID was not found.</response>
+    /// <response code="500">Unexpected server error.</response>
     [HttpDelete("{id}")]
     [ProducesResponseType(typeof(object), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(string), (int)HttpStatusCode.BadRequest)]
