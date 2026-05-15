@@ -10,10 +10,11 @@ using System.Net;
 namespace BuildTruckProjectService.Projects.Interfaces.REST.Controllers;
 
 /// <summary>
-/// REST Controller for Project operations
+/// Handles HTTP requests for project management operations.
 /// </summary>
 /// <remarks>
-/// Handles the 4 main project endpoints with proper authorization and validation
+/// Provides endpoints to create, retrieve, update, and delete projects.
+/// All endpoints require a valid JWT bearer token.
 /// </remarks>
 [ApiController]
 [Route("api/v1/projects")]
@@ -38,9 +39,14 @@ public class ProjectsController : ControllerBase
     }
 
     /// <summary>
-    /// Create a new project
-    /// POST /api/v1/projects/create
+    /// Creates a new project.
     /// </summary>
+    /// <param name="resource">The project data submitted via form.</param>
+    /// <returns>The created project resource.</returns>
+    /// <response code="201">Project created successfully.</response>
+    /// <response code="400">Validation or business rule failure.</response>
+    /// <response code="403">User is not authorized to create a project.</response>
+    /// <response code="500">Unexpected server error.</response>
     [HttpPost("create")]
     [ProducesResponseType(typeof(ProjectResource), (int)HttpStatusCode.Created)]
     [ProducesResponseType(typeof(string), (int)HttpStatusCode.BadRequest)]
@@ -108,9 +114,13 @@ public class ProjectsController : ControllerBase
     }
 
     /// <summary>
-    /// Get projects by manager ID
-    /// GET /api/v1/projects/by-manager/{id}
+    /// Retrieves all projects assigned to a specific manager.
     /// </summary>
+    /// <param name="id">The manager's user ID.</param>
+    /// <returns>A list of project summary resources.</returns>
+    /// <response code="200">Projects retrieved successfully.</response>
+    /// <response code="400">The provided manager ID is invalid.</response>
+    /// <response code="500">Unexpected server error.</response>
     [HttpGet("by-manager/{id}")]
     [ProducesResponseType(typeof(List<ProjectSummaryResource>), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(string), (int)HttpStatusCode.BadRequest)]
@@ -147,9 +157,16 @@ public class ProjectsController : ControllerBase
     }
 
     /// <summary>
-    /// Update an existing project
-    /// PUT /api/v1/projects/{id}/update
+    /// Updates an existing project by its ID.
     /// </summary>
+    /// <param name="id">The ID of the project to update.</param>
+    /// <param name="resource">The updated project data submitted via form.</param>
+    /// <returns>The updated project resource.</returns>
+    /// <response code="200">Project updated successfully.</response>
+    /// <response code="400">Validation, business rule failure, or no changes detected.</response>
+    /// <response code="403">User is not authorized to update this project.</response>
+    /// <response code="404">Project with the given ID was not found.</response>
+    /// <response code="500">Unexpected server error.</response>
     [HttpPut("{id}/update")]
     [ProducesResponseType(typeof(ProjectResource), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(string), (int)HttpStatusCode.BadRequest)]
@@ -236,9 +253,17 @@ public class ProjectsController : ControllerBase
     }
 
     /// <summary>
-    /// Delete a project
-    /// DELETE /api/v1/projects/{id}
+    /// Deletes a project by its ID.
     /// </summary>
+    /// <param name="id">The ID of the project to delete.</param>
+    /// <param name="force">If true, forces deletion even when the project has active data.</param>
+    /// <param name="reason">Optional reason for the deletion, stored for audit purposes.</param>
+    /// <returns>A confirmation message with deletion metadata.</returns>
+    /// <response code="200">Project deleted successfully.</response>
+    /// <response code="400">Invalid ID, command validation failure, or delete operation failed.</response>
+    /// <response code="403">User is not authorized to delete this project.</response>
+    /// <response code="404">Project with the given ID was not found.</response>
+    /// <response code="500">Unexpected server error.</response>
     [HttpDelete("{id}")]
     [ProducesResponseType(typeof(object), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(string), (int)HttpStatusCode.BadRequest)]
@@ -324,9 +349,15 @@ public class ProjectsController : ControllerBase
         }
     }
     /// <summary>
-    /// Get project by supervisor ID
-    /// GET /api/v1/projects/by-supervisor/{supervisorId}
+    /// Retrieves the active project assigned to a specific supervisor.
     /// </summary>
+    /// <param name="supervisorId">The supervisor's user ID.</param>
+    /// <returns>The most recent project resource associated with the supervisor.</returns>
+    /// <response code="200">Project retrieved successfully.</response>
+    /// <response code="400">The provided supervisor ID is invalid.</response>
+    /// <response code="403">Requesting user is not authorized to view this supervisor's project.</response>
+    /// <response code="404">No project found for the given supervisor.</response>
+    /// <response code="500">Unexpected server error.</response>
     [HttpGet("by-supervisor/{supervisorId}")]
     [ProducesResponseType(typeof(ProjectResource), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(string), (int)HttpStatusCode.BadRequest)]

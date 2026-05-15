@@ -124,7 +124,7 @@ builder.Services.AddSwaggerGen(options =>
     options.EnableAnnotations();
 });
 
-// ===== SHARED SERVICES =====
+// ===== SHARED SERVICES ======
 builder.Services.AddScoped<IUnitOfWork>(provider =>
     new UnitOfWork<UserServiceDbContext>(provider.GetRequiredService<UserServiceDbContext>()));
 
@@ -139,7 +139,7 @@ if (cloudinarySettings == null || !cloudinarySettings.IsValid)
     throw new InvalidOperationException("Cloudinary settings are missing or invalid.");
 builder.Services.AddScoped<ICloudinaryImageService, CloudinaryImageService>();
 
-// ===== USERS BOUNDED CONTEXT =====
+// ===== USERS BOUNDED CONTEXT ======
 builder.Services.AddScoped<IUserRepository>(provider =>
     new UserRepository(provider.GetRequiredService<UserServiceDbContext>()));
 builder.Services.AddScoped<IUserCommandService, UserCommandService>();
