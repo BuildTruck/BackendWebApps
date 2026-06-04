@@ -21,6 +21,7 @@
   <ItemGroup>
     <ProjectReference Include="..\BuildTruckUserService\BuildTruckUserService.csproj" />
     <ProjectReference Include="..\BuildTruckProjectService\BuildTruckProjectService.csproj" />
+    <ProjectReference Include="..\BuildTruckDocumentationService\BuildTruckDocumentationService.csproj" />
   </ItemGroup>
 
 </Project>
