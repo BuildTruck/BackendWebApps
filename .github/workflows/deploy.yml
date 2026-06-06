@@ -43,6 +43,9 @@ jobs:
             CloudinarySettings__ApiSecret=${{ secrets.CLOUDINARY_SECRET }}
             UserService__BaseUrl=http://buildtruck-user-service:8080
             ProjectService__BaseUrl=http://buildtruck-project-service:8080
+            DocumentationService__BaseUrl=http://buildtruck-documentation-service:8080
+            IncidentService__BaseUrl=http://buildtruck-incident-service:8080
+            MachineryService__BaseUrl=http://buildtruck-machinery-service:8080
             EOF
             echo "✅ .env generated"
 
