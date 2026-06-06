@@ -14,6 +14,10 @@ services:
     depends_on:
       - buildtruck-user-service
       - buildtruck-backend
+      - buildtruck-project-service
+      - buildtruck-documentation-service
+      - buildtruck-incident-service
+      - buildtruck-machinery-service
     networks:
       - buildtruck-network
     restart: always
@@ -24,6 +28,87 @@ services:
       context: .
       dockerfile: BuildTruckProjectService/Dockerfile
     container_name: buildtruck-project-service
+    expose:
+      - "8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      buildtruck-user-service:
+        condition: service_started
+    env_file:
+      - .env
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=server=mysql;port=3306;database=buildtruck;user=root;password=${MYSQL_PASSWORD}
+      - TokenSettings__SecretKey=${JWT_SECRET_KEY}
+      - TokenSettings__Issuer=${JWT_ISSUER}
+      - TokenSettings__Audience=${JWT_AUDIENCE}
+      - CloudinarySettings__ApiSecret=${CLOUDINARY_API_SECRET}
+      - UserService__BaseUrl=http://buildtruck-user-service:8080
+    networks:
+      - buildtruck-network
+    restart: always
+
+  # ===== DOCUMENTATION MICROSERVICE =====
+  buildtruck-documentation-service:
+    build:
+      context: .
+      dockerfile: BuildTruckDocumentationService/Dockerfile
+    container_name: buildtruck-documentation-service
+    expose:
+      - "8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      buildtruck-user-service:
+        condition: service_started
+    env_file:
+      - .env
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=server=mysql;port=3306;database=buildtruck;user=root;password=${MYSQL_PASSWORD}
+      - TokenSettings__SecretKey=${JWT_SECRET_KEY}
+      - TokenSettings__Issuer=${JWT_ISSUER}
+      - TokenSettings__Audience=${JWT_AUDIENCE}
+      - CloudinarySettings__ApiSecret=${CLOUDINARY_API_SECRET}
+      - UserService__BaseUrl=http://buildtruck-user-service:8080
+    networks:
+      - buildtruck-network
+    restart: always
+
+  # ===== INCIDENTS MICROSERVICE =====
+  buildtruck-incident-service:
+    build:
+      context: .
+      dockerfile: BuildTruckIncidentService/Dockerfile
+    container_name: buildtruck-incident-service
+    expose:
+      - "8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      buildtruck-user-service:
+        condition: service_started
+    env_file:
+      - .env
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=server=mysql;port=3306;database=buildtruck;user=root;password=${MYSQL_PASSWORD}
+      - TokenSettings__SecretKey=${JWT_SECRET_KEY}
+      - TokenSettings__Issuer=${JWT_ISSUER}
+      - TokenSettings__Audience=${JWT_AUDIENCE}
+      - CloudinarySettings__ApiSecret=${CLOUDINARY_API_SECRET}
+      - UserService__BaseUrl=http://buildtruck-user-service:8080
+    networks:
+      - buildtruck-network
+    restart: always
+
+  # ===== MACHINERY MICROSERVICE =====
+  buildtruck-machinery-service:
+    build:
+      context: .
+      dockerfile: BuildTruckMachineryService/Dockerfile
+    container_name: buildtruck-machinery-service
     expose:
       - "8080"
     depends_on:
@@ -85,6 +170,10 @@ services:
         condition: service_started
       buildtruck-project-service:
         condition: service_started
+      buildtruck-documentation-service:
+        condition: service_started
+      buildtruck-incident-service:
+        condition: service_started
     env_file:
       - .env
     environment:
@@ -97,6 +186,9 @@ services:
       - CloudinarySettings__ApiSecret=${CLOUDINARY_API_SECRET}
       - UserService__BaseUrl=http://buildtruck-user-service:8080
       - ProjectService__BaseUrl=http://buildtruck-project-service:8080
+      - DocumentationService__BaseUrl=http://buildtruck-documentation-service:8080
+      - IncidentService__BaseUrl=http://buildtruck-incident-service:8080
+      - MachineryService__BaseUrl=http://buildtruck-machinery-service:8080
     networks:
       - buildtruck-network
     restart: always
