@@ -1,4 +1,4 @@
-namespace BuildTruckProjectService.Shared.Infrastructure.Tokens.JWT;
+namespace BuildTruckMachineryService.Shared.Infrastructure.Tokens.JWT;
 
 public class TokenSettings
 {

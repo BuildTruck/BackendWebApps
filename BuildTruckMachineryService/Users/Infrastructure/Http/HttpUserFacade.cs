@@ -1,40 +1,44 @@
 using System.Net.Http.Json;
-using BuildTruckProjectService.Users.Application.Internal.OutboundServices;
+using System.Text.Json;
+using BuildTruckMachineryService.Users.Application.Internal.OutboundServices;
 
-namespace BuildTruckProjectService.Users.Infrastructure.Http;
+namespace BuildTruckMachineryService.Users.Infrastructure.Http;
 
-public class HttpUserFacade(IHttpClientFactory httpClientFactory) : IUserFacade
+public class HttpUserFacade(
+    IHttpClientFactory httpClientFactory,
+    ILogger<HttpUserFacade> logger) : IUserFacade
 {
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
     private HttpClient Client => httpClientFactory.CreateClient("UserService");
 
     public async Task<UserDto?> FindByIdAsync(int userId)
     {
         try
         {
-            return await Client.GetFromJsonAsync<UserDto>($"/api/v1/users/{userId}");
+            return await Client.GetFromJsonAsync<UserDto>($"/api/v1/users/{userId}", JsonOptions);
         }
-        catch { return null; }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error calling UserService FindByIdAsync for user {UserId}", userId);
+            return null;
+        }
     }
 
     public async Task<UserDto?> FindByEmailAsync(string email)
     {
         try
         {
-            return await Client.GetFromJsonAsync<UserDto>($"/api/v1/users?email={Uri.EscapeDataString(email)}");
+            return await Client.GetFromJsonAsync<UserDto>(
+                $"/api/v1/users?email={Uri.EscapeDataString(email)}", JsonOptions);
         }
-        catch { return null; }
-    }
-
-    public async Task<string> GetUserProfileImageUrlAsync(int userId, int size = 200)
-    {
-        try
+        catch (Exception ex)
         {
-            var response = await Client.GetFromJsonAsync<ProfileImageResponse>(
-                $"/api/v1/users/{userId}/profile-image-url?size={size}");
-            return response?.Url ?? string.Empty;
+            logger.LogError(ex, "Error calling UserService FindByEmailAsync for {Email}", email);
+            return null;
         }
-        catch { return string.Empty; }
     }
-
-    private record ProfileImageResponse(string Url);
 }

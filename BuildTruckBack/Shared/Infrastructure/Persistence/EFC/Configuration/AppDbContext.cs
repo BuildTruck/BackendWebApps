@@ -4,8 +4,6 @@ using BuildTruckBack.Configurations.Infrastructure.Persistence.EFC.Configuration
 using BuildTruckBack.Shared.Infrastructure.Persistence.EFC.Configuration.Extensions;
 using EntityFrameworkCore.CreatedUpdatedDate.Extensions;
 using Microsoft.EntityFrameworkCore;
-using BuildTruckBack.Incidents.Domain.Aggregates;
-using BuildTruckBack.Incidents.Infrastructure.Persistence.EFC.Configuration;
 using BuildTruckBack.Notifications.Infrastructure.Persistence.EFC.Configuration;
 using BuildTruckBack.Stats.Domain.Model.Aggregates;
 using BuildTruckBack.Stats.Infrastructure.Persistence.EFC.Configuration;
@@ -20,11 +18,6 @@ namespace BuildTruckBack.Shared.Infrastructure.Persistence.EFC.Configuration;
 /// </param>
 public class AppDbContext(DbContextOptions options) : DbContext(options)
 {
-    public DbSet<Incident> Incidents { get; set; }
-
-    // ✅ Machinery DbSet
-    public DbSet<Machinery.Domain.Model.Aggregates.Machinery> Machinery { get; set; }
-    
     // ✅ Configurations DbSet
     public DbSet<ConfigurationSettings> ConfigurationsSettings { get; set; }
     
@@ -43,10 +36,6 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
     public DbSet<BuildTruckBack.Notifications.Domain.Model.Aggregates.Notification> Notifications { get; set; }
     public DbSet<BuildTruckBack.Notifications.Domain.Model.Aggregates.NotificationPreference> NotificationPreferences { get; set; }
     public DbSet<BuildTruckBack.Notifications.Domain.Model.Aggregates.NotificationDelivery> NotificationDeliveries { get; set; }
-    
-    public DbSet<BuildTruckBack.Documentation.Domain.Model.Aggregates.Documentation> Documentation { get; set; }
-    
-    
     
     /// <summary>
     ///     On configuring  the database context
@@ -186,75 +175,8 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
 
     // Add Personnel DbSet to your AppDbContext class:
     
-    
-    // ===== MACHINERY CONFIGURATION =====
-    builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>().HasKey(m => m.Id);
-    builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>().Property(m => m.Id).IsRequired().ValueGeneratedOnAdd();
-    builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>().Property(m => m.ProjectId).IsRequired();
-    builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>().Property(m => m.Name).IsRequired().HasMaxLength(100);
-    builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>().Property(m => m.LicensePlate).IsRequired().HasMaxLength(20);
-    builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>().Property(m => m.MachineryType).IsRequired().HasMaxLength(50);
-    builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>().Property(m => m.Status)
-        .IsRequired()
-        .HasConversion<string>()
-        .HasMaxLength(20);
-    builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>().Property(m => m.Provider).IsRequired().HasMaxLength(100);
-    builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>().Property(m => m.Description).HasMaxLength(500);
-    builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>().Property(m => m.PersonnelId);
-    builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>().Property(m => m.ImageUrl).HasMaxLength(500);
-    builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>().Property(m => m.CreatedAt).IsRequired();
-    builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>().Property(m => m.UpdatedAt).IsRequired();
-    builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>().Property(m => m.RegisterDate).IsRequired();
 
-    // FK Machinery->Projects exists in MySQL but not registered in EF (owned by ProjectServiceDbContext)
-
-    // Ensure LicensePlate is unique per project
-    builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>()
-        .HasIndex(m => new { m.ProjectId, m.LicensePlate })
-        .IsUnique();
-
-    // Index for status filtering
-    builder.Entity<Machinery.Domain.Model.Aggregates.Machinery>()
-        .HasIndex(m => m.Status)
-        .HasDatabaseName("IX_Machinery_Status");
-    
-    
-    // public DbSet<BuildTruckBack.Personnel.Domain.Model.Aggregates.Personnel> Personnel { get; set; }
-            // ===== NAMING CONVENTION =====
-
-            // ===== DOCUMENTATION CONTEXT CONFIGURATION =====
-        builder.Entity<BuildTruckBack.Documentation.Domain.Model.Aggregates.Documentation>().HasKey(d => d.Id);
-        builder.Entity<BuildTruckBack.Documentation.Domain.Model.Aggregates.Documentation>().Property(d => d.Id).IsRequired().ValueGeneratedOnAdd();
-        builder.Entity<BuildTruckBack.Documentation.Domain.Model.Aggregates.Documentation>().Property(d => d.ProjectId).IsRequired();
-        builder.Entity<BuildTruckBack.Documentation.Domain.Model.Aggregates.Documentation>().Property(d => d.Title).IsRequired().HasMaxLength(200);
-        builder.Entity<BuildTruckBack.Documentation.Domain.Model.Aggregates.Documentation>().Property(d => d.Description).IsRequired().HasMaxLength(1000);
-        builder.Entity<BuildTruckBack.Documentation.Domain.Model.Aggregates.Documentation>().Property(d => d.ImagePath).IsRequired().HasColumnType("text");
-        builder.Entity<BuildTruckBack.Documentation.Domain.Model.Aggregates.Documentation>().Property(d => d.Date).IsRequired().HasColumnType("date");
-        builder.Entity<BuildTruckBack.Documentation.Domain.Model.Aggregates.Documentation>().Property(d => d.CreatedBy).IsRequired();
-        builder.Entity<BuildTruckBack.Documentation.Domain.Model.Aggregates.Documentation>().Property(d => d.IsDeleted).IsRequired().HasDefaultValue(false);
-
-        // FK Documentation->Projects exists in MySQL but not registered in EF (owned by ProjectServiceDbContext)
-
-        // Documentation indexes
-        builder.Entity<BuildTruckBack.Documentation.Domain.Model.Aggregates.Documentation>()
-            .HasIndex(d => d.ProjectId)
-            .HasDatabaseName("IX_Documentation_ProjectId");
-
-        builder.Entity<BuildTruckBack.Documentation.Domain.Model.Aggregates.Documentation>()
-            .HasIndex(d => new { d.ProjectId, d.Title })
-            .HasDatabaseName("IX_Documentation_ProjectId_Title")
-            .IsUnique()
-            .HasFilter("[IsDeleted] = 0");
-
-        builder.Entity<BuildTruckBack.Documentation.Domain.Model.Aggregates.Documentation>()
-            .HasIndex(d => d.Date)
-            .HasDatabaseName("IX_Documentation_Date");
-
-        builder.Entity<BuildTruckBack.Documentation.Domain.Model.Aggregates.Documentation>()
-            .HasIndex(d => d.CreatedBy)
-            .HasDatabaseName("IX_Documentation_CreatedBy");
-        
-        // ===== MATERIALS CONTEXT CONFIGURATION =====
+// ===== MATERIALS CONTEXT CONFIGURATION =====
         
         // Material Configuration
         builder.Entity<BuildTruckBack.Materials.Domain.Model.Aggregates.Material>().HasKey(m => m.Id);
@@ -442,8 +364,6 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
         builder.ApplyConfiguration(new NotificationConfiguration());
         builder.ApplyConfiguration(new NotificationDeliveryConfiguration());
         builder.ApplyConfiguration(new NotificationPreferenceConfiguration());
-        //Incidents
-        builder.ApplyConfiguration(new IncidentConfiguration());
         // ===== NAMING CONVENTION =====
         builder.UseSnakeCaseNamingConvention();
     }

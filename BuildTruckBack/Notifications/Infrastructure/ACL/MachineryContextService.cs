@@ -56,6 +56,6 @@ public class MachineryContextService : IMachineryContextService
     public async Task<int> GetActiveMachineryCountAsync(int projectId)
     {
         var activeMachinery = await _machineryFacade.GetActiveMachineryByProjectAsync(projectId);
-        return activeMachinery.Count;
+        return activeMachinery.Count();
     }
 }

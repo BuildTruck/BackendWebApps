@@ -1,104 +1,60 @@
-using BuildTruckProjectService.Projects.Application.ACL.Services;
-using BuildTruckProjectService.Users.Application.Internal.OutboundServices;
-using ProjectsUserDto = BuildTruckProjectService.Projects.Application.ACL.Services.UserDto;
-using SharedUserDto = BuildTruckProjectService.Users.Application.Internal.OutboundServices.UserDto;
+using BuildTruckMachineryService.Machinery.Application.ACL.Services;
+using BuildTruckMachineryService.Users.Application.Internal.OutboundServices;
 
-namespace BuildTruckProjectService.Projects.Infrastructure.ACL;
+namespace BuildTruckMachineryService.Machinery.Infrastructure.ACL;
 
+/// <summary>
+/// ACL Adapter to communicate with Users context
+/// </summary>
 public class UserContextService : IUserContextService
 {
     private readonly IUserFacade _userFacade;
-    private readonly ILogger<UserContextService> _logger;
 
-    public UserContextService(IUserFacade userFacade, ILogger<UserContextService> logger)
+    public UserContextService(IUserFacade userFacade)
     {
         _userFacade = userFacade;
-        _logger = logger;
     }
 
-    public async Task<ProjectsUserDto?> FindByIdAsync(int userId)
+    public async Task<bool> UserExistsAsync(int userId)
     {
         try
         {
             var user = await _userFacade.FindByIdAsync(userId);
-            if (user == null) return null;
-
-            return new ProjectsUserDto
-            {
-                Id = user.Id,
-                FullName = user.FullName,
-                Email = user.Email,
-                Role = user.Role,
-                IsActive = user.IsActive,
-                ProfileImageUrl = user.ProfileImageUrl,
-                LastLogin = user.LastLogin.HasValue ? new DateTimeOffset(user.LastLogin.Value) : null
-            };
+            return user != null;
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            _logger.LogError(ex, "Failed to find user by ID: {UserId}", userId);
+            return false;
+        }
+    }
+
+    public async Task<string?> GetUserEmailAsync(int userId)
+    {
+        try
+        {
+            var user = await _userFacade.FindByIdAsync(userId);
+            return user?.Email; // Usa la propiedad calculada que devuelve CorporateEmail.Address
+        }
+        catch (Exception)
+        {
             return null;
         }
     }
 
-    public async Task<bool> IsActiveUserAsync(int userId)
-    {
-        var user = await _userFacade.FindByIdAsync(userId);
-        return user?.IsActive ?? false;
-    }
-
-    public async Task<bool> IsManagerAsync(int userId)
-    {
-        var user = await _userFacade.FindByIdAsync(userId);
-        return user?.Role == "Manager";
-    }
-
-    public async Task<bool> IsSupervisorAsync(int userId)
-    {
-        var user = await _userFacade.FindByIdAsync(userId);
-        return user?.Role == "Supervisor";
-    }
-
-    public async Task<bool> IsAdminAsync(int userId)
-    {
-        var user = await _userFacade.FindByIdAsync(userId);
-        return user?.Role == "Admin";
-    }
-
-    public async Task<bool> IsSupervisorAvailableAsync(int supervisorId)
-    {
-        var user = await _userFacade.FindByIdAsync(supervisorId);
-        return user != null && user.Role == "Supervisor" && user.IsActive;
-    }
-
-    public Task<int?> FindAvailableSupervisorAsync()
-    {
-        _logger.LogWarning("FindAvailableSupervisorAsync not fully implemented");
-        return Task.FromResult<int?>(null);
-    }
-
-    public async Task<bool> AssignSupervisorToProjectAsync(int supervisorId, int projectId)
-    {
-        var user = await _userFacade.FindByIdAsync(supervisorId);
-        return user != null && user.Role == "Supervisor" && user.IsActive;
-    }
-
-    public async Task<bool> ReleaseSupervisorFromProjectAsync(int supervisorId)
-    {
-        var user = await _userFacade.FindByIdAsync(supervisorId);
-        return user != null && user.Role == "Supervisor";
-    }
-
-    public async Task<string> GetUserProfileImageUrlAsync(int userId, int size = 200)
+    public async Task<bool> UserHasPermissionAsync(int userId, string permission)
     {
         try
         {
-            return await _userFacade.GetUserProfileImageUrlAsync(userId, size);
+            var user = await _userFacade.FindByIdAsync(userId);
+            if (user == null) return false;
+            
+            // Implementar lógica de permisos basada en UserRole
+            return user.Role.ToString().ToLower() == permission.ToLower() || 
+                   user.Role.ToString() == "Admin"; // Admin tiene todos los permisos
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            _logger.LogError(ex, "Failed to get profile image for user {UserId}", userId);
-            return string.Empty;
+            return false;
         }
     }
 }
