@@ -31,17 +31,12 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
-using BuildTruckBack.Machinery.Application.ACL.Services;
-
 using BuildTruckBack.Configurations.Domain.Model.ValueObjects;
 using BuildTruckBack.Configurations.Interfaces.ACL;
 
-using BuildTruckBack.Machinery.Application.Internal.CommandServices;
-using BuildTruckBack.Machinery.Application.Internal.QueryServices;
-using BuildTruckBack.Machinery.Domain.Repositories;
-using BuildTruckBack.Machinery.Domain.Services;
-using BuildTruckBack.Machinery.Infrastructure.ACL;
-using BuildTruckBack.Machinery.Infrastructure.Persistence.EFC.Repositories;
+// Machinery Microservice (delegates via HTTP)
+using BuildTruckBack.Machinery.Application.Internal.OutboundServices;
+using BuildTruckBack.Machinery.Infrastructure.Http;
 
 // Projects Context (delegates to BuildTruckProjectService via HTTP)
 using BuildTruckBack.Projects.Application.Internal.OutboundServices;
@@ -231,6 +226,14 @@ builder.Services.AddHttpClient("IncidentService", client =>
     client.Timeout = TimeSpan.FromSeconds(10);
 });
 
+// HTTP Client for MachineryService (microservice communication)
+builder.Services.AddHttpClient("MachineryService", client =>
+{
+    client.BaseAddress = new Uri(
+        builder.Configuration["MachineryService:BaseUrl"] ?? "http://buildtruck-machinery-service:8080");
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
+
 // Shared Bounded Context - Infrastructure
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
@@ -357,22 +360,8 @@ builder.Services.AddScoped<IDocumentationFacade, HttpDocumentationFacade>();
 builder.Services.AddScoped<IIncidentFacade, HttpIncidentFacade>();
 
 
-// Machinery Bounded Context
-builder.Services.AddScoped<IMachineryRepository, MachineryRepository>();
-//builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-builder.Services.AddScoped<CreateMachineryCommandHandler>();
-builder.Services.AddScoped<UpdateMachineryCommandHandler>();
-builder.Services.AddScoped<DeleteMachineryCommandHandler>();
-
-builder.Services.AddScoped<GetActiveMachineryQueryHandler>();
-builder.Services.AddScoped<GetMachineryByIdQueryHandler>();
-builder.Services.AddScoped<GetMachineryByProjectQueryHandler>();
-// Register Command Service
-builder.Services.AddScoped<IMachineryCommandService, MachineryCommandService>();
-builder.Services.AddScoped<IMachineryQueryService, MachineryQueryService>();
-builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("Cloudinary"));
-builder.Services.AddScoped<ICloudinaryImageService, CloudinaryImageService>();
-builder.Services.AddScoped<IMachineryCloudinaryService, MachineryCloudinaryService>();
+// Machinery Microservice (HTTP Facade)
+builder.Services.AddScoped<IMachineryFacade, HttpMachineryFacade>();
 
 // ===== STATS MODULE =====
 // Repositories
