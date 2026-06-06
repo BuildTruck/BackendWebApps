@@ -68,22 +68,13 @@ using BuildTruckBack.Materials.Infrastructure.Persistence.EFC.Repositories;
 using BuildTruckBack.Shared.Infrastructure.ExternalServices.Exports.Services;
 using BuildTruckBack.Shared.Infrastructure.ExternalServices.Exports.Configuration;
 
-// Documentation Bounded Context
-using BuildTruckBack.Documentation.Application.Internal.CommandServices;
-using BuildTruckBack.Documentation.Application.Internal.QueryServices;
-using BuildTruckBack.Documentation.Application.ACL.Services;
-using BuildTruckBack.Documentation.Domain.Repositories;
-using BuildTruckBack.Documentation.Domain.Services;
-using BuildTruckBack.Documentation.Infrastructure.Persistence.EFC.Repositories;
-using BuildTruckBack.Documentation.Infrastructure.ACL;
-using BuildTruckBack.Documentation.Infrastructure.Exports;
+// Documentation Microservice (delegates via HTTP)
+using BuildTruckBack.Documentation.Application.Internal.OutboundServices;
+using BuildTruckBack.Documentation.Infrastructure.Http;
 
-// Incidents 
-using BuildTruckBack.Incidents.Application.Internal;
-using BuildTruckBack.Incidents.Domain.Model.Commands;
-using BuildTruckBack.Incidents.Domain.Model.Queries;
-using BuildTruckBack.Incidents.Domain.Repositories;
-using BuildTruckBack.Incidents.Infrastructure.Persistence.EFC.Repositories;
+// Incidents Microservice (delegates via HTTP)
+using BuildTruckBack.Incidents.Application.Internal.OutboundServices;
+using BuildTruckBack.Incidents.Infrastructure.Http;
 using BuildTruckBack.Notifications.Interfaces.WebSocket;
 //Stats
 using BuildTruckBack.Stats.Application.ACL.Services;
@@ -224,6 +215,22 @@ builder.Services.AddHttpClient("ProjectService", client =>
     client.Timeout = TimeSpan.FromSeconds(10);
 });
 
+// HTTP Client for DocumentationService (microservice communication)
+builder.Services.AddHttpClient("DocumentationService", client =>
+{
+    client.BaseAddress = new Uri(
+        builder.Configuration["DocumentationService:BaseUrl"] ?? "http://buildtruck-documentation-service:8080");
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
+
+// HTTP Client for IncidentService (microservice communication)
+builder.Services.AddHttpClient("IncidentService", client =>
+{
+    client.BaseAddress = new Uri(
+        builder.Configuration["IncidentService:BaseUrl"] ?? "http://buildtruck-incident-service:8080");
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
+
 // Shared Bounded Context - Infrastructure
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
@@ -343,39 +350,11 @@ builder.Services.AddScoped<IUniversalExportService>(provider =>
     return universalService;
 });
 
-// Documentation Bounded Context
-builder.Services.AddScoped<IDocumentationRepository, DocumentationRepository>();
-builder.Services.AddScoped<IDocumentationCommandService, DocumentationCommandService>();
-builder.Services.AddScoped<IDocumentationQueryService, DocumentationQueryService>();
+// Documentation Microservice (HTTP Facade)
+builder.Services.AddScoped<IDocumentationFacade, HttpDocumentationFacade>();
 
-// Documentation ACL Services - Communication with other contexts
-builder.Services.AddScoped<BuildTruckBack.Documentation.Application.ACL.Services.IProjectContextService, 
-    BuildTruckBack.Documentation.Infrastructure.ACL.ProjectContextService>();
-
-builder.Services.AddScoped<BuildTruckBack.Documentation.Application.ACL.Services.IUserContextService, 
-    BuildTruckBack.Documentation.Infrastructure.ACL.UserContextService>();
-
-// Documentation Cloudinary Service
-builder.Services.AddScoped<BuildTruckBack.Documentation.Application.ACL.Services.ICloudinaryService>(provider =>
-{
-    var sharedCloudinaryService = provider.GetRequiredService<ICloudinaryImageService>();
-    var logger = provider.GetRequiredService<ILogger<DocumentationCloudinaryService>>();
-    return new DocumentationCloudinaryService(sharedCloudinaryService, logger);
-});
-
-// Documentation Export Handler
-builder.Services.AddScoped<DocumentationExportHandler>();
-
-
-// Incidents Bounded Context
-builder.Services.AddScoped<IIncidentRepository, IncidentRepository>();
-builder.Services.AddScoped<IIncidentFacade, IncidentFacade>();
-builder.Services.AddScoped<IIncidentCommandHandler, IncidentCommandHandler>();
-builder.Services.AddScoped<IIncidentQueryHandler, IncidentQueryHandler>();
-builder.Services.AddScoped<
-    BuildTruckBack.Incidents.Application.ACL.Services.ICloudinaryService,
-    BuildTruckBack.Incidents.Infrastructure.ACL.CloudinaryService
->();
+// Incidents Microservice (HTTP Facade)
+builder.Services.AddScoped<IIncidentFacade, HttpIncidentFacade>();
 
 
 // Machinery Bounded Context
