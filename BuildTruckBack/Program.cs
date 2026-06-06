@@ -86,7 +86,6 @@ using StatsPersonnelServiceImpl = BuildTruckBack.Stats.Infrastructure.ACL.Person
 
 using Microsoft.Extensions.Options;
 using Swashbuckle.AspNetCore.SwaggerGen;
-using DocumentationCloudinaryService = BuildTruckBack.Documentation.Infrastructure.ACL.CloudinaryService;
 
 
 // ===== LOAD ENVIRONMENT VARIABLES =====
@@ -359,7 +358,6 @@ builder.Services.AddScoped<IDocumentationFacade, HttpDocumentationFacade>();
 // Incidents Microservice (HTTP Facade)
 builder.Services.AddScoped<IIncidentFacade, HttpIncidentFacade>();
 
-
 // Machinery Microservice (HTTP Facade)
 builder.Services.AddScoped<IMachineryFacade, HttpMachineryFacade>();
 
@@ -376,13 +374,10 @@ builder.Services.AddScoped<IStatsQueryService, StatsQueryService>();
 builder.Services.AddScoped<BuildTruckBack.Stats.Application.ACL.Services.IUserContextService, BuildTruckBack.Stats.Infrastructure.ACL.UserContextService>();
 builder.Services.AddScoped<BuildTruckBack.Stats.Application.ACL.Services.IPersonnelContextService, BuildTruckBack.Stats.Infrastructure.ACL.PersonnelContextService>();
 builder.Services.AddScoped<BuildTruckBack.Stats.Application.ACL.Services.IProjectContextService, BuildTruckBack.Stats.Infrastructure.ACL.ProjectContextService>();
-builder.Services.AddScoped<BuildTruckBack.Stats.Application.ACL.Services.IIncidentContextService, BuildTruckBack.Stats.Infrastructure.ACL.IncidentContextService>();
 builder.Services.AddScoped<BuildTruckBack.Stats.Application.ACL.Services.IMaterialContextService, BuildTruckBack.Stats.Infrastructure.ACL.MaterialContextService>();
-builder.Services.AddScoped<BuildTruckBack.Stats.Application.ACL.Services.IMachineryContextService, BuildTruckBack.Stats.Infrastructure.ACL.MachineryContextService>();
 
-// Personnel Facade 
+// Personnel Facade
 builder.Services.AddScoped<BuildTruckBack.Personnel.Application.Internal.OutboundServices.IPersonnelFacade, BuildTruckBack.Personnel.Application.Internal.OutboundServices.PersonnelFacade>();
-builder.Services.AddScoped<BuildTruckBack.Machinery.Application.Internal.OutboundServices.IMachineryFacade, BuildTruckBack.Machinery.Application.Internal.OutboundServices.MachineryFacade>();
 
 // ===== NOTIFICATIONS MODULE =====
 // Repositories
@@ -403,7 +398,6 @@ builder.Services.AddScoped<BuildTruckBack.Notifications.Application.ACL.Services
 builder.Services.AddScoped<BuildTruckBack.Notifications.Application.ACL.Services.IPersonnelContextService, BuildTruckBack.Notifications.Infrastructure.ACL.PersonnelContextService>();
 builder.Services.AddScoped<BuildTruckBack.Notifications.Application.ACL.Services.IMaterialContextService, BuildTruckBack.Notifications.Infrastructure.ACL.MaterialContextService>();
 builder.Services.AddScoped<BuildTruckBack.Notifications.Application.ACL.Services.IMachineryContextService, BuildTruckBack.Notifications.Infrastructure.ACL.MachineryContextService>();
-builder.Services.AddScoped<BuildTruckBack.Notifications.Application.ACL.Services.IIncidentContextService, BuildTruckBack.Notifications.Infrastructure.ACL.IncidentContextService>();
 builder.Services.AddScoped<BuildTruckBack.Notifications.Application.ACL.Services.IConfigurationContextService, BuildTruckBack.Notifications.Infrastructure.ACL.ConfigurationContextService>();
 builder.Services.AddScoped<BuildTruckBack.Notifications.Application.ACL.Services.ISharedEmailService, BuildTruckBack.Notifications.Infrastructure.ACL.SharedEmailService>();
 builder.Services.AddScoped<BuildTruckBack.Notifications.Application.ACL.Services.IWebSocketService, BuildTruckBack.Notifications.Infrastructure.ACL.WebSocketService>();

@@ -7,6 +7,12 @@ public interface IMachineryFacade
     Task<MachineryDto> CreateAsync(CreateMachineryDto dto);
     Task<MachineryDto> UpdateAsync(int id, UpdateMachineryDto dto);
     Task<bool> DeleteAsync(int machineryId);
+
+    // Additional methods for ACL services
+    Task<MachineryDto?> GetMachineryByIdAsync(int machineryId) => GetByIdAsync(machineryId);
+    Task<bool> ValidateMachineryExistsInProjectAsync(int machineryId, int projectId);
+    Task<IEnumerable<MachineryDto>> GetActiveMachineryByProjectAsync(int projectId);
+    Task<IEnumerable<MachineryDto>> GetMachineryByProjectAsync(int projectId) => GetByProjectIdAsync(projectId);
 }
 
 public record MachineryDto(
@@ -16,11 +22,16 @@ public record MachineryDto(
     string Description,
     string Type,
     string Condition,
+    string Status,
+    int? PersonnelId,
     string? ImageUrl,
     DateTime AcquisitionDate,
     string? Notes,
     DateTime CreatedAt
-);
+)
+{
+    public bool IsActive() => Status == "Activo" || Status == "Active";
+};
 
 public record CreateMachineryDto(
     int ProjectId,

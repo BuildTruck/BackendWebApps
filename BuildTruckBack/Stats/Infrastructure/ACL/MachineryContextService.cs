@@ -32,7 +32,7 @@ public class MachineryContextService : IMachineryContextService
                 return MachineryMetrics.FromCounts(0, 0, 0);
             }
 
-            var allMachinery = new List<BuildTruckBack.Machinery.Domain.Model.Aggregates.Machinery>();
+            var allMachinery = new List<BuildTruckBack.Machinery.Application.Internal.OutboundServices.MachineryDto>();
 
             // Get machinery for each project
             foreach (var projectId in projectIds)
@@ -48,7 +48,7 @@ public class MachineryContextService : IMachineryContextService
                 }
             }
 
-            var totalMachinery = allMachinery.Count;
+            var totalMachinery = allMachinery.Count();
             var activeMachinery = allMachinery.Count(m => IsActiveStatus(m.Status));
             var inMaintenanceMachinery = allMachinery.Count(m => IsMaintenanceStatus(m.Status));
             var inactiveMachinery = allMachinery.Count(m => IsInactiveStatus(m.Status));
@@ -61,8 +61,8 @@ public class MachineryContextService : IMachineryContextService
 
             // Group by type
             var machineryByType = allMachinery
-                .Where(m => !string.IsNullOrEmpty(m.MachineryType))
-                .GroupBy(m => m.MachineryType)
+                .Where(m => !string.IsNullOrEmpty(m.Type))
+                .GroupBy(m => m.Type)
                 .ToDictionary(g => g.Key, g => g.Count());
 
             // Group by project
@@ -105,7 +105,7 @@ public class MachineryContextService : IMachineryContextService
         {
             if (!projectIds.Any()) return new Dictionary<string, int>();
 
-            var allMachinery = new List<BuildTruckBack.Machinery.Domain.Model.Aggregates.Machinery>();
+            var allMachinery = new List<BuildTruckBack.Machinery.Application.Internal.OutboundServices.MachineryDto>();
 
             foreach (var projectId in projectIds)
             {
@@ -138,7 +138,7 @@ public class MachineryContextService : IMachineryContextService
         {
             if (!projectIds.Any()) return new Dictionary<string, int>();
 
-            var allMachinery = new List<BuildTruckBack.Machinery.Domain.Model.Aggregates.Machinery>();
+            var allMachinery = new List<BuildTruckBack.Machinery.Application.Internal.OutboundServices.MachineryDto>();
 
             foreach (var projectId in projectIds)
             {
@@ -154,8 +154,8 @@ public class MachineryContextService : IMachineryContextService
             }
 
             return allMachinery
-                .Where(m => !string.IsNullOrEmpty(m.MachineryType))
-                .GroupBy(m => m.MachineryType)
+                .Where(m => !string.IsNullOrEmpty(m.Type))
+                .GroupBy(m => m.Type)
                 .ToDictionary(g => g.Key, g => g.Count());
         }
         catch (Exception ex)
@@ -177,7 +177,7 @@ public class MachineryContextService : IMachineryContextService
                 try
                 {
                     var projectMachinery = await _machineryFacade.GetMachineryByProjectAsync(projectId);
-                    totalCount += projectMachinery.Count;
+                    totalCount += projectMachinery.Count();
                 }
                 catch (Exception ex)
                 {
@@ -295,7 +295,7 @@ public class MachineryContextService : IMachineryContextService
                 try
                 {
                     var projectMachinery = await _machineryFacade.GetMachineryByProjectAsync(projectId);
-                    totalCount += projectMachinery.Count;
+                    totalCount += projectMachinery.Count();
                     activeCount += projectMachinery.Count(m => IsActiveStatus(m.Status));
                 }
                 catch (Exception ex)
@@ -344,7 +344,7 @@ public class MachineryContextService : IMachineryContextService
                 try
                 {
                     var projectMachinery = await _machineryFacade.GetMachineryByProjectAsync(projectId);
-                    machineryByProject[$"Project {projectId}"] = projectMachinery.Count;
+                    machineryByProject[$"Project {projectId}"] = projectMachinery.Count();
                 }
                 catch (Exception ex)
                 {

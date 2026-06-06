@@ -102,4 +102,16 @@ public class HttpMachineryFacade : IMachineryFacade
             return false;
         }
     }
+
+    public async Task<bool> ValidateMachineryExistsInProjectAsync(int machineryId, int projectId)
+    {
+        var machinery = await GetByIdAsync(machineryId);
+        return machinery?.ProjectId == projectId;
+    }
+
+    public async Task<IEnumerable<MachineryDto>> GetActiveMachineryByProjectAsync(int projectId)
+    {
+        var allMachinery = await GetByProjectIdAsync(projectId);
+        return allMachinery.Where(m => m.Condition == "Activo" || m.Condition == "Active");
+    }
 }

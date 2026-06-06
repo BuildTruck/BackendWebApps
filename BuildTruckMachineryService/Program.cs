@@ -1,19 +1,22 @@
 using DotNetEnv;
+using BuildTruckMachineryService.Machinery.Application.ACL.Services;
+using BuildTruckMachineryService.Machinery.Application.Internal.CommandServices;
+using BuildTruckMachineryService.Machinery.Application.Internal.QueryServices;
+using BuildTruckMachineryService.Machinery.Domain.Repositories;
+using BuildTruckMachineryService.Machinery.Domain.Services;
+using BuildTruckMachineryService.Machinery.Infrastructure.ACL;
+using BuildTruckMachineryService.Machinery.Infrastructure.Persistence.EFC.Repositories;
+using BuildTruckMachineryService.Projects.Application.Internal.OutboundServices;
+using BuildTruckMachineryService.Projects.Infrastructure.Http;
+using BuildTruckMachineryService.Shared.Infrastructure.Persistence.EFC.Configuration;
+using BuildTruckMachineryService.Shared.Infrastructure.Tokens.JWT;
+using BuildTruckMachineryService.Users.Application.Internal.OutboundServices;
+using BuildTruckMachineryService.Users.Infrastructure.Http;
 using BuildTruckShared.Domain.Repositories;
 using BuildTruckShared.Infrastructure.ExternalServices.Cloudinary.Configuration;
 using BuildTruckShared.Infrastructure.ExternalServices.Cloudinary.Services;
 using BuildTruckShared.Infrastructure.Interfaces.ASP.Configuration;
 using BuildTruckShared.Infrastructure.Persistence.EFC.Repositories;
-using BuildTruckMachineryService.Machinery.Application.ACL.Services;
-using BuildTruckMachineryService.Machinery.Application.Internal.CommandServices;
-using BuildTruckMachineryService.Machinery.Application.Internal.OutboundServices;
-using BuildTruckMachineryService.Machinery.Domain.Services;
-using BuildTruckMachineryService.Machinery.Infrastructure.ACL;
-using BuildTruckMachineryService.Machinery.Infrastructure.Persistence.EFC.Repositories;
-using BuildTruckMachineryService.Shared.Infrastructure.Persistence.EFC.Configuration;
-using BuildTruckMachineryService.Shared.Infrastructure.Tokens.JWT;
-using BuildTruckMachineryService.Users.Application.Internal.OutboundServices;
-using BuildTruckMachineryService.Users.Infrastructure.Http;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -22,20 +25,19 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using System.Text;
 
+using MachineryCloudinaryService = BuildTruckMachineryService.Machinery.Infrastructure.ACL.CloudinaryService;
+using MachineryProjectContextService = BuildTruckMachineryService.Machinery.Application.ACL.Services.IProjectContextService;
 using MachineryUserContextService = BuildTruckMachineryService.Machinery.Application.ACL.Services.IUserContextService;
-using MachineryCloudinaryService = BuildTruckMachineryService.Machinery.Application.ACL.Services.ICloudinaryService;
 
 Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddEnvironmentVariables();
 
-// ===== ROUTING & CONTROLLERS =====
 builder.Services.AddRouting(options => options.LowercaseUrls = true);
 builder.Services.AddControllers(options =>
     options.Conventions.Add(new KebabCaseRouteNamingConvention()));
 
-// ===== CORS =====
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAllPolicy", policy =>
@@ -55,11 +57,10 @@ builder.Services.AddCors(options =>
     });
 });
 
-// ===== DATABASE =====
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
-builder.Services.AddDbContext<ProjectServiceDbContext>(options =>
+builder.Services.AddDbContext<MachineryServiceDbContext>(options =>
 {
     if (builder.Environment.IsDevelopment())
         options.UseMySQL(connectionString)
@@ -71,7 +72,6 @@ builder.Services.AddDbContext<ProjectServiceDbContext>(options =>
             .LogTo(Console.WriteLine, LogLevel.Error);
 });
 
-// ===== JWT =====
 builder.Services.Configure<TokenSettings>(builder.Configuration.GetSection("TokenSettings"));
 
 var tokenSettings = builder.Configuration.GetSection("TokenSettings").Get<TokenSettings>();
@@ -94,17 +94,29 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-// ===== SWAGGER =====
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
-    options.SwaggerDoc("v1", new() { Title = "BuildTruck Project Service API", Version = "v1" });
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "BuildTruck Machinery Service API",
+        Version = "v1",
+        Description = "Machinery microservice"
+    });
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        In = ParameterLocation.Header,
+        Description = "JWT token - paste without 'Bearer ' prefix",
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        BearerFormat = "JWT",
+        Scheme = "bearer"
+    });
     options.EnableAnnotations();
 });
 
-// ===== SHARED SERVICES =====
 builder.Services.AddScoped<IUnitOfWork>(provider =>
-    new UnitOfWork<ProjectServiceDbContext>(provider.GetRequiredService<ProjectServiceDbContext>()));
+    new UnitOfWork<MachineryServiceDbContext>(provider.GetRequiredService<MachineryServiceDbContext>()));
 
 builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
 var cloudinarySettings = builder.Configuration.GetSection("CloudinarySettings").Get<CloudinarySettings>();
@@ -112,7 +124,16 @@ if (cloudinarySettings == null || !cloudinarySettings.IsValid)
     throw new InvalidOperationException("Cloudinary settings are missing or invalid.");
 builder.Services.AddScoped<ICloudinaryImageService, CloudinaryImageService>();
 
-// ===== HTTP CLIENT — UserService =====
+builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddHttpClient("ProjectService", client =>
+{
+    client.BaseAddress = new Uri(
+        builder.Configuration["ProjectService:BaseUrl"] ?? "http://buildtruck-project-service:8080");
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
+builder.Services.AddScoped<IProjectFacade, HttpProjectFacade>();
+
 builder.Services.AddHttpClient("UserService", client =>
 {
     client.BaseAddress = new Uri(
@@ -121,32 +142,27 @@ builder.Services.AddHttpClient("UserService", client =>
 });
 builder.Services.AddScoped<IUserFacade, HttpUserFacade>();
 
-// ===== PROJECTS BOUNDED CONTEXT =====
-builder.Services.AddScoped<ProjectRepository>(provider =>
-    new ProjectRepository(provider.GetRequiredService<ProjectServiceDbContext>()));
-builder.Services.AddScoped<IProjectCommandService, ProjectCommandService>();
-builder.Services.AddScoped<IProjectFacade, ProjectFacade>();
-
+builder.Services.AddScoped<IMachineryRepository>(provider =>
+    new MachineryRepository(provider.GetRequiredService<MachineryServiceDbContext>()));
+builder.Services.AddScoped<IMachineryCommandService, MachineryCommandService>();
+builder.Services.AddScoped<IMachineryQueryService, MachineryQueryService>();
+builder.Services.AddScoped<MachineryProjectContextService, ProjectContextService>();
 builder.Services.AddScoped<MachineryUserContextService, UserContextService>();
-builder.Services.AddScoped<MachineryCloudinaryService>(provider =>
+builder.Services.AddScoped<ICloudinaryService>(provider =>
 {
-    var sharedCloudinary = provider.GetRequiredService<ICloudinaryImageService>();
-    var logger = provider.GetRequiredService<ILogger<BuildTruckMachineryService.Machinery.Infrastructure.ACL.CloudinaryService>>();
-    return new BuildTruckMachineryService.Machinery.Infrastructure.ACL.CloudinaryService(sharedCloudinary, logger);
+    var sharedCloudinaryService = provider.GetRequiredService<ICloudinaryImageService>();
+    var logger = provider.GetRequiredService<ILogger<MachineryCloudinaryService>>();
+    return new MachineryCloudinaryService(sharedCloudinaryService, logger);
 });
-builder.Services.AddScoped<BuildTruckMachineryService.Machinery.Interfaces.REST.Transform.ProjectResourceAssembler>();
 
-builder.Services.AddHttpContextAccessor();
-
-// ===== BUILD APP =====
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
-    var context = scope.ServiceProvider.GetRequiredService<ProjectServiceDbContext>();
+    var context = scope.ServiceProvider.GetRequiredService<MachineryServiceDbContext>();
     try
     {
-        var creator = context.GetService<Microsoft.EntityFrameworkCore.Storage.IRelationalDatabaseCreator>();
+        var creator = context.GetService<IRelationalDatabaseCreator>();
         creator.CreateTables();
     }
     catch { }
