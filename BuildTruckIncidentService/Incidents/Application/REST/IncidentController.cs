@@ -20,7 +20,7 @@ namespace BuildTruckIncidentService.Incidents.Application.REST
     /// REST API controller for managing incidents in BuildTruck platform
     /// </remarks>
     [ApiController]
-    [Route("api/v1/[controller]")] // ✅ Consistente con Machinery
+    [Route("api/v1/incidents")]
     [Produces(MediaTypeNames.Application.Json)]
     [SwaggerTag("Available Incident Management endpoints")]
     [Authorize]
