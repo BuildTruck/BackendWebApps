@@ -12,8 +12,7 @@ public class HttpProjectFacade(
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
-        PropertyNameCaseInsensitive = true,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        PropertyNameCaseInsensitive = true
     };
 
     private HttpClient CreateClient()
