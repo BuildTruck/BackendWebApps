@@ -32,9 +32,9 @@ public class HttpProjectFacade(
     {
         try
         {
-            var response = await CreateClient().GetFromJsonAsync<ExistsResponse>(
-                $"/api/v1/projects/exists/{projectId}", JsonOptions);
-            return response?.Exists ?? false;
+            var project = await CreateClient().GetFromJsonAsync<ProjectInfo>(
+                $"/api/v1/projects/{projectId}", JsonOptions);
+            return project != null;
         }
         catch (Exception ex)
         {
@@ -61,9 +61,9 @@ public class HttpProjectFacade(
     {
         try
         {
-            var response = await CreateClient().GetFromJsonAsync<AccessResponse>(
-                $"/api/v1/projects/user-access?userId={userId}&projectId={projectId}", JsonOptions);
-            return response?.HasAccess ?? false;
+            var project = await CreateClient().GetFromJsonAsync<ProjectInfo>(
+                $"/api/v1/projects/{projectId}", JsonOptions);
+            return project != null && (project.ManagerId == userId || project.SupervisorId == userId);
         }
         catch (Exception ex)
         {
@@ -76,6 +76,4 @@ public class HttpProjectFacade(
         }
     }
 
-    private record ExistsResponse(bool Exists);
-    private record AccessResponse(bool HasAccess);
 }
