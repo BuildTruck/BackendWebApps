@@ -143,6 +143,7 @@ using (var scope = app.Services.CreateScope())
         creator.CreateTables();
     }
     catch { }
+    await BuildTruckIncidentService.Shared.Infrastructure.Persistence.EFC.Seeding.DatabaseSeeder.SeedAsync(context);
 }
 
 app.UseSwagger();

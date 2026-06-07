@@ -168,6 +168,7 @@ using (var scope = app.Services.CreateScope())
         creator.CreateTables();
     }
     catch { }
+    await BuildTruckDocumentationService.Shared.Infrastructure.Persistence.EFC.Seeding.DatabaseSeeder.SeedAsync(context);
 }
 
 app.UseSwagger();
