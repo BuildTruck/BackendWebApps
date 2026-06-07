@@ -20,7 +20,7 @@ namespace BuildTruckMachineryService.Machinery.Interfaces.REST.Controllers;
 /// Only admins can access these endpoints
 /// </remarks>
 [ApiController]
-[Route("api/v1/[controller]")]
+[Route("api/v1/machinery")]
 [Produces(MediaTypeNames.Application.Json)]
 [SwaggerTag("Available Machinery Management endpoints")]
 [Authorize]

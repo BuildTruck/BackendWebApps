@@ -11,7 +11,7 @@ using System.Security.Claims;
 namespace BuildTruckDocumentationService.Documentation.Interfaces.REST.Controllers;
 
 [ApiController]
-[Route("api/v1/[controller]")]
+[Route("api/v1/documentation")]
 [Produces("application/json")]
 public class DocumentationController : ControllerBase
 {
@@ -51,7 +51,9 @@ public class DocumentationController : ControllerBase
             }
 
             // Get current user ID from JWT
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userIdClaim = User.FindFirst("user_id")?.Value
+                ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                ?? User.FindFirst("sub")?.Value;
             if (!int.TryParse(userIdClaim, out var currentUserId))
             {
                 return BadRequest("Invalid user information");
