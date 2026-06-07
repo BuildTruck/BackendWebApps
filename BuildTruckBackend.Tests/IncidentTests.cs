@@ -99,6 +99,37 @@ public class IncidentTests
     }
 
     [Fact]
+    public async Task IncidentCommandHandler_CreatesIncidentWithoutImage_AndDoesNotUpload()
+    {
+        await using var context = CreateContext();
+        var cloudinary = new FakeCloudinaryService();
+        var handler = new IncidentCommandHandler(context, cloudinary);
+
+        var incidentId = await handler.HandleAsync(new CreateIncidentCommand(
+            ProjectId: 12,
+            Title: "Loose cable",
+            Description: "Loose electrical cable found near storage",
+            IncidentType: "Safety",
+            Severity: "Medio",
+            Status: "Reportado",
+            Location: "Storage",
+            ReportedBy: "4",
+            AssignedTo: null,
+            OccurredAt: DateTime.Now.Date.AddHours(9),
+            Image: null,
+            Notes: "Needs immediate isolation",
+            ImagePath: null));
+
+        var incident = await context.Incidents.FindAsync(incidentId);
+
+        Assert.NotNull(incident);
+        Assert.Equal(12, incident.ProjectId);
+        Assert.Equal("Loose cable", incident.Title);
+        Assert.Null(incident.Image);
+        Assert.Equal(0, cloudinary.UploadCalls);
+    }
+
+    [Fact]
     public async Task IncidentCommandHandler_UpdatesIncident_AndReplacesExistingImage()
     {
         await using var context = CreateContext();
@@ -154,6 +185,108 @@ public class IncidentTests
         {
             File.Delete(imagePath);
         }
+    }
+
+    [Fact]
+    public async Task IncidentCommandHandler_UpdatesIncidentWithoutNewImage_PreservesExistingImage()
+    {
+        await using var context = CreateContext();
+        var incident = new Incident
+        {
+            ProjectId = 20,
+            Title = "Initial incident",
+            Description = "Initial description",
+            IncidentType = "Safety",
+            Severity = IncidentSeverity.Medio,
+            Status = IncidentStatus.Reportado,
+            Location = "Warehouse",
+            Image = "https://res.cloudinary.com/demo/incidents/current.jpg",
+            Notes = "Initial notes"
+        };
+        await context.Incidents.AddAsync(incident);
+        await context.SaveChangesAsync();
+
+        var cloudinary = new FakeCloudinaryService();
+        var handler = new IncidentCommandHandler(context, cloudinary);
+        var resolvedAt = DateTime.Now.Date.AddHours(14);
+
+        await handler.HandleAsync(new UpdateIncidentCommand(
+            Id: incident.Id,
+            ProjectId: 25,
+            Title: "Updated without image",
+            Description: "Description changed",
+            IncidentType: "Operational",
+            Severity: "High",
+            Status: "Resolved",
+            Location: "Warehouse aisle",
+            ReportedBy: "7",
+            AssignedTo: "11",
+            OccurredAt: DateTime.Now.Date.AddHours(13),
+            ResolvedAt: resolvedAt,
+            Image: null,
+            Notes: "Resolved without replacing evidence",
+            ImagePath: null));
+
+        var updated = await context.Incidents.FindAsync(incident.Id);
+
+        Assert.NotNull(updated);
+        Assert.Equal(25, updated.ProjectId);
+        Assert.Equal("Updated without image", updated.Title);
+        Assert.Equal(IncidentSeverity.High, updated.Severity);
+        Assert.Equal(IncidentStatus.Resolved, updated.Status);
+        Assert.Equal(resolvedAt, updated.ResolvedAt);
+        Assert.Equal("https://res.cloudinary.com/demo/incidents/current.jpg", updated.Image);
+        Assert.Equal(0, cloudinary.DeleteCalls);
+        Assert.Equal(0, cloudinary.UploadCalls);
+    }
+
+    [Fact]
+    public async Task IncidentCommandHandler_DeleteIncident_RemovesRecordAndDeletesImage()
+    {
+        await using var context = CreateContext();
+        var incident = new Incident
+        {
+            ProjectId = 30,
+            Title = "Incident to delete",
+            Description = "Temporary incident",
+            IncidentType = "Safety",
+            Image = "https://res.cloudinary.com/demo/incidents/delete.jpg"
+        };
+        await context.Incidents.AddAsync(incident);
+        await context.SaveChangesAsync();
+
+        var cloudinary = new FakeCloudinaryService();
+        var handler = new IncidentCommandHandler(context, cloudinary);
+
+        await handler.DeleteAsync(incident.Id);
+
+        Assert.Null(await context.Incidents.FindAsync(incident.Id));
+        Assert.Equal(1, cloudinary.DeleteCalls);
+    }
+
+    [Fact]
+    public async Task IncidentCommandHandler_RejectsInvalidSeverityDuringCreate()
+    {
+        await using var context = CreateContext();
+        var handler = new IncidentCommandHandler(context, new FakeCloudinaryService());
+
+        var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
+            handler.HandleAsync(new CreateIncidentCommand(
+                ProjectId: 10,
+                Title: "Invalid severity",
+                Description: "Invalid severity should fail",
+                IncidentType: "Safety",
+                Severity: "Urgent",
+                Status: "Reportado",
+                Location: "Main gate",
+                ReportedBy: null,
+                AssignedTo: null,
+                OccurredAt: DateTime.Now,
+                Image: null,
+                Notes: "Invalid test",
+                ImagePath: null)));
+
+        Assert.Contains("IncidentSeverity", exception.Message);
     }
 
     [Fact]
