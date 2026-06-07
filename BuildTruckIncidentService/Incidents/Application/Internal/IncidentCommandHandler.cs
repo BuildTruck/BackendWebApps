@@ -64,6 +64,7 @@ using System;
                                     throw new Exception($"No se encontró el incidente con Id {command.Id}");
 
                                 incident.Title = command.Title;
+                                incident.ProjectId = command.ProjectId;
                                 incident.Description = command.Description;
                                 incident.IncidentType = command.IncidentType;
                                 incident.Severity = IncidentSeverityExtensions.FromString(command.Severity);
@@ -72,6 +73,7 @@ using System;
                                 incident.ReportedBy = command.ReportedBy;
                                 incident.AssignedTo = command.AssignedTo;
                                 incident.OccurredAt = command.OccurredAt;
+                                incident.ResolvedAt = command.ResolvedAt;
                                 incident.Notes = command.Notes;
                                 incident.UpdatedAt = DateTime.UtcNow.AddHours(-5);
 
