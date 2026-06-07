@@ -28,10 +28,10 @@ public class DocumentationCommandService : IDocumentationCommandService
 
     public async Task<Domain.Model.Aggregates.Documentation?> Handle(CreateOrUpdateDocumentationCommand command)
     {
-        // Validate project exists
-        var projectExists = await _projectContextService.ProjectExistsAsync(command.ProjectId);
-        if (!projectExists)
-            throw new ArgumentException($"Project with ID {command.ProjectId} does not exist");
+        // TODO: Validate project exists (commented - same approach as Incidents)
+        // var projectExists = await _projectContextService.ProjectExistsAsync(command.ProjectId);
+        // if (!projectExists)
+        //     throw new ArgumentException($"Project with ID {command.ProjectId} does not exist");
 
         // Validate image is provided
         if (string.IsNullOrEmpty(command.ImagePath))
