@@ -23,6 +23,7 @@
     <ProjectReference Include="..\BuildTruckProjectService\BuildTruckProjectService.csproj" />
     <ProjectReference Include="..\BuildTruckDocumentationService\BuildTruckDocumentationService.csproj" />
     <ProjectReference Include="..\BuildTruckIncidentService\BuildTruckIncidentService.csproj" />
+    <ProjectReference Include="..\BuildTruckMaterialsService\BuildTruckMaterialsService.csproj" />
   </ItemGroup>
 
 </Project>
