@@ -1,25 +1,27 @@
+using BuildTruckBack.Configurations.Application.Internal.OutboundServices;
 using BuildTruckBack.Notifications.Application.ACL.Services;
-using BuildTruckBack.Configurations.Interfaces.ACL;
 
 namespace BuildTruckBack.Notifications.Infrastructure.ACL;
 
 public class ConfigurationContextService : IConfigurationContextService
 {
-    private readonly IConfigurationSettingsFacade _configurationFacade;
-    public ConfigurationContextService(IConfigurationSettingsFacade configurationFacade)  // ← AGREGAR
+    private readonly IConfigurationFacade _configurationFacade;
+
+    public ConfigurationContextService(IConfigurationFacade configurationFacade)
     {
-        _configurationFacade = configurationFacade;  // ← AGREGAR
+        _configurationFacade = configurationFacade;
     }
+
     public async Task<bool> IsEmailNotificationGloballyEnabledAsync(int userId)
     {
         try
         {
             var config = await _configurationFacade.GetConfigurationSettingsByUserIdAsync(userId);
-            return config?.EmailNotifications ?? true; // Default true si no tiene config
+            return config?.EmailNotificationsEnabled ?? true;
         }
         catch
         {
-            return true; // Default en caso de error
+            return true;
         }
     }
 
@@ -28,29 +30,20 @@ public class ConfigurationContextService : IConfigurationContextService
         try
         {
             var config = await _configurationFacade.GetConfigurationSettingsByUserIdAsync(userId);
-            return config?.NotificationsEnable ?? true; // Default true
+            return config?.NotificationsEnabled ?? true;
         }
         catch
         {
-            return true; // Default en caso de error
+            return true;
         }
     }
 
-    public async Task<TimeSpan> GetDigestTimeAsync(int userId)
-    {
-        await Task.CompletedTask;
-        return new TimeSpan(8, 0, 0);
-    }
+    public Task<TimeSpan> GetDigestTimeAsync(int userId) =>
+        Task.FromResult(new TimeSpan(8, 0, 0));
 
-    public async Task<string> GetUserTimezoneAsync(int userId)
-    {
-        await Task.CompletedTask;
-        return "America/Lima";
-    }
+    public Task<string> GetUserTimezoneAsync(int userId) =>
+        Task.FromResult("America/Lima");
 
-    public async Task<string> GetUserLanguageAsync(int userId)
-    {
-        await Task.CompletedTask;
-        return "es";
-    }
+    public Task<string> GetUserLanguageAsync(int userId) =>
+        Task.FromResult("es");
 }
