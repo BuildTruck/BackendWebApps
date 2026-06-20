@@ -1,12 +1,8 @@
 using DotNetEnv;
 
-// Configurations Context
-using BuildTruckBack.Configurations.Application.ACL;
-using BuildTruckBack.Configurations.Application.Internal.CommandServices;
-using BuildTruckBack.Configurations.Application.Internal.QueryServices;
-using BuildTruckBack.Configurations.Domain.Repositories;
-using BuildTruckBack.Configurations.Domain.Services;
-using BuildTruckBack.Configurations.Infrastructure.Persistence.EFC.Repositories;
+// Configurations Microservice (delegates via HTTP)
+using BuildTruckBack.Configurations.Application.Internal.OutboundServices;
+using BuildTruckBack.Configurations.Infrastructure.Http;
 
 // Users Context (only facade contract — implementation calls UserService via HTTP)
 using BuildTruckBack.Users.Application.Internal.OutboundServices;
@@ -30,9 +26,6 @@ using BuildTruckBack.Shared.Infrastructure.Tokens.JWT;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-
-using BuildTruckBack.Configurations.Domain.Model.ValueObjects;
-using BuildTruckBack.Configurations.Interfaces.ACL;
 
 // Machinery Microservice (delegates via HTTP)
 using BuildTruckBack.Machinery.Application.Internal.OutboundServices;
@@ -233,6 +226,14 @@ builder.Services.AddHttpClient("MachineryService", client =>
     client.Timeout = TimeSpan.FromSeconds(10);
 });
 
+// HTTP Client for ConfigurationService (microservice communication)
+builder.Services.AddHttpClient("ConfigurationService", client =>
+{
+    client.BaseAddress = new Uri(
+        builder.Configuration["ConfigurationService:BaseUrl"] ?? "http://buildtruck-configuration-service:8080");
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
+
 // Shared Bounded Context - Infrastructure
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
@@ -262,14 +263,8 @@ if (cloudinarySettings == null || !cloudinarySettings.IsValid)
         "Cloudinary settings are missing or invalid. Please check your appsettings.json file.");
 }
 
-// Configurations Bounded Context
-// Database configuration
-
-// Dependency injection for Configurations
-builder.Services.AddScoped<IConfigurationSettingsRepository, ConfigurationSettingsRepository>();
-builder.Services.AddScoped<IConfigurationSettingsCommandService, ConfigurationSettingsCommandService>();
-builder.Services.AddScoped<IConfigurationSettingsQueryService, ConfigurationSettingsQueryService>();
-builder.Services.AddScoped<IConfigurationSettingsFacade, ConfigurationSettingsFacade>();
+// Configurations Microservice (HTTP Facade)
+builder.Services.AddScoped<IConfigurationFacade, HttpConfigurationFacade>();
 
 // Users — IUserFacade delegates to BuildTruckUserService via HTTP
 builder.Services.AddScoped<IUserFacade, BuildTruckBack.Users.Infrastructure.Http.HttpUserFacade>();

@@ -1,6 +1,3 @@
-using BuildTruckBack.Configurations.Domain.Model.Aggregates;
-using BuildTruckBack.Configurations.Domain.Model.ValueObjects;
-using BuildTruckBack.Configurations.Infrastructure.Persistence.EFC.Configuration;
 using BuildTruckBack.Shared.Infrastructure.Persistence.EFC.Configuration.Extensions;
 using EntityFrameworkCore.CreatedUpdatedDate.Extensions;
 using Microsoft.EntityFrameworkCore;
@@ -18,9 +15,6 @@ namespace BuildTruckBack.Shared.Infrastructure.Persistence.EFC.Configuration;
 /// </param>
 public class AppDbContext(DbContextOptions options) : DbContext(options)
 {
-    // ✅ Configurations DbSet
-    public DbSet<ConfigurationSettings> ConfigurationsSettings { get; set; }
-    
     // ✅ Personnel DbSet
     public DbSet<BuildTruckBack.Personnel.Domain.Model.Aggregates.Personnel> Personnel { get; set; }
 
@@ -77,29 +71,6 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
         builder.Ignore<BuildTruckBack.Notifications.Domain.Model.ValueObjects.NotificationScope>();
         builder.Ignore<BuildTruckBack.Notifications.Domain.Model.ValueObjects.UserRole>();
         
-// ===== CONFIGURATIONS CONTEXT CONFIGURATION =====
-        builder.Entity<ConfigurationSettings>().HasKey(c => c.Id);
-        builder.Entity<ConfigurationSettings>().ToTable("configurations");
-        builder.Entity<ConfigurationSettings>().Property(c => c.Id).ValueGeneratedOnAdd();
-        builder.Entity<ConfigurationSettings>().Property(c => c.UserId).HasColumnName("user_id").IsRequired();
-        builder.Entity<ConfigurationSettings>().Property(c => c.Themes).HasColumnName("theme").HasMaxLength(20).IsRequired().HasConversion<string>();
-        builder.Entity<ConfigurationSettings>().Property(c => c.Plans).HasColumnName("plan").HasMaxLength(20).IsRequired().HasConversion<string>();
-        builder.Entity<ConfigurationSettings>().Property(c => c.NotificationsEnable).HasColumnName("notifications_enable").IsRequired();
-        builder.Entity<ConfigurationSettings>().Property(c => c.EmailNotifications).HasColumnName("email_notifications").IsRequired();
-        builder.Entity<ConfigurationSettings>().Property(c => c.CreatedAt).HasColumnName("created_at").IsRequired();
-        builder.Entity<ConfigurationSettings>().Property(c => c.UpdatedAt).HasColumnName("updated_at").IsRequired();
-        builder.Entity<ConfigurationSettings>().Property(c => c.TutorialsCompleted)
-            .HasColumnName("tutorials_completed")
-            .HasMaxLength(1000)
-            .IsRequired()
-            .HasConversion(
-                v => v.ToJsonString(),
-                v => new TutorialProgress(v)
-            );
-
-        builder.Entity<ConfigurationSettings>().HasIndex(c => c.UserId).IsUnique().HasDatabaseName("IX_Configurations_User_Id");
-        // FK Configurations->Users exists in MySQL but not registered in EF (owned by UserServiceDbContext)
-
         // ===== PERSONNEL CONTEXT CONFIGURATION =====
         builder.Entity<BuildTruckBack.Personnel.Domain.Model.Aggregates.Personnel>().HasKey(p => p.Id);
         builder.Entity<BuildTruckBack.Personnel.Domain.Model.Aggregates.Personnel>().Property(p => p.Id).IsRequired().ValueGeneratedOnAdd();

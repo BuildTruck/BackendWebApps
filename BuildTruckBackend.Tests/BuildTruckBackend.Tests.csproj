@@ -24,6 +24,7 @@
     <ProjectReference Include="..\BuildTruckDocumentationService\BuildTruckDocumentationService.csproj" />
     <ProjectReference Include="..\BuildTruckIncidentService\BuildTruckIncidentService.csproj" />
     <ProjectReference Include="..\BuildTruckMaterialsService\BuildTruckMaterialsService.csproj" />
+    <ProjectReference Include="..\BuildTruckConfigurationService\BuildTruckConfigurationService.csproj" />
   </ItemGroup>
 
 </Project>
