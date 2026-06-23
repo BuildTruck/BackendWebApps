@@ -234,6 +234,13 @@ builder.Services.AddHttpClient("PersonnelService", client =>
     client.Timeout = TimeSpan.FromSeconds(10);
 });
 
+builder.Services.AddHttpClient("NotificationService", client =>
+{
+    client.BaseAddress = new Uri(
+        builder.Configuration["NotificationService:BaseUrl"] ?? "http://buildtruck-notification-service:8080");
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
+
 // Shared Bounded Context - Infrastructure
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
@@ -374,10 +381,9 @@ builder.Services.AddHostedService<BuildTruckBack.Notifications.Infrastructure.Se
 // Facade
 builder.Services.AddScoped<BuildTruckBack.Notifications.Application.Internal.OutboundServices.INotificationFacade, BuildTruckBack.Notifications.Application.Internal.OutboundServices.NotificationFacade>();
 
-// External Facade
-builder.Services.AddScoped<BuildTruckBack.Notifications.Interfaces.ACL.INotificationContextFacade, BuildTruckBack.Notifications.Interfaces.ACL.Services.NotificationContextFacade>();
-// En la sección de NOTIFICATIONS MODULE, agrega:
-builder.Services.AddScoped<BuildTruckBack.Notifications.Application.ACL.Services.IWebSocketService, BuildTruckBack.Notifications.Infrastructure.ACL.WebSocketService>();
+// External Facade → now delegates to the Notification microservice via HTTP
+builder.Services.AddScoped<BuildTruckBack.Notifications.Interfaces.ACL.INotificationContextFacade,
+    BuildTruckBack.Notifications.Infrastructure.Http.HttpNotificationContextFacade>();
 
 builder.Services.AddSignalR();
 
