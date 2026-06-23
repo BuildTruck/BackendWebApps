@@ -15,9 +15,6 @@ namespace BuildTruckBack.Shared.Infrastructure.Persistence.EFC.Configuration;
 /// </param>
 public class AppDbContext(DbContextOptions options) : DbContext(options)
 {
-    // ✅ Personnel DbSet
-    public DbSet<BuildTruckBack.Personnel.Domain.Model.Aggregates.Personnel> Personnel { get; set; }
-
     // ✅ Materials DbSets
     public DbSet<BuildTruckBack.Materials.Domain.Model.Aggregates.Material> Materials { get; set; }
     public DbSet<BuildTruckBack.Materials.Domain.Model.Aggregates.MaterialEntry> MaterialEntries { get; set; }
@@ -71,83 +68,7 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
         builder.Ignore<BuildTruckBack.Notifications.Domain.Model.ValueObjects.NotificationScope>();
         builder.Ignore<BuildTruckBack.Notifications.Domain.Model.ValueObjects.UserRole>();
         
-        // ===== PERSONNEL CONTEXT CONFIGURATION =====
-        builder.Entity<BuildTruckBack.Personnel.Domain.Model.Aggregates.Personnel>().HasKey(p => p.Id);
-        builder.Entity<BuildTruckBack.Personnel.Domain.Model.Aggregates.Personnel>().Property(p => p.Id).IsRequired().ValueGeneratedOnAdd();
-
-        // Basic Information
-        builder.Entity<BuildTruckBack.Personnel.Domain.Model.Aggregates.Personnel>().Property(p => p.ProjectId).IsRequired();
-        builder.Entity<BuildTruckBack.Personnel.Domain.Model.Aggregates.Personnel>().Property(p => p.Name).IsRequired().HasMaxLength(100);
-        builder.Entity<BuildTruckBack.Personnel.Domain.Model.Aggregates.Personnel>().Property(p => p.Lastname).IsRequired().HasMaxLength(100);
-        builder.Entity<BuildTruckBack.Personnel.Domain.Model.Aggregates.Personnel>().Property(p => p.DocumentNumber).IsRequired().HasMaxLength(50);
-        builder.Entity<BuildTruckBack.Personnel.Domain.Model.Aggregates.Personnel>().Property(p => p.Position).IsRequired().HasMaxLength(150);
-        builder.Entity<BuildTruckBack.Personnel.Domain.Model.Aggregates.Personnel>().Property(p => p.Department).IsRequired().HasMaxLength(100);
-
-        // Enum properties
-        builder.Entity<BuildTruckBack.Personnel.Domain.Model.Aggregates.Personnel>()
-            .Property(p => p.PersonnelType)
-            .HasColumnType("varchar(50)")
-            .HasConversion<string>();
-
-        builder.Entity<BuildTruckBack.Personnel.Domain.Model.Aggregates.Personnel>()
-            .Property(p => p.Status)
-            .HasColumnType("varchar(50)")
-            .HasConversion<string>();
-
-        // Financial Information
-        builder.Entity<BuildTruckBack.Personnel.Domain.Model.Aggregates.Personnel>().Property(p => p.MonthlyAmount).HasColumnType("decimal(10,2)");
-        builder.Entity<BuildTruckBack.Personnel.Domain.Model.Aggregates.Personnel>().Property(p => p.TotalAmount).HasColumnType("decimal(10,2)");
-        builder.Entity<BuildTruckBack.Personnel.Domain.Model.Aggregates.Personnel>().Property(p => p.Discount).HasColumnType("decimal(10,2)");
-        builder.Entity<BuildTruckBack.Personnel.Domain.Model.Aggregates.Personnel>().Property(p => p.Bank).HasMaxLength(50);
-        builder.Entity<BuildTruckBack.Personnel.Domain.Model.Aggregates.Personnel>().Property(p => p.AccountNumber).HasMaxLength(50);
-
-        // Contract Information
-        builder.Entity<BuildTruckBack.Personnel.Domain.Model.Aggregates.Personnel>().Property(p => p.StartDate).HasColumnType("date");
-        builder.Entity<BuildTruckBack.Personnel.Domain.Model.Aggregates.Personnel>().Property(p => p.EndDate).HasColumnType("date");
-
-        // Attendance and contact
-        builder.Entity<BuildTruckBack.Personnel.Domain.Model.Aggregates.Personnel>().Property(p => p.MonthlyAttendanceJson).HasColumnType("json");
-        builder.Entity<BuildTruckBack.Personnel.Domain.Model.Aggregates.Personnel>().Property(p => p.Phone).HasMaxLength(20);
-        builder.Entity<BuildTruckBack.Personnel.Domain.Model.Aggregates.Personnel>().Property(p => p.Email).HasMaxLength(150);
-        builder.Entity<BuildTruckBack.Personnel.Domain.Model.Aggregates.Personnel>().Property(p => p.AvatarUrl).HasColumnType("text");
-
-        // Calculated fields
-        builder.Entity<BuildTruckBack.Personnel.Domain.Model.Aggregates.Personnel>().Property(p => p.WorkedDays).HasDefaultValue(0);
-        builder.Entity<BuildTruckBack.Personnel.Domain.Model.Aggregates.Personnel>().Property(p => p.CompensatoryDays).HasDefaultValue(0);
-        builder.Entity<BuildTruckBack.Personnel.Domain.Model.Aggregates.Personnel>().Property(p => p.UnpaidLeave).HasDefaultValue(0);
-        builder.Entity<BuildTruckBack.Personnel.Domain.Model.Aggregates.Personnel>().Property(p => p.Absences).HasDefaultValue(0);
-        builder.Entity<BuildTruckBack.Personnel.Domain.Model.Aggregates.Personnel>().Property(p => p.Sundays).HasDefaultValue(0);
-        builder.Entity<BuildTruckBack.Personnel.Domain.Model.Aggregates.Personnel>().Property(p => p.TotalDays).HasDefaultValue(0);
-
-        // Audit
-        builder.Entity<BuildTruckBack.Personnel.Domain.Model.Aggregates.Personnel>().Property(p => p.IsDeleted).IsRequired().HasDefaultValue(false);
-
-        // Ignore computed property
-        builder.Entity<BuildTruckBack.Personnel.Domain.Model.Aggregates.Personnel>().Ignore(p => p.MonthlyAttendance);
-
-        // FK Personnel->Projects exists in MySQL but not registered in EF (owned by ProjectServiceDbContext)
-
-        // Index for project queries
-        builder.Entity<BuildTruckBack.Personnel.Domain.Model.Aggregates.Personnel>()
-            .HasIndex(p => p.ProjectId)
-            .HasDatabaseName("IX_Personnel_ProjectId");
-
-        // Index for document number per project (unique)
-        builder.Entity<BuildTruckBack.Personnel.Domain.Model.Aggregates.Personnel>()
-            .HasIndex(p => new { p.ProjectId, p.DocumentNumber })
-            .HasDatabaseName("IX_Personnel_ProjectId_DocumentNumber")
-            .IsUnique();
-
-        // Index for active personnel
-        builder.Entity<BuildTruckBack.Personnel.Domain.Model.Aggregates.Personnel>()
-            .HasIndex(p => new { p.ProjectId, p.Status, p.IsDeleted })
-            .HasDatabaseName("IX_Personnel_ProjectId_Status_IsDeleted");
-
-
-    // Add Personnel DbSet to your AppDbContext class:
-    
-
-// ===== MATERIALS CONTEXT CONFIGURATION =====
+        // ===== MATERIALS CONTEXT CONFIGURATION =====
         
         // Material Configuration
         builder.Entity<BuildTruckBack.Materials.Domain.Model.Aggregates.Material>().HasKey(m => m.Id);

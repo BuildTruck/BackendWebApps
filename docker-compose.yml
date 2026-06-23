@@ -19,6 +19,7 @@ services:
       - buildtruck-incident-service
       - buildtruck-machinery-service
       - buildtruck-configuration-service
+      - buildtruck-personnel-service
     networks:
       - buildtruck-network
     restart: always
@@ -131,6 +132,35 @@ services:
       - buildtruck-network
     restart: always
 
+  # ===== PERSONNEL MICROSERVICE =====
+  buildtruck-personnel-service:
+    build:
+      context: .
+      dockerfile: BuildTruckPersonnelService/Dockerfile
+    container_name: buildtruck-personnel-service
+    expose:
+      - "8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      buildtruck-user-service:
+        condition: service_started
+      buildtruck-project-service:
+        condition: service_started
+    env_file:
+      - .env
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=server=mysql;port=3306;database=buildtruck;user=root;password=${MYSQL_PASSWORD}
+      - TokenSettings__SecretKey=${JWT_SECRET_KEY}
+      - TokenSettings__Issuer=${JWT_ISSUER}
+      - TokenSettings__Audience=${JWT_AUDIENCE}
+      - CloudinarySettings__ApiSecret=${CLOUDINARY_API_SECRET}
+      - ProjectService__BaseUrl=http://buildtruck-project-service:8080
+    networks:
+      - buildtruck-network
+    restart: always
+
   # ===== CONFIGURATIONS MICROSERVICE =====
   buildtruck-configuration-service:
     build:
@@ -202,6 +232,8 @@ services:
         condition: service_started
       buildtruck-configuration-service:
         condition: service_started
+      buildtruck-personnel-service:
+        condition: service_started
     env_file:
       - .env
     environment:
@@ -218,6 +250,7 @@ services:
       - IncidentService__BaseUrl=http://buildtruck-incident-service:8080
       - MachineryService__BaseUrl=http://buildtruck-machinery-service:8080
       - ConfigurationService__BaseUrl=http://buildtruck-configuration-service:8080
+      - PersonnelService__BaseUrl=http://buildtruck-personnel-service:8080
     networks:
       - buildtruck-network
     restart: always

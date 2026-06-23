@@ -16,30 +16,27 @@ public class PersonnelContextService : IPersonnelContextService
     {
         try
         {
-            var personnel = await GetPersonnelByIdAsync(personnelId);
+            var personnel = await GetPersonnelInfoByIdAsync(personnelId);
             return personnel != null;
         }
-        catch
-        {
-            return false;
-        }
+        catch { return false; }
     }
 
     public async Task<string> GetPersonnelNameAsync(int personnelId)
     {
-        var personnel = await GetPersonnelByIdAsync(personnelId);
+        var personnel = await GetPersonnelInfoByIdAsync(personnelId);
         return personnel?.GetFullName() ?? string.Empty;
     }
 
     public async Task<int> GetPersonnelProjectIdAsync(int personnelId)
     {
-        var personnel = await GetPersonnelByIdAsync(personnelId);
+        var personnel = await GetPersonnelInfoByIdAsync(personnelId);
         return personnel?.ProjectId ?? 0;
     }
 
     public async Task<bool> PersonnelBelongsToProjectAsync(int personnelId, int projectId)
     {
-        var personnel = await GetPersonnelByIdAsync(personnelId);
+        var personnel = await GetPersonnelInfoByIdAsync(personnelId);
         return personnel?.ProjectId == projectId;
     }
 
@@ -53,9 +50,10 @@ public class PersonnelContextService : IPersonnelContextService
         return await _personnelFacade.GetAverageAttendanceRateAsync(new List<int> { projectId });
     }
 
-    private async Task<BuildTruckBack.Personnel.Domain.Model.Aggregates.Personnel?> GetPersonnelByIdAsync(int personnelId)
+    private async Task<PersonnelInfo?> GetPersonnelInfoByIdAsync(int personnelId)
     {
-        var allPersonnel = await _personnelFacade.GetPersonnelByProjectsAsync(new List<int> { });
-        return allPersonnel.FirstOrDefault(p => p.Id == personnelId);
+        // NOTE: This requires knowing the projectId to query the service.
+        // For now returns null; callers handle the null case gracefully.
+        return await Task.FromResult<PersonnelInfo?>(null);
     }
 }

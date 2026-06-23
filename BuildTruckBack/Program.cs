@@ -34,16 +34,8 @@ using BuildTruckBack.Machinery.Infrastructure.Http;
 // Projects Context (delegates to BuildTruckProjectService via HTTP)
 using BuildTruckBack.Projects.Application.Internal.OutboundServices;
 
-// Personnel Context
-using BuildTruckBack.Personnel.Application.Internal.CommandServices;
-using BuildTruckBack.Personnel.Application.Internal.QueryServices;
-using BuildTruckBack.Personnel.Application.ACL.Services;
-using BuildTruckBack.Personnel.Domain.Repositories;
-using BuildTruckBack.Personnel.Domain.Services;
-using BuildTruckBack.Personnel.Infrastructure.Persistence.EFC.Repositories;
-using BuildTruckBack.Personnel.Infrastructure.ACL;
-using BuildTruckBack.Personnel.Infrastructure.Exports;
-using PersonnelCloudinaryService = BuildTruckBack.Personnel.Infrastructure.ACL.CloudinaryService;
+// Personnel Context — now delegated to BuildTruckPersonnelService via HTTP
+using BuildTruckBack.Personnel.Infrastructure.Http;
 
 // Materials Context
 using BuildTruckBack.Materials.Application.Internal.CommandServices;
@@ -234,6 +226,14 @@ builder.Services.AddHttpClient("ConfigurationService", client =>
     client.Timeout = TimeSpan.FromSeconds(10);
 });
 
+// HTTP Client for PersonnelService (microservice communication)
+builder.Services.AddHttpClient("PersonnelService", client =>
+{
+    client.BaseAddress = new Uri(
+        builder.Configuration["PersonnelService:BaseUrl"] ?? "http://buildtruck-personnel-service:8080");
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
+
 // Shared Bounded Context - Infrastructure
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
@@ -272,10 +272,7 @@ builder.Services.AddScoped<IUserFacade, BuildTruckBack.Users.Infrastructure.Http
 // Projects — IProjectFacade delegates to BuildTruckProjectService via HTTP
 builder.Services.AddScoped<IProjectFacade, BuildTruckBack.Projects.Infrastructure.Http.HttpProjectFacade>();
 
-// Personnel Bounded Context
-builder.Services.AddScoped<IPersonnelRepository, PersonnelRepository>();
-builder.Services.AddScoped<IPersonnelCommandService, PersonnelCommandService>();
-builder.Services.AddScoped<IPersonnelQueryService, PersonnelQueryService>();
+// Personnel — delegated to BuildTruckPersonnelService via HTTP
 
 // Materials Bounded Context
 builder.Services.AddScoped<IMaterialRepository, MaterialRepository>();
@@ -314,37 +311,13 @@ builder.Services.AddHttpContextAccessor();
 // Inventory Service
 builder.Services.AddScoped<IInventoryQueryService, InventoryQueryService>();
 
-// Personnel ACL Services - Communication with other contexts
-builder.Services.AddScoped<BuildTruckBack.Personnel.Application.ACL.Services.IProjectContextService, 
-    BuildTruckBack.Personnel.Infrastructure.ACL.ProjectContextService>();
-
-builder.Services.AddScoped<BuildTruckBack.Personnel.Application.ACL.Services.IUserContextService, 
-    BuildTruckBack.Personnel.Infrastructure.ACL.UserContextService>();
-
-// Personnel Cloudinary Service - Using alias to avoid conflicts
-builder.Services.AddScoped<BuildTruckBack.Personnel.Application.ACL.Services.ICloudinaryService>(provider =>
-{
-    var sharedCloudinaryService = provider.GetRequiredService<ICloudinaryImageService>();
-    var logger = provider.GetRequiredService<ILogger<PersonnelCloudinaryService>>();
-    return new PersonnelCloudinaryService(sharedCloudinaryService, logger);
-});
-
-// Personnel Export Handler
-builder.Services.AddScoped<PersonnelEntityExportHandler>();
-
 builder.Services.AddScoped<IUniversalExportService>(provider =>
 {
     var excelGenerator = provider.GetRequiredService<IExcelGeneratorService>();
     var pdfGenerator = provider.GetRequiredService<IPdfGeneratorService>();
     var settings = provider.GetRequiredService<IOptions<ExportSettings>>();
     var logger = provider.GetRequiredService<ILogger<UniversalExportService>>();
-    
-    var universalService = new UniversalExportService(excelGenerator, pdfGenerator, settings, logger);
-    
-    var personnelHandler = provider.GetRequiredService<PersonnelEntityExportHandler>();
-    universalService.RegisterHandler(personnelHandler);
-    
-    return universalService;
+    return new UniversalExportService(excelGenerator, pdfGenerator, settings, logger);
 });
 
 // Documentation Microservice (HTTP Facade)
@@ -371,8 +344,8 @@ builder.Services.AddScoped<BuildTruckBack.Stats.Application.ACL.Services.IPerson
 builder.Services.AddScoped<BuildTruckBack.Stats.Application.ACL.Services.IProjectContextService, BuildTruckBack.Stats.Infrastructure.ACL.ProjectContextService>();
 builder.Services.AddScoped<BuildTruckBack.Stats.Application.ACL.Services.IMaterialContextService, BuildTruckBack.Stats.Infrastructure.ACL.MaterialContextService>();
 
-// Personnel Facade
-builder.Services.AddScoped<BuildTruckBack.Personnel.Application.Internal.OutboundServices.IPersonnelFacade, BuildTruckBack.Personnel.Application.Internal.OutboundServices.PersonnelFacade>();
+// Personnel Facade — HTTP adapter to BuildTruckPersonnelService
+builder.Services.AddScoped<BuildTruckBack.Personnel.Application.Internal.OutboundServices.IPersonnelFacade, HttpPersonnelFacade>();
 
 // ===== NOTIFICATIONS MODULE =====
 // Repositories
