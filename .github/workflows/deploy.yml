@@ -15,6 +15,7 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
+          command_timeout: 30m
           script: |
             echo "=========================================="
             echo "🚀 Starting BuildTruck Deploy"
@@ -31,27 +32,27 @@ jobs:
             # ── 2. Generate .env ─────────────────────────
             echo ""
             echo "🔐 [2/5] Generating .env from secrets..."
-            cat > .env << 'EOF'
-            JWT_SECRET_KEY=${{ secrets.JWT_SECRET }}
-            JWT_ISSUER=BuildTruckBack
-            JWT_AUDIENCE=BuildTruckBack-Users
-            TokenSettings__SecretKey=${{ secrets.JWT_SECRET }}
-            MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}
-            SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}
-            EmailSettings__SmtpPassword=${{ secrets.SMTP_PASSWORD }}
-            CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_SECRET }}
-            CloudinarySettings__ApiSecret=${{ secrets.CLOUDINARY_SECRET }}
-            UserService__BaseUrl=http://buildtruck-user-service:8080
-            ProjectService__BaseUrl=http://buildtruck-project-service:8080
-            DocumentationService__BaseUrl=http://buildtruck-documentation-service:8080
-            IncidentService__BaseUrl=http://buildtruck-incident-service:8080
-            MachineryService__BaseUrl=http://buildtruck-machinery-service:8080
-            MaterialsService__BaseUrl=http://buildtruck-materials-service:8080
-            PersonnelService__BaseUrl=http://buildtruck-personnel-service:8080
-            ConfigurationService__BaseUrl=http://buildtruck-configuration-service:8080
-            NotificationService__BaseUrl=http://buildtruck-notification-service:8080
-            StatsService__BaseUrl=http://buildtruck-stats-service:8080
-            EOF
+            printf '%s\n' \
+              'JWT_SECRET_KEY=${{ secrets.JWT_SECRET }}' \
+              'JWT_ISSUER=BuildTruckBack' \
+              'JWT_AUDIENCE=BuildTruckBack-Users' \
+              'TokenSettings__SecretKey=${{ secrets.JWT_SECRET }}' \
+              'MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}' \
+              'SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}' \
+              'EmailSettings__SmtpPassword=${{ secrets.SMTP_PASSWORD }}' \
+              'CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_SECRET }}' \
+              'CloudinarySettings__ApiSecret=${{ secrets.CLOUDINARY_SECRET }}' \
+              'UserService__BaseUrl=http://buildtruck-user-service:8080' \
+              'ProjectService__BaseUrl=http://buildtruck-project-service:8080' \
+              'DocumentationService__BaseUrl=http://buildtruck-documentation-service:8080' \
+              'IncidentService__BaseUrl=http://buildtruck-incident-service:8080' \
+              'MachineryService__BaseUrl=http://buildtruck-machinery-service:8080' \
+              'MaterialsService__BaseUrl=http://buildtruck-materials-service:8080' \
+              'PersonnelService__BaseUrl=http://buildtruck-personnel-service:8080' \
+              'ConfigurationService__BaseUrl=http://buildtruck-configuration-service:8080' \
+              'NotificationService__BaseUrl=http://buildtruck-notification-service:8080' \
+              'StatsService__BaseUrl=http://buildtruck-stats-service:8080' \
+              > .env
             echo "✅ .env generated"
 
             # ── 3. Stop running containers ───────────────
