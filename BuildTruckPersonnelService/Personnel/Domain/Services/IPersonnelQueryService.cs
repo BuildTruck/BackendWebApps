@@ -1,17 +1,17 @@
-using BuildTruckPersonnelService.Personnel.Domain.Model.Aggregates;
+using PersonnelEntity = BuildTruckPersonnelService.Personnel.Domain.Model.Aggregates.Personnel;
 
 namespace BuildTruckPersonnelService.Personnel.Domain.Services;
 
 public interface IPersonnelQueryService
 {
-    Task<IEnumerable<Personnel>> GetPersonnelByProjectAsync(int projectId);
+    Task<IEnumerable<PersonnelEntity>> GetPersonnelByProjectAsync(int projectId);
 
-    Task<IEnumerable<Personnel>> GetPersonnelWithAttendanceAsync(
+    Task<IEnumerable<PersonnelEntity>> GetPersonnelWithAttendanceAsync(
         int projectId, int year, int month, bool includeAttendance = true);
 
-    Task<Personnel?> GetPersonnelByIdAsync(int personnelId);
+    Task<PersonnelEntity?> GetPersonnelByIdAsync(int personnelId);
 
-    Task<IEnumerable<Personnel>> GetActivePersonnelByProjectAsync(int projectId);
+    Task<IEnumerable<PersonnelEntity>> GetActivePersonnelByProjectAsync(int projectId);
 
     Task<IEnumerable<string>> GetDepartmentsByProjectAsync(int projectId);
 

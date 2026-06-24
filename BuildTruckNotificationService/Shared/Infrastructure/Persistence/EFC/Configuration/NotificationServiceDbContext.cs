@@ -15,6 +15,7 @@ public class NotificationServiceDbContext(DbContextOptions<NotificationServiceDb
     protected override void OnConfiguring(DbContextOptionsBuilder builder)
     {
         builder.AddCreatedUpdatedInterceptor();
+        builder.UseSnakeCaseNamingConvention();
         base.OnConfiguring(builder);
     }
 
@@ -24,6 +25,5 @@ public class NotificationServiceDbContext(DbContextOptions<NotificationServiceDb
         builder.ApplyConfiguration(new NotificationConfiguration());
         builder.ApplyConfiguration(new NotificationDeliveryConfiguration());
         builder.ApplyConfiguration(new NotificationPreferenceConfiguration());
-        builder.UseSnakeCaseNamingConvention();
     }
 }

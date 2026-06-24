@@ -56,18 +56,9 @@ using BuildTruckBack.Documentation.Infrastructure.Http;
 using BuildTruckBack.Incidents.Application.Internal.OutboundServices;
 using BuildTruckBack.Incidents.Infrastructure.Http;
 using BuildTruckBack.Notifications.Interfaces.WebSocket;
-//Stats
-using BuildTruckBack.Stats.Application.ACL.Services;
-using BuildTruckBack.Stats.Application.Internal.CommandServices;
-using BuildTruckBack.Stats.Application.Internal.QueryServices;
-using BuildTruckBack.Stats.Domain.Repositories;
-using BuildTruckBack.Stats.Domain.Services;
-using BuildTruckBack.Stats.Infrastructure.ACL;
-using BuildTruckBack.Stats.Infrastructure.Persistence.EFC.Repositories;
-using StatsUserService = BuildTruckBack.Stats.Application.ACL.Services.IUserContextService;
-using StatsUserServiceImpl = BuildTruckBack.Stats.Infrastructure.ACL.UserContextService;
-using StatsPersonnelService = BuildTruckBack.Stats.Application.ACL.Services.IPersonnelContextService;
-using StatsPersonnelServiceImpl = BuildTruckBack.Stats.Infrastructure.ACL.PersonnelContextService;
+// Stats Microservice (delegates via HTTP to BuildTruckStatsService)
+using BuildTruckBack.Stats.Application.Internal.OutboundServices;
+using BuildTruckBack.Stats.Infrastructure.Http;
 
 using Microsoft.Extensions.Options;
 using Swashbuckle.AspNetCore.SwaggerGen;
@@ -336,20 +327,17 @@ builder.Services.AddScoped<IIncidentFacade, HttpIncidentFacade>();
 // Machinery Microservice (HTTP Facade)
 builder.Services.AddScoped<IMachineryFacade, HttpMachineryFacade>();
 
-// ===== STATS MODULE =====
-// Repositories
-builder.Services.AddScoped<IStatsRepository, StatsRepository>();
-builder.Services.AddScoped<IStatsHistoryRepository, StatsHistoryRepository>();
+// ===== STATS MODULE (migrated to BuildTruckStatsService microservice) =====
+// Stats HTTP client
+builder.Services.AddHttpClient("StatsService", client =>
+{
+    client.BaseAddress = new Uri(
+        builder.Configuration["StatsService:BaseUrl"] ?? "http://buildtruck-stats-service:8080");
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
 
-// Services  
-builder.Services.AddScoped<IStatsCommandService, StatsCommandService>();
-builder.Services.AddScoped<IStatsQueryService, StatsQueryService>();
-
-// ACL Services
-builder.Services.AddScoped<BuildTruckBack.Stats.Application.ACL.Services.IUserContextService, BuildTruckBack.Stats.Infrastructure.ACL.UserContextService>();
-builder.Services.AddScoped<BuildTruckBack.Stats.Application.ACL.Services.IPersonnelContextService, BuildTruckBack.Stats.Infrastructure.ACL.PersonnelContextService>();
-builder.Services.AddScoped<BuildTruckBack.Stats.Application.ACL.Services.IProjectContextService, BuildTruckBack.Stats.Infrastructure.ACL.ProjectContextService>();
-builder.Services.AddScoped<BuildTruckBack.Stats.Application.ACL.Services.IMaterialContextService, BuildTruckBack.Stats.Infrastructure.ACL.MaterialContextService>();
+// Stats facade — delegates all Stats operations to BuildTruckStatsService via HTTP
+builder.Services.AddScoped<IStatsFacade, HttpStatsFacade>();
 
 // Personnel Facade — HTTP adapter to BuildTruckPersonnelService
 builder.Services.AddScoped<BuildTruckBack.Personnel.Application.Internal.OutboundServices.IPersonnelFacade, HttpPersonnelFacade>();

@@ -1,11 +1,11 @@
-using BuildTruckPersonnelService.Personnel.Domain.Model.Aggregates;
 using BuildTruckPersonnelService.Personnel.Interfaces.REST.Resources;
+using PersonnelEntity = BuildTruckPersonnelService.Personnel.Domain.Model.Aggregates.Personnel;
 
 namespace BuildTruckPersonnelService.Personnel.Interfaces.REST.Transform;
 
 public static class PersonnelResourceFromEntityAssembler
 {
-    public static PersonnelResource ToResourceFromEntity(Personnel personnel, bool includeAttendanceData = false)
+    public static PersonnelResource ToResourceFromEntity(PersonnelEntity personnel, bool includeAttendanceData = false)
     {
         return new PersonnelResource(
             personnel.Id,
@@ -40,13 +40,13 @@ public static class PersonnelResourceFromEntityAssembler
         );
     }
 
-    public static PersonnelResource ToResourceFromEntity(Personnel personnel)
+    public static PersonnelResource ToResourceFromEntity(PersonnelEntity personnel)
         => ToResourceFromEntity(personnel, false);
 
     public static IEnumerable<PersonnelResource> ToResourceFromEntity(
-        IEnumerable<Personnel> personnel, bool includeAttendanceData = false)
+        IEnumerable<PersonnelEntity> personnel, bool includeAttendanceData = false)
         => personnel.Select(p => ToResourceFromEntity(p, includeAttendanceData));
 
-    public static IEnumerable<PersonnelResource> ToResourceFromEntity(IEnumerable<Personnel> personnel)
+    public static IEnumerable<PersonnelResource> ToResourceFromEntity(IEnumerable<PersonnelEntity> personnel)
         => ToResourceFromEntity(personnel, false);
 }

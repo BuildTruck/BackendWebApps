@@ -7,6 +7,7 @@ using BuildTruckShared.Domain.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
+using PersonnelEntity = BuildTruckPersonnelService.Personnel.Domain.Model.Aggregates.Personnel;
 
 namespace BuildTruckPersonnelService.Personnel.Interfaces.REST.Controllers;
 
@@ -113,7 +114,7 @@ public class PersonnelController : ControllerBase
             if (projectId <= 0)
                 return BadRequest("Invalid project ID");
 
-            IEnumerable<Domain.Model.Aggregates.Personnel> personnel;
+            IEnumerable<PersonnelEntity> personnel;
 
             if (includeAttendance)
             {

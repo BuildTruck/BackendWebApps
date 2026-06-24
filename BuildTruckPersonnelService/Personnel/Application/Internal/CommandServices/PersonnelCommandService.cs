@@ -1,9 +1,9 @@
 using BuildTruckPersonnelService.Personnel.Application.ACL.Services;
-using BuildTruckPersonnelService.Personnel.Domain.Model.Aggregates;
 using BuildTruckPersonnelService.Personnel.Domain.Model.Commands;
 using BuildTruckPersonnelService.Personnel.Domain.Repositories;
 using BuildTruckPersonnelService.Personnel.Domain.Services;
 using BuildTruckShared.Domain.Repositories;
+using PersonnelEntity = BuildTruckPersonnelService.Personnel.Domain.Model.Aggregates.Personnel;
 
 namespace BuildTruckPersonnelService.Personnel.Application.Internal.CommandServices;
 
@@ -29,7 +29,7 @@ public class PersonnelCommandService : IPersonnelCommandService
         _notificationService = notificationService;
     }
 
-    public async Task<Personnel?> Handle(CreatePersonnelCommand command)
+    public async Task<PersonnelEntity?> Handle(CreatePersonnelCommand command)
     {
         var projectExists = await _projectContextService.ProjectExistsAsync(command.ProjectId);
         if (!projectExists)
@@ -47,7 +47,7 @@ public class PersonnelCommandService : IPersonnelCommandService
                 throw new InvalidOperationException($"Email {command.Email} already exists in this project");
         }
 
-        var personnel = new Personnel(
+        var personnel = new PersonnelEntity(
             command.ProjectId,
             command.Name,
             command.Lastname,
@@ -77,7 +77,7 @@ public class PersonnelCommandService : IPersonnelCommandService
         }
     }
 
-    public async Task<Personnel?> Handle(UpdatePersonnelCommand command)
+    public async Task<PersonnelEntity?> Handle(UpdatePersonnelCommand command)
     {
         var personnel = await _personnelRepository.FindByIdAsync(command.PersonnelId);
         if (personnel == null)
@@ -119,7 +119,7 @@ public class PersonnelCommandService : IPersonnelCommandService
             return true;
 
         var personnelIds = command.PersonnelAttendances.Select(p => p.PersonnelId).ToList();
-        var personnelList = new List<Personnel>();
+        var personnelList = new List<PersonnelEntity>();
 
         foreach (var personnelId in personnelIds)
         {

@@ -1,13 +1,13 @@
-using BuildTruckPersonnelService.Personnel.Domain.Model.Aggregates;
 using BuildTruckPersonnelService.Personnel.Domain.Model.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using PersonnelEntity = BuildTruckPersonnelService.Personnel.Domain.Model.Aggregates.Personnel;
 
 namespace BuildTruckPersonnelService.Personnel.Infrastructure.Persistence.EFC.Configuration;
 
-public class PersonnelConfiguration : IEntityTypeConfiguration<Personnel>
+public class PersonnelConfiguration : IEntityTypeConfiguration<PersonnelEntity>
 {
-    public void Configure(EntityTypeBuilder<Personnel> builder)
+    public void Configure(EntityTypeBuilder<PersonnelEntity> builder)
     {
         builder.ToTable("Personnel");
         builder.HasKey(p => p.Id);
