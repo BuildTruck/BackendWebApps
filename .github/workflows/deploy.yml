@@ -46,6 +46,11 @@ jobs:
             DocumentationService__BaseUrl=http://buildtruck-documentation-service:8080
             IncidentService__BaseUrl=http://buildtruck-incident-service:8080
             MachineryService__BaseUrl=http://buildtruck-machinery-service:8080
+            MaterialsService__BaseUrl=http://buildtruck-materials-service:8080
+            PersonnelService__BaseUrl=http://buildtruck-personnel-service:8080
+            ConfigurationService__BaseUrl=http://buildtruck-configuration-service:8080
+            NotificationService__BaseUrl=http://buildtruck-notification-service:8080
+            StatsService__BaseUrl=http://buildtruck-stats-service:8080
             EOF
             echo "✅ .env generated"
 

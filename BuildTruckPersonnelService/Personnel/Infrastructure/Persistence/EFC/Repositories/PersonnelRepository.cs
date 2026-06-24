@@ -1,48 +1,48 @@
-using BuildTruckPersonnelService.Personnel.Domain.Model.Aggregates;
 using BuildTruckPersonnelService.Personnel.Domain.Model.ValueObjects;
 using BuildTruckPersonnelService.Personnel.Domain.Repositories;
 using BuildTruckPersonnelService.Shared.Infrastructure.Persistence.EFC.Configuration;
 using BuildTruckShared.Infrastructure.Persistence.EFC.Repositories;
 using Microsoft.EntityFrameworkCore;
+using PersonnelEntity = BuildTruckPersonnelService.Personnel.Domain.Model.Aggregates.Personnel;
 
 namespace BuildTruckPersonnelService.Personnel.Infrastructure.Persistence.EFC.Repositories;
 
-public class PersonnelRepository : BaseRepository<Personnel>, IPersonnelRepository
+public class PersonnelRepository : BaseRepository<PersonnelEntity, PersonnelServiceDbContext>, IPersonnelRepository
 {
     public PersonnelRepository(PersonnelServiceDbContext context) : base(context)
     {
     }
 
-    public async Task<IEnumerable<Personnel>> FindByProjectIdAsync(int projectId)
+    public async Task<IEnumerable<PersonnelEntity>> FindByProjectIdAsync(int projectId)
     {
-        return await Context.Set<Personnel>()
+        return await Context.Set<PersonnelEntity>()
             .Where(p => p.ProjectId == projectId && !p.IsDeleted)
             .OrderBy(p => p.Name)
             .ThenBy(p => p.Lastname)
             .ToListAsync();
     }
 
-    public async Task<IEnumerable<Personnel>> FindByProjectIdWithAttendanceAsync(int projectId, int year, int month)
+    public async Task<IEnumerable<PersonnelEntity>> FindByProjectIdWithAttendanceAsync(int projectId, int year, int month)
     {
-        return await Context.Set<Personnel>()
+        return await Context.Set<PersonnelEntity>()
             .Where(p => p.ProjectId == projectId && !p.IsDeleted)
             .OrderBy(p => p.Name)
             .ThenBy(p => p.Lastname)
             .ToListAsync();
     }
 
-    public async Task<Personnel?> FindByDocumentNumberAsync(string documentNumber, int projectId)
+    public async Task<PersonnelEntity?> FindByDocumentNumberAsync(string documentNumber, int projectId)
     {
-        return await Context.Set<Personnel>()
+        return await Context.Set<PersonnelEntity>()
             .FirstOrDefaultAsync(p =>
                 p.DocumentNumber == documentNumber &&
                 p.ProjectId == projectId &&
                 !p.IsDeleted);
     }
 
-    public async Task<Personnel?> FindByEmailAsync(string email, int projectId)
+    public async Task<PersonnelEntity?> FindByEmailAsync(string email, int projectId)
     {
-        return await Context.Set<Personnel>()
+        return await Context.Set<PersonnelEntity>()
             .FirstOrDefaultAsync(p =>
                 p.Email == email &&
                 p.ProjectId == projectId &&
@@ -51,7 +51,7 @@ public class PersonnelRepository : BaseRepository<Personnel>, IPersonnelReposito
 
     public async Task<bool> ExistsByDocumentNumberAsync(string documentNumber, int projectId, int? excludePersonnelId = null)
     {
-        var query = Context.Set<Personnel>()
+        var query = Context.Set<PersonnelEntity>()
             .Where(p =>
                 p.DocumentNumber == documentNumber &&
                 p.ProjectId == projectId &&
@@ -68,7 +68,7 @@ public class PersonnelRepository : BaseRepository<Personnel>, IPersonnelReposito
         if (string.IsNullOrEmpty(email))
             return false;
 
-        var query = Context.Set<Personnel>()
+        var query = Context.Set<PersonnelEntity>()
             .Where(p =>
                 p.Email == email &&
                 p.ProjectId == projectId &&
@@ -80,9 +80,9 @@ public class PersonnelRepository : BaseRepository<Personnel>, IPersonnelReposito
         return await query.AnyAsync();
     }
 
-    public async Task<IEnumerable<Personnel>> FindActiveByProjectIdAsync(int projectId)
+    public async Task<IEnumerable<PersonnelEntity>> FindActiveByProjectIdAsync(int projectId)
     {
-        return await Context.Set<Personnel>()
+        return await Context.Set<PersonnelEntity>()
             .Where(p =>
                 p.ProjectId == projectId &&
                 !p.IsDeleted &&
@@ -94,7 +94,7 @@ public class PersonnelRepository : BaseRepository<Personnel>, IPersonnelReposito
 
     public async Task<IEnumerable<string>> GetDepartmentsByProjectIdAsync(int projectId)
     {
-        return await Context.Set<Personnel>()
+        return await Context.Set<PersonnelEntity>()
             .Where(p => p.ProjectId == projectId && !p.IsDeleted)
             .Select(p => p.Department)
             .Distinct()
@@ -103,12 +103,12 @@ public class PersonnelRepository : BaseRepository<Personnel>, IPersonnelReposito
             .ToListAsync();
     }
 
-    public async Task<bool> UpdateAttendanceBatchAsync(IEnumerable<Personnel> personnelList)
+    public async Task<bool> UpdateAttendanceBatchAsync(IEnumerable<PersonnelEntity> personnelList)
     {
         try
         {
             foreach (var personnel in personnelList)
-                Context.Set<Personnel>().Update(personnel);
+                Context.Set<PersonnelEntity>().Update(personnel);
 
             return true;
         }
@@ -118,15 +118,15 @@ public class PersonnelRepository : BaseRepository<Personnel>, IPersonnelReposito
         }
     }
 
-    public new async Task<Personnel?> FindByIdAsync(int id)
+    public new async Task<PersonnelEntity?> FindByIdAsync(int id)
     {
-        return await Context.Set<Personnel>()
+        return await Context.Set<PersonnelEntity>()
             .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
     }
 
-    public new async Task<IEnumerable<Personnel>> ListAsync()
+    public new async Task<IEnumerable<PersonnelEntity>> ListAsync()
     {
-        return await Context.Set<Personnel>()
+        return await Context.Set<PersonnelEntity>()
             .Where(p => !p.IsDeleted)
             .ToListAsync();
     }

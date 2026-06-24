@@ -1,6 +1,6 @@
-using BuildTruckPersonnelService.Personnel.Domain.Model.Aggregates;
 using BuildTruckPersonnelService.Personnel.Domain.Model.ValueObjects;
 using BuildTruckPersonnelService.Shared.Infrastructure.Persistence.EFC.Configuration;
+using PersonnelEntity = BuildTruckPersonnelService.Personnel.Domain.Model.Aggregates.Personnel;
 
 namespace BuildTruckPersonnelService.Shared.Infrastructure.Persistence.EFC.Seeding;
 
@@ -14,7 +14,7 @@ public static class DatabaseSeeder
         int year = now.Year;
         int month = now.Month;
 
-        var seedPersonnel = new List<Personnel>
+        var seedPersonnel = new List<PersonnelEntity>
         {
             // ===== PROJECT 1 - Torres Miraflores =====
             Make(1, "Carlos", "Mendoza Ríos",    "45123678", "Ingeniero Civil",          "Ingeniería",     PersonnelType.TECHNICAL,       PersonnelStatus.ACTIVE,  4500m, "BCP",        "19012345678",  new DateTime(2024, 3,  1), "987654321", "carlos.mendoza@buildtruck.pe"),
@@ -85,20 +85,20 @@ public static class DatabaseSeeder
         Console.WriteLine($"✅ PERSONNEL SEED DATA CREATED - {seedPersonnel.Count} records");
     }
 
-    private static Personnel Make(
+    private static PersonnelEntity Make(
         int projectId, string name, string lastname, string documentNumber,
         string position, string department, PersonnelType type, PersonnelStatus status,
         decimal monthlyAmount, string bank, string accountNumber,
         DateTime startDate, string phone, string email)
     {
-        var p = new Personnel(projectId, name, lastname, documentNumber, position, department, type, status);
+        var p = new PersonnelEntity(projectId, name, lastname, documentNumber, position, department, type, status);
         p.UpdateFinancialInfo(monthlyAmount, 0m, bank, accountNumber);
         p.UpdateContactInfo(phone, email);
         p.UpdateContractInfo(startDate, null, status);
         return p;
     }
 
-    private static void MarkAttendance(Personnel p, int year, int month, int daysToMark, int[] absenceDays)
+    private static void MarkAttendance(PersonnelEntity p, int year, int month, int daysToMark, int[] absenceDays)
     {
         if (daysToMark <= 0) return;
 

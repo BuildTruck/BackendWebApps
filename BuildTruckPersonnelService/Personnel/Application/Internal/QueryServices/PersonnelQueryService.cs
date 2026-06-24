@@ -1,6 +1,6 @@
-using BuildTruckPersonnelService.Personnel.Domain.Model.Aggregates;
 using BuildTruckPersonnelService.Personnel.Domain.Repositories;
 using BuildTruckPersonnelService.Personnel.Domain.Services;
+using PersonnelEntity = BuildTruckPersonnelService.Personnel.Domain.Model.Aggregates.Personnel;
 
 namespace BuildTruckPersonnelService.Personnel.Application.Internal.QueryServices;
 
@@ -13,12 +13,12 @@ public class PersonnelQueryService : IPersonnelQueryService
         _personnelRepository = personnelRepository;
     }
 
-    public async Task<IEnumerable<Personnel>> GetPersonnelByProjectAsync(int projectId)
+    public async Task<IEnumerable<PersonnelEntity>> GetPersonnelByProjectAsync(int projectId)
     {
         return await _personnelRepository.FindByProjectIdAsync(projectId);
     }
 
-    public async Task<IEnumerable<Personnel>> GetPersonnelWithAttendanceAsync(
+    public async Task<IEnumerable<PersonnelEntity>> GetPersonnelWithAttendanceAsync(
         int projectId, int year, int month, bool includeAttendance = true)
     {
         if (!includeAttendance)
@@ -37,12 +37,12 @@ public class PersonnelQueryService : IPersonnelQueryService
         return personnelList;
     }
 
-    public async Task<Personnel?> GetPersonnelByIdAsync(int personnelId)
+    public async Task<PersonnelEntity?> GetPersonnelByIdAsync(int personnelId)
     {
         return await _personnelRepository.FindByIdAsync(personnelId);
     }
 
-    public async Task<IEnumerable<Personnel>> GetActivePersonnelByProjectAsync(int projectId)
+    public async Task<IEnumerable<PersonnelEntity>> GetActivePersonnelByProjectAsync(int projectId)
     {
         return await _personnelRepository.FindActiveByProjectIdAsync(projectId);
     }
