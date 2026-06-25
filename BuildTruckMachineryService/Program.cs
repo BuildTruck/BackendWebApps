@@ -144,6 +144,9 @@ builder.Services.AddScoped<IUserFacade, HttpUserFacade>();
 
 builder.Services.AddScoped<IMachineryRepository>(provider =>
     new MachineryRepository(provider.GetRequiredService<MachineryServiceDbContext>()));
+builder.Services.AddScoped<CreateMachineryCommandHandler>();
+builder.Services.AddScoped<UpdateMachineryCommandHandler>();
+builder.Services.AddScoped<DeleteMachineryCommandHandler>();
 builder.Services.AddScoped<IMachineryCommandService, MachineryCommandService>();
 builder.Services.AddScoped<IMachineryQueryService, MachineryQueryService>();
 builder.Services.AddScoped<MachineryProjectContextService, ProjectContextService>();

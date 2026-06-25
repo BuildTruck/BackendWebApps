@@ -152,11 +152,12 @@ using (var scope = app.Services.CreateScope())
         var creator = context.GetService<IRelationalDatabaseCreator>();
         creator.CreateTables();
     }
-    catch
+    catch { }
+    try
     {
-        // Personnel table already exists in the shared database.
+        await BuildTruckPersonnelService.Shared.Infrastructure.Persistence.EFC.Seeding.DatabaseSeeder.SeedAsync(context);
     }
-    await BuildTruckPersonnelService.Shared.Infrastructure.Persistence.EFC.Seeding.DatabaseSeeder.SeedAsync(context);
+    catch { }
 }
 
 app.UseSwagger();

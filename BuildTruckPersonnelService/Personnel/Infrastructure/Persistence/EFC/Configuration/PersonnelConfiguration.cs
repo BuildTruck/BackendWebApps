@@ -51,7 +51,7 @@ public class PersonnelConfiguration : IEntityTypeConfiguration<PersonnelEntity>
         builder.Property(p => p.MonthlyAttendanceJson)
             .HasColumnName("MonthlyAttendanceJson")
             .HasColumnType("json")
-            .HasDefaultValue("{}");
+            .HasDefaultValueSql("('{}')");
 
         builder.Property(p => p.Phone).HasColumnName("Phone").HasMaxLength(20);
         builder.Property(p => p.Email).HasColumnName("Email").HasMaxLength(150);
