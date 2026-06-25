@@ -6,7 +6,7 @@ namespace BuildTruckProjectService.Projects.Interfaces.REST.Controllers;
 
 [ApiController]
 [Route("api/v1/projects")]
-[Authorize]
+[AllowAnonymous]
 public class ProjectsInternalController(IProjectFacade projectFacade) : ControllerBase
 {
     [HttpGet("{id:int}")]
