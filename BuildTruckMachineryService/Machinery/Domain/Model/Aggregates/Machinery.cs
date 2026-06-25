@@ -26,7 +26,7 @@ public class Machinery
     
     [Required]
     [MaxLength(20)]
-    public string Status { get; set; } = "active";
+    public string Status { get; set; } = "Active";
     
     [MaxLength(100)]
     public string Provider { get; set; } = string.Empty;
@@ -49,6 +49,6 @@ public class Machinery
     public DateTime RegisterDate { get; set; } = DateTime.UtcNow.Date;
 
     // Domain methods
-    public bool IsActive() => Status == "active";
-    public bool IsInMaintenance() => Status == "maintenance";
+    public bool IsActive() => Status.Equals("active", StringComparison.OrdinalIgnoreCase);
+    public bool IsInMaintenance() => Status.Equals("maintenance", StringComparison.OrdinalIgnoreCase);
 }

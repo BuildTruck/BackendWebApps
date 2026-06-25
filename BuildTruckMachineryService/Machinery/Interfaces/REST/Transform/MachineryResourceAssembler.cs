@@ -15,7 +15,7 @@ public static class MachineryResourceAssembler
             Name = machinery.Name,
             LicensePlate = machinery.LicensePlate,
             MachineryType = machinery.MachineryType,
-            Status = Enum.Parse<MachineryStatus>(machinery.Status),
+            Status = Enum.Parse<MachineryStatus>(machinery.Status, ignoreCase: true),
             Provider = machinery.Provider,
             Description = machinery.Description,
             PersonnelId = machinery.PersonnelId,
