@@ -5,7 +5,59 @@ on:
     branches: [main]
 
 jobs:
+  # ── Build images in CI (7 GB RAM) and push to Docker Hub ──
+  build-and-push:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - name: user-service
+            dockerfile: BuildTruckUserService/Dockerfile
+          - name: project-service
+            dockerfile: BuildTruckProjectService/Dockerfile
+          - name: documentation-service
+            dockerfile: BuildTruckDocumentationService/Dockerfile
+          - name: incident-service
+            dockerfile: BuildTruckIncidentService/Dockerfile
+          - name: machinery-service
+            dockerfile: BuildTruckMachineryService/Dockerfile
+          - name: materials-service
+            dockerfile: BuildTruckMaterialsService/Dockerfile
+          - name: personnel-service
+            dockerfile: BuildTruckPersonnelService/Dockerfile
+          - name: configuration-service
+            dockerfile: BuildTruckConfigurationService/Dockerfile
+          - name: notification-service
+            dockerfile: BuildTruckNotificationService/Dockerfile
+          - name: stats-service
+            dockerfile: BuildTruckStatsService/Dockerfile
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push ${{ matrix.name }}
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/buildtruck-${{ matrix.name }}:latest
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+
+  # ── Pull pre-built images on EC2 and restart ──
   deploy:
+    needs: build-and-push
     runs-on: ubuntu-latest
 
     steps:
@@ -15,23 +67,33 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
-          command_timeout: 30m
+          command_timeout: 10m
           script: |
             echo "=========================================="
-            echo "🚀 Starting BuildTruck Deploy"
-            echo "📅 $(date)"
+            echo "Starting BuildTruck Deploy"
+            echo "$(date)"
             echo "=========================================="
 
-            # ── 1. Pull latest code ──────────────────────
+            # ── 0. Swap (one-time setup, safe to re-run) ──
+            if [ ! -f /swapfile ]; then
+              echo "[0/5] Creating 2 GB swap file..."
+              sudo fallocate -l 2G /swapfile
+              sudo chmod 600 /swapfile
+              sudo mkswap /swapfile
+              sudo swapon /swapfile
+              echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+              echo "Swap created"
+            fi
+
+            # ── 1. Pull latest code ──
             echo ""
-            echo "📥 [1/5] Pulling latest code from main..."
+            echo "[1/5] Pulling latest code from main..."
             cd /home/ec2-user/buildtruck/BackendWebApps
             git pull origin main
-            echo "✅ Code updated successfully"
 
-            # ── 2. Generate .env ─────────────────────────
+            # ── 2. Generate .env ──
             echo ""
-            echo "🔐 [2/5] Generating .env from secrets..."
+            echo "[2/5] Generating .env..."
             printf '%s\n' \
               'JWT_SECRET_KEY=${{ secrets.JWT_SECRET }}' \
               'JWT_ISSUER=BuildTruckBack' \
@@ -42,49 +104,33 @@ jobs:
               'EmailSettings__SmtpPassword=${{ secrets.SMTP_PASSWORD }}' \
               'CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_SECRET }}' \
               'CloudinarySettings__ApiSecret=${{ secrets.CLOUDINARY_SECRET }}' \
-              'UserService__BaseUrl=http://buildtruck-user-service:8080' \
-              'ProjectService__BaseUrl=http://buildtruck-project-service:8080' \
-              'DocumentationService__BaseUrl=http://buildtruck-documentation-service:8080' \
-              'IncidentService__BaseUrl=http://buildtruck-incident-service:8080' \
-              'MachineryService__BaseUrl=http://buildtruck-machinery-service:8080' \
-              'MaterialsService__BaseUrl=http://buildtruck-materials-service:8080' \
-              'PersonnelService__BaseUrl=http://buildtruck-personnel-service:8080' \
-              'ConfigurationService__BaseUrl=http://buildtruck-configuration-service:8080' \
-              'NotificationService__BaseUrl=http://buildtruck-notification-service:8080' \
-              'StatsService__BaseUrl=http://buildtruck-stats-service:8080' \
+              'IMAGE_PREFIX=${{ secrets.DOCKERHUB_USERNAME }}' \
               > .env
-            echo "✅ .env generated"
+            echo ".env generated"
 
-            # ── 3. Stop running containers ───────────────
+            # ── 3. Stop running containers ──
             echo ""
-            echo "🛑 [3/5] Stopping running containers..."
-            docker compose down -v --remove-orphans 2>/dev/null || true
-            docker rm -f buildtruck-mysql 2>/dev/null || true
-            docker volume rm backendwebapps_mysql_data 2>/dev/null || true
-            echo "✅ Containers stopped"
+            echo "[3/5] Stopping containers..."
+            docker compose down --remove-orphans 2>/dev/null || true
 
-            # ── 4. Build and start containers ────────────
+            # ── 4. Pull pre-built images and start ──
             echo ""
-            echo "🔨 [4/5] Building and starting containers..."
-            docker compose up -d --build 2>&1 | tee /tmp/compose-up.log
-            if grep -q "^.*ERROR\|exit code [^0]" /tmp/compose-up.log; then
-              echo "❌ Build failed! Check logs above."
-              exit 1
-            fi
-            echo "✅ Containers started"
+            echo "[4/5] Pulling images from Docker Hub..."
+            docker compose pull
 
-            # ── 5. Cleanup ────────────────────────────────
+            echo "Starting containers..."
+            docker compose up -d
+
+            # ── 5. Cleanup ──
             echo ""
-            echo "🧹 [5/5] Cleaning up unused Docker resources..."
+            echo "[5/5] Cleaning unused images..."
             docker image prune -f
-            echo "✅ Cleanup done"
 
-            # ── Summary ───────────────────────────────────
             echo ""
             echo "=========================================="
-            echo "📊 Container status:"
+            echo "Container status:"
             docker compose ps
             echo "=========================================="
-            echo "✅ Deploy completed successfully!"
-            echo "🌐 API available at: http://${{ secrets.EC2_HOST }}"
+            echo "Deploy completed!"
+            echo "API: http://${{ secrets.EC2_HOST }}"
             echo "=========================================="

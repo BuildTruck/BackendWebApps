@@ -28,9 +28,7 @@ services:
 
   # ===== AUTH + USERS MICROSERVICE =====
   buildtruck-user-service:
-    build:
-      context: .
-      dockerfile: BuildTruckUserService/Dockerfile
+    image: ${IMAGE_PREFIX}/buildtruck-user-service:latest
     container_name: buildtruck-user-service
     expose:
       - "8080"
@@ -50,12 +48,11 @@ services:
     networks:
       - buildtruck-network
     restart: always
+    mem_limit: 200m
 
   # ===== PROJECTS MICROSERVICE =====
   buildtruck-project-service:
-    build:
-      context: .
-      dockerfile: BuildTruckProjectService/Dockerfile
+    image: ${IMAGE_PREFIX}/buildtruck-project-service:latest
     container_name: buildtruck-project-service
     expose:
       - "8080"
@@ -77,12 +74,11 @@ services:
     networks:
       - buildtruck-network
     restart: always
+    mem_limit: 200m
 
   # ===== DOCUMENTATION MICROSERVICE =====
   buildtruck-documentation-service:
-    build:
-      context: .
-      dockerfile: BuildTruckDocumentationService/Dockerfile
+    image: ${IMAGE_PREFIX}/buildtruck-documentation-service:latest
     container_name: buildtruck-documentation-service
     expose:
       - "8080"
@@ -104,12 +100,11 @@ services:
     networks:
       - buildtruck-network
     restart: always
+    mem_limit: 200m
 
   # ===== INCIDENTS MICROSERVICE =====
   buildtruck-incident-service:
-    build:
-      context: .
-      dockerfile: BuildTruckIncidentService/Dockerfile
+    image: ${IMAGE_PREFIX}/buildtruck-incident-service:latest
     container_name: buildtruck-incident-service
     expose:
       - "8080"
@@ -131,12 +126,11 @@ services:
     networks:
       - buildtruck-network
     restart: always
+    mem_limit: 200m
 
   # ===== MACHINERY MICROSERVICE =====
   buildtruck-machinery-service:
-    build:
-      context: .
-      dockerfile: BuildTruckMachineryService/Dockerfile
+    image: ${IMAGE_PREFIX}/buildtruck-machinery-service:latest
     container_name: buildtruck-machinery-service
     expose:
       - "8080"
@@ -158,12 +152,11 @@ services:
     networks:
       - buildtruck-network
     restart: always
+    mem_limit: 200m
 
   # ===== MATERIALS MICROSERVICE =====
   buildtruck-materials-service:
-    build:
-      context: .
-      dockerfile: BuildTruckMaterialsService/Dockerfile
+    image: ${IMAGE_PREFIX}/buildtruck-materials-service:latest
     container_name: buildtruck-materials-service
     expose:
       - "8080"
@@ -187,12 +180,11 @@ services:
     networks:
       - buildtruck-network
     restart: always
+    mem_limit: 200m
 
   # ===== PERSONNEL MICROSERVICE =====
   buildtruck-personnel-service:
-    build:
-      context: .
-      dockerfile: BuildTruckPersonnelService/Dockerfile
+    image: ${IMAGE_PREFIX}/buildtruck-personnel-service:latest
     container_name: buildtruck-personnel-service
     expose:
       - "8080"
@@ -216,12 +208,11 @@ services:
     networks:
       - buildtruck-network
     restart: always
+    mem_limit: 200m
 
   # ===== CONFIGURATIONS MICROSERVICE =====
   buildtruck-configuration-service:
-    build:
-      context: .
-      dockerfile: BuildTruckConfigurationService/Dockerfile
+    image: ${IMAGE_PREFIX}/buildtruck-configuration-service:latest
     container_name: buildtruck-configuration-service
     expose:
       - "8080"
@@ -241,12 +232,11 @@ services:
     networks:
       - buildtruck-network
     restart: always
+    mem_limit: 200m
 
   # ===== NOTIFICATION MICROSERVICE =====
   buildtruck-notification-service:
-    build:
-      context: .
-      dockerfile: BuildTruckNotificationService/Dockerfile
+    image: ${IMAGE_PREFIX}/buildtruck-notification-service:latest
     container_name: buildtruck-notification-service
     expose:
       - "8080"
@@ -286,12 +276,11 @@ services:
     networks:
       - buildtruck-network
     restart: always
+    mem_limit: 200m
 
   # ===== STATS MICROSERVICE =====
   buildtruck-stats-service:
-    build:
-      context: .
-      dockerfile: BuildTruckStatsService/Dockerfile
+    image: ${IMAGE_PREFIX}/buildtruck-stats-service:latest
     container_name: buildtruck-stats-service
     expose:
       - "8080"
@@ -327,6 +316,7 @@ services:
     networks:
       - buildtruck-network
     restart: always
+    mem_limit: 200m
 
   # ===== MYSQL =====
   mysql:
@@ -344,6 +334,7 @@ services:
     networks:
       - buildtruck-network
     restart: always
+    mem_limit: 350m
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
