@@ -208,6 +208,8 @@ builder.Services.AddScoped<IWebSocketService, WebSocketService>();
 // Background service
 builder.Services.AddHostedService<NotificationBackgroundService>();
 
+builder.Services.AddHealthChecks();
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -233,4 +235,5 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapHub<NotificationHub>("/hubs/notifications");
+app.MapHealthChecks("/health");
 app.Run();

@@ -175,6 +175,8 @@ builder.Services.AddScoped<IMaterialContextService, MaterialContextService>();
 builder.Services.AddScoped<IMachineryContextService, MachineryContextService>();
 builder.Services.AddScoped<IIncidentContextService, IncidentContextService>();
 
+builder.Services.AddHealthChecks();
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -199,4 +201,5 @@ app.UseCors("AllowAllPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHealthChecks("/health");
 app.Run();

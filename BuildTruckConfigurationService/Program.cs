@@ -117,6 +117,8 @@ builder.Services.AddScoped<IConfigurationSettingsQueryService, ConfigurationSett
 builder.Services.AddScoped<IConfigurationSettingsFacade, ConfigurationSettingsFacade>();
 builder.Services.AddScoped<INotificationContextService, NotificationContextService>();
 
+builder.Services.AddHealthChecks();
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -141,4 +143,5 @@ app.UseCors("AllowAllPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHealthChecks("/health");
 app.Run();

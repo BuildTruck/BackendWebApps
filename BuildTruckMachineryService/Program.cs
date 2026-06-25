@@ -155,6 +155,8 @@ builder.Services.AddScoped<ICloudinaryService>(provider =>
     return new MachineryCloudinaryService(sharedCloudinaryService, logger);
 });
 
+builder.Services.AddHealthChecks();
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -177,4 +179,5 @@ app.UseCors("AllowAllPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHealthChecks("/health");
 app.Run();

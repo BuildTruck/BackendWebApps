@@ -139,6 +139,8 @@ builder.Services.AddScoped<BuildTruckProjectService.Projects.Interfaces.REST.Tra
 builder.Services.AddHttpContextAccessor();
 
 // ===== BUILD APP =====
+builder.Services.AddHealthChecks();
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -161,4 +163,5 @@ app.UseCors("AllowAllPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHealthChecks("/health");
 app.Run();

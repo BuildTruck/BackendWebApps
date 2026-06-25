@@ -158,6 +158,8 @@ builder.Services.AddScoped<IAuthFacade, AuthFacade>();
 builder.Services.AddHttpContextAccessor();
 
 // ===== BUILD APP =====
+builder.Services.AddHealthChecks();
+
 var app = builder.Build();
 
 // Ensure DB schema exists and seed initial data
@@ -183,5 +185,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHealthChecks("/health");
 
 app.Run();
