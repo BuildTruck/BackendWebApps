@@ -38,11 +38,17 @@ namespace BuildTruckMaterialsService.Materials.Interfaces.REST.Controllers
         [SwaggerResponse(404, "Project not found")]
         public async Task<ActionResult<IEnumerable<MaterialEntryResource>>> GetMaterialEntriesByProject(int projectId)
         {
-            var query = new GetMaterialEntriesByProjectQuery(projectId);
-            var entries = await _entryQueryService.Handle(query);
-            
-            var resources = entries.Select(MaterialEntryResourceAssembler.ToResourceFromEntity);
-            return Ok(resources);
+            try
+            {
+                var query = new GetMaterialEntriesByProjectQuery(projectId);
+                var entries = await _entryQueryService.Handle(query);
+                var resources = entries.Select(MaterialEntryResourceAssembler.ToResourceFromEntity);
+                return Ok(resources);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -54,35 +60,38 @@ namespace BuildTruckMaterialsService.Materials.Interfaces.REST.Controllers
         [SwaggerResponse(400, "Invalid request data")]
         public async Task<ActionResult<MaterialEntryResource>> CreateOrUpdateMaterialEntry([FromBody] CreateOrUpdateMaterialEntryResource resource)
         {
-            Console.WriteLine($"=== DATOS RECIBIDOS EN CONTROLLER ===");
-            Console.WriteLine($"ID: {resource.Id}");
-            Console.WriteLine($"Status recibido: '{resource.Status}'");
-            Console.WriteLine($"Payment recibido: '{resource.Payment}'");
-            Console.WriteLine($"DocumentType recibido: '{resource.DocumentType}'");
-            
-            MaterialEntry? entry;
-            
-            if (resource.Id.HasValue && resource.Id.Value > 0)
+            try
             {
-                // Actualizar entrada existente
-                var updateCommand = MaterialEntryResourceAssembler.ToUpdateCommandFromResource(resource.Id.Value, resource);
-                entry = await _entryCommandService.Handle(updateCommand);
-                
-                if (entry == null)
-                    return NotFound("Material entry not found");
+                MaterialEntry? entry;
+
+                if (resource.Id.HasValue && resource.Id.Value > 0)
+                {
+                    var updateCommand = MaterialEntryResourceAssembler.ToUpdateCommandFromResource(resource.Id.Value, resource);
+                    entry = await _entryCommandService.Handle(updateCommand);
+
+                    if (entry == null)
+                        return NotFound("Material entry not found");
+                }
+                else
+                {
+                    var createCommand = MaterialEntryResourceAssembler.ToCreateCommandFromResource(resource);
+                    entry = await _entryCommandService.Handle(createCommand);
+
+                    if (entry == null)
+                        return BadRequest("Failed to create material entry");
+                }
+
+                var entryResource = MaterialEntryResourceAssembler.ToResourceFromEntity(entry);
+                return Ok(entryResource);
             }
-            else
+            catch (ArgumentException ex)
             {
-                // Crear nueva entrada
-                var createCommand = MaterialEntryResourceAssembler.ToCreateCommandFromResource(resource);
-                entry = await _entryCommandService.Handle(createCommand);
-                
-                if (entry == null)
-                    return BadRequest("Failed to create material entry");
+                return BadRequest($"Invalid data: {ex.Message}");
             }
-            
-            var entryResource = MaterialEntryResourceAssembler.ToResourceFromEntity(entry);
-            return Ok(entryResource);
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
         }
     }
 }
