@@ -157,6 +157,7 @@ builder.Services.AddScoped<ICloudinaryService>(provider =>
     var logger = provider.GetRequiredService<ILogger<MachineryCloudinaryService>>();
     return new MachineryCloudinaryService(sharedCloudinaryService, logger);
 });
+builder.Services.AddScoped<BuildTruckMachineryService.Machinery.Application.ACL.Services.IMachineryCloudinaryService, BuildTruckMachineryService.Machinery.Infrastructure.ACL.MachineryCloudinaryService>();
 
 builder.Services.AddHealthChecks();
 
