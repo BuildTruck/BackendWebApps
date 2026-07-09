@@ -34,7 +34,8 @@ public class MaterialsTests
         var materialRepository = new FakeMaterialRepository();
         var unitOfWork = new FakeUnitOfWork();
         var notifications = new FakeNotificationContextService();
-        var service = new MaterialCommandService(materialRepository, unitOfWork, notifications);
+        var cache = new FakeMaterialCacheService();
+        var service = new MaterialCommandService(materialRepository, unitOfWork, notifications, cache);
 
         var material = await service.Handle(new CreateMaterialCommand(
             ProjectId: 12,
@@ -50,6 +51,7 @@ public class MaterialsTests
         Assert.Single(materialRepository.Materials);
         Assert.Equal(1, unitOfWork.CompleteCalls);
         Assert.Equal(1, notifications.MaterialAddedCalls);
+        Assert.Equal(new[] { 12 }, cache.InvalidatedProjects);
     }
 
     [Fact]
@@ -195,6 +197,30 @@ public class MaterialsTests
         public Task CompleteAsync()
         {
             CompleteCalls++;
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class FakeMaterialCacheService : IMaterialCacheService
+    {
+        public List<int> InvalidatedProjects { get; } = new();
+        public List<int> InvalidatedMaterials { get; } = new();
+
+        public Task<T?> GetOrSetProjectAsync<T>(int projectId, string suffix, Func<Task<T?>> factory, CancellationToken ct = default)
+            => factory();
+
+        public Task<T?> GetOrSetAsync<T>(string key, Func<Task<T?>> factory, CancellationToken ct = default)
+            => factory();
+
+        public Task InvalidateProjectAsync(int projectId, CancellationToken ct = default)
+        {
+            InvalidatedProjects.Add(projectId);
+            return Task.CompletedTask;
+        }
+
+        public Task InvalidateMaterialAsync(int materialId, CancellationToken ct = default)
+        {
+            InvalidatedMaterials.Add(materialId);
             return Task.CompletedTask;
         }
     }

@@ -13,15 +13,18 @@ public class MaterialCommandService : IMaterialCommandService
     private readonly IMaterialRepository _materialRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly INotificationContextService _notificationContextService;
+    private readonly IMaterialCacheService _cache;
 
     public MaterialCommandService(
         IMaterialRepository materialRepository,
         IUnitOfWork unitOfWork,
-        INotificationContextService notificationContextService)
+        INotificationContextService notificationContextService,
+        IMaterialCacheService cache)
     {
         _materialRepository = materialRepository;
         _unitOfWork = unitOfWork;
         _notificationContextService = notificationContextService;
+        _cache = cache;
     }
 
     public async Task<Material?> Handle(CreateMaterialCommand command)
@@ -36,6 +39,7 @@ public class MaterialCommandService : IMaterialCommandService
 
         await _materialRepository.AddAsync(material);
         await _unitOfWork.CompleteAsync();
+        await _cache.InvalidateProjectAsync(material.ProjectId);
         await _notificationContextService.NotifyMaterialAddedAsync(
             material.ProjectId,
             material.Id,
@@ -58,6 +62,8 @@ public class MaterialCommandService : IMaterialCommandService
             command.Provider);
 
         await _unitOfWork.CompleteAsync();
+        await _cache.InvalidateProjectAsync(material.ProjectId);
+        await _cache.InvalidateMaterialAsync(material.Id);
 
         if (material.Stock <= material.MinimumStock && material.Stock > 0)
         {
@@ -82,8 +88,12 @@ public class MaterialCommandService : IMaterialCommandService
         if (material == null)
             return false;
 
+        var projectId = material.ProjectId;
+
         _materialRepository.Remove(material);
         await _unitOfWork.CompleteAsync();
+        await _cache.InvalidateProjectAsync(projectId);
+        await _cache.InvalidateMaterialAsync(command.MaterialId);
         return true;
     }
 }

@@ -48,7 +48,7 @@ services:
     networks:
       - buildtruck-network
     restart: always
-    mem_limit: 200m
+    mem_limit: 140m
 
   # ===== PROJECTS MICROSERVICE =====
   buildtruck-project-service:
@@ -74,7 +74,7 @@ services:
     networks:
       - buildtruck-network
     restart: always
-    mem_limit: 200m
+    mem_limit: 140m
 
   # ===== DOCUMENTATION MICROSERVICE =====
   buildtruck-documentation-service:
@@ -100,7 +100,7 @@ services:
     networks:
       - buildtruck-network
     restart: always
-    mem_limit: 200m
+    mem_limit: 140m
 
   # ===== INCIDENTS MICROSERVICE =====
   buildtruck-incident-service:
@@ -126,7 +126,7 @@ services:
     networks:
       - buildtruck-network
     restart: always
-    mem_limit: 200m
+    mem_limit: 140m
 
   # ===== MACHINERY MICROSERVICE =====
   buildtruck-machinery-service:
@@ -152,7 +152,7 @@ services:
     networks:
       - buildtruck-network
     restart: always
-    mem_limit: 200m
+    mem_limit: 140m
 
   # ===== MATERIALS MICROSERVICE =====
   buildtruck-materials-service:
@@ -163,6 +163,8 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+      redis:
+        condition: service_healthy
       buildtruck-user-service:
         condition: service_started
       buildtruck-project-service:
@@ -172,6 +174,9 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ConnectionStrings__DefaultConnection=server=mysql;port=3306;database=buildtruck_materials;user=root;password=${MYSQL_PASSWORD}
+      - ConnectionStrings__Redis=redis:6379
+      - CacheSettings__Enabled=true
+      - CacheSettings__TtlSeconds=300
       - TokenSettings__SecretKey=${JWT_SECRET_KEY}
       - TokenSettings__Issuer=${JWT_ISSUER}
       - TokenSettings__Audience=${JWT_AUDIENCE}
@@ -180,7 +185,7 @@ services:
     networks:
       - buildtruck-network
     restart: always
-    mem_limit: 200m
+    mem_limit: 140m
 
   # ===== PERSONNEL MICROSERVICE =====
   buildtruck-personnel-service:
@@ -208,7 +213,7 @@ services:
     networks:
       - buildtruck-network
     restart: always
-    mem_limit: 200m
+    mem_limit: 140m
 
   # ===== CONFIGURATIONS MICROSERVICE =====
   buildtruck-configuration-service:
@@ -232,7 +237,7 @@ services:
     networks:
       - buildtruck-network
     restart: always
-    mem_limit: 200m
+    mem_limit: 140m
 
   # ===== NOTIFICATION MICROSERVICE =====
   buildtruck-notification-service:
@@ -276,7 +281,7 @@ services:
     networks:
       - buildtruck-network
     restart: always
-    mem_limit: 200m
+    mem_limit: 140m
 
   # ===== STATS MICROSERVICE =====
   buildtruck-stats-service:
@@ -316,7 +321,7 @@ services:
     networks:
       - buildtruck-network
     restart: always
-    mem_limit: 200m
+    mem_limit: 140m
 
   # ===== MYSQL =====
   mysql:
@@ -334,11 +339,33 @@ services:
     networks:
       - buildtruck-network
     restart: always
-    mem_limit: 350m
+    mem_limit: 380m
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
       timeout: 5s
+      retries: 5
+
+  # ===== REDIS CACHE =====
+  redis:
+    image: redis:7-alpine
+    container_name: buildtruck-redis
+    command: >
+      redis-server
+      --maxmemory 32mb
+      --maxmemory-policy allkeys-lru
+      --save ""
+      --appendonly no
+    expose:
+      - "6379"
+    networks:
+      - buildtruck-network
+    restart: always
+    mem_limit: 64m
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
       retries: 5
 
 volumes:
