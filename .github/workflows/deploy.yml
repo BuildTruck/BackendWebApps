@@ -104,8 +104,17 @@ jobs:
               'EmailSettings__SmtpPassword=${{ secrets.SMTP_PASSWORD }}' \
               'CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_SECRET }}' \
               'CloudinarySettings__ApiSecret=${{ secrets.CLOUDINARY_SECRET }}' \
+              'RABBITMQ_USER=buildtruck' \
+              'RABBITMQ_PASSWORD=${{ secrets.RABBITMQ_PASSWORD }}' \
               'IMAGE_PREFIX=${{ secrets.DOCKERHUB_USERNAME }}' \
               > .env
+
+            # Un secreto ausente deja el valor vacio y rompe el arranque del broker.
+            if ! grep -q '^RABBITMQ_PASSWORD=.\+' .env; then
+              echo "ERROR: falta el secreto RABBITMQ_PASSWORD en GitHub."
+              echo "Anadelo en Settings > Secrets and variables > Actions."
+              exit 1
+            fi
             echo ".env generated"
 
             # ── 3. Stop running containers ──

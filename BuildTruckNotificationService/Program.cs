@@ -21,6 +21,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
+using BuildTruckNotificationService.Notifications.Application.ACL.Services;
+using BuildTruckNotificationService.Notifications.Infrastructure.Messaging;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 
@@ -185,6 +187,22 @@ builder.Services.AddScoped<INotificationDeliveryRepository, NotificationDelivery
 builder.Services.AddScoped<INotificationPreferenceRepository, NotificationPreferenceRepository>();
 
 // Domain services
+// ===== MESSAGING (RabbitMQ) =====
+// Sin broker, el publicador nulo devuelve false y la entrega vuelve a ser en linea.
+builder.Services.Configure<RabbitMqSettings>(builder.Configuration.GetSection("RabbitMq"));
+var rabbitEnabled = builder.Configuration.GetValue("RabbitMq:Enabled", false);
+
+if (rabbitEnabled)
+{
+    builder.Services.AddSingleton<RabbitMqConnection>();
+    builder.Services.AddSingleton<INotificationQueuePublisher, RabbitMqNotificationPublisher>();
+    builder.Services.AddHostedService<NotificationDeliveryConsumer>();
+}
+else
+{
+    builder.Services.AddSingleton<INotificationQueuePublisher, NullNotificationQueuePublisher>();
+}
+
 builder.Services.AddScoped<INotificationCommandService, NotificationCommandService>();
 builder.Services.AddScoped<INotificationQueryService, NotificationQueryService>();
 builder.Services.AddScoped<INotificationDeliveryService, NotificationDeliveryCommandService>();

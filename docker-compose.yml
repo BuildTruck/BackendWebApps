@@ -48,7 +48,7 @@ services:
     networks:
       - buildtruck-network
     restart: always
-    mem_limit: 140m
+    mem_limit: 128m
 
   # ===== PROJECTS MICROSERVICE =====
   buildtruck-project-service:
@@ -74,7 +74,7 @@ services:
     networks:
       - buildtruck-network
     restart: always
-    mem_limit: 140m
+    mem_limit: 128m
 
   # ===== DOCUMENTATION MICROSERVICE =====
   buildtruck-documentation-service:
@@ -100,7 +100,7 @@ services:
     networks:
       - buildtruck-network
     restart: always
-    mem_limit: 140m
+    mem_limit: 128m
 
   # ===== INCIDENTS MICROSERVICE =====
   buildtruck-incident-service:
@@ -126,7 +126,7 @@ services:
     networks:
       - buildtruck-network
     restart: always
-    mem_limit: 140m
+    mem_limit: 128m
 
   # ===== MACHINERY MICROSERVICE =====
   buildtruck-machinery-service:
@@ -152,7 +152,7 @@ services:
     networks:
       - buildtruck-network
     restart: always
-    mem_limit: 140m
+    mem_limit: 128m
 
   # ===== MATERIALS MICROSERVICE =====
   buildtruck-materials-service:
@@ -185,7 +185,7 @@ services:
     networks:
       - buildtruck-network
     restart: always
-    mem_limit: 140m
+    mem_limit: 128m
 
   # ===== PERSONNEL MICROSERVICE =====
   buildtruck-personnel-service:
@@ -213,7 +213,7 @@ services:
     networks:
       - buildtruck-network
     restart: always
-    mem_limit: 140m
+    mem_limit: 128m
 
   # ===== CONFIGURATIONS MICROSERVICE =====
   buildtruck-configuration-service:
@@ -237,7 +237,7 @@ services:
     networks:
       - buildtruck-network
     restart: always
-    mem_limit: 140m
+    mem_limit: 128m
 
   # ===== NOTIFICATION MICROSERVICE =====
   buildtruck-notification-service:
@@ -247,6 +247,8 @@ services:
       - "8080"
     depends_on:
       mysql:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
       buildtruck-user-service:
         condition: service_started
@@ -267,6 +269,11 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ConnectionStrings__DefaultConnection=server=mysql;port=3306;database=buildtruck_notifications;user=root;password=${MYSQL_PASSWORD}
+      - RabbitMq__Host=rabbitmq
+      - RabbitMq__Port=5672
+      - RabbitMq__Username=${RABBITMQ_USER:-buildtruck}
+      - RabbitMq__Password=${RABBITMQ_PASSWORD}
+      - RabbitMq__Enabled=true
       - TokenSettings__SecretKey=${JWT_SECRET_KEY}
       - TokenSettings__Issuer=${JWT_ISSUER}
       - TokenSettings__Audience=${JWT_AUDIENCE}
@@ -281,7 +288,7 @@ services:
     networks:
       - buildtruck-network
     restart: always
-    mem_limit: 140m
+    mem_limit: 128m
 
   # ===== STATS MICROSERVICE =====
   buildtruck-stats-service:
@@ -321,7 +328,7 @@ services:
     networks:
       - buildtruck-network
     restart: always
-    mem_limit: 140m
+    mem_limit: 128m
 
   # ===== MYSQL =====
   mysql:
@@ -368,8 +375,33 @@ services:
       timeout: 3s
       retries: 5
 
+  # ===== RABBITMQ MESSAGE BROKER =====
+  rabbitmq:
+    image: rabbitmq:3.13-alpine
+    container_name: buildtruck-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-buildtruck}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+      # Se autolimita antes de que Docker lo mate por OOM.
+      RABBITMQ_VM_MEMORY_HIGH_WATERMARK: "0.6"
+    expose:
+      - "5672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - buildtruck-network
+    restart: always
+    mem_limit: 220m
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
 volumes:
   mysql_data:
+  rabbitmq_data:
 
 networks:
   buildtruck-network:
