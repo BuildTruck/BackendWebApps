@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # ===== NGINX REVERSE PROXY =====
   nginx:
@@ -249,7 +247,10 @@ services:
       mysql:
         condition: service_healthy
       rabbitmq:
-        condition: service_healthy
+        # service_started, no service_healthy: el publicador degrada a entrega
+        # en linea si el broker no responde. Un broker caido no debe impedir
+        # que arranque la API.
+        condition: service_started
       buildtruck-user-service:
         condition: service_started
       buildtruck-project-service:
@@ -379,11 +380,13 @@ services:
   rabbitmq:
     image: rabbitmq:3.13-alpine
     container_name: buildtruck-rabbitmq
+    # El proceso debe poder leer /var/lib/rabbitmq/.erlang.cookie.
+    user: rabbitmq
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-buildtruck}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
-      # Se autolimita antes de que Docker lo mate por OOM.
-      RABBITMQ_VM_MEMORY_HIGH_WATERMARK: "0.6"
+      # No usar RABBITMQ_VM_MEMORY_HIGH_WATERMARK: 3.13 aborta el arranque
+      # si detecta esa variable. RabbitMQ lee el limite del cgroup (mem_limit).
     expose:
       - "5672"
     volumes:
