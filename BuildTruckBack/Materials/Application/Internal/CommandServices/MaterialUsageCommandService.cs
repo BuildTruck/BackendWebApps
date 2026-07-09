@@ -19,10 +19,14 @@ namespace BuildTruckBack.Materials.Application.Internal.CommandServices
         private readonly IMaterialUsageRepository _usageRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly INotificationContextFacade _notificationFacade;
-        public MaterialUsageCommandService(IMaterialUsageRepository usageRepository, IUnitOfWork unitOfWork)
+        public MaterialUsageCommandService(
+            IMaterialUsageRepository usageRepository,
+            IUnitOfWork unitOfWork,
+            INotificationContextFacade notificationFacade)
         {
             _usageRepository = usageRepository;
             _unitOfWork = unitOfWork;
+            _notificationFacade = notificationFacade;
         }
 
         public async Task<MaterialUsage?> Handle(CreateMaterialUsageCommand command)
