@@ -1,5 +1,7 @@
 using BuildTruckNotificationService.Notifications.Application.ACL;
+using BuildTruckNotificationService.Notifications.Application.ACL.Services;
 using BuildTruckNotificationService.Notifications.Application.Internal.CommandServices;
+using Microsoft.Extensions.Logging.Abstractions;
 using BuildTruckNotificationService.Notifications.Application.Internal.QueryServices;
 using BuildTruckNotificationService.Notifications.Domain.Model.Aggregates;
 using BuildTruckNotificationService.Notifications.Domain.Model.Commands;
@@ -63,11 +65,14 @@ public class NotificationTests
         var deliveryService = new FakeNotificationDeliveryService();
         var webSocketService = new FakeWebSocketService();
         var unitOfWork = new FakeUnitOfWork();
+        var queue = new FakeQueuePublisher();
         var service = new NotificationCommandService(
             repository,
             deliveryService,
             webSocketService,
-            unitOfWork);
+            unitOfWork,
+            queue,
+            NullLogger<NotificationCommandService>.Instance);
 
         var id = await service.Handle(new CreateNotificationCommand(
             UserId: 9,
@@ -87,9 +92,50 @@ public class NotificationTests
         Assert.Equal(1, id);
         Assert.Single(repository.Notifications);
         Assert.Equal(1, unitOfWork.CompleteCalls);
-        Assert.Equal(1, webSocketService.SendToUserCalls);
-        Assert.Equal(9, webSocketService.LastUserId);
+
+        // IN_APP se resuelve en linea (no hace I/O externo).
         Assert.Contains(deliveryService.DeliveredChannels, channel => channel == NotificationChannel.InApp);
+
+        // Los canales lentos se encolan: el SMTP ya no bloquea la peticion.
+        Assert.DoesNotContain(deliveryService.DeliveredChannels, channel => channel == NotificationChannel.Email);
+        Assert.Equal(
+            new[] { "WEBSOCKET", "EMAIL" },
+            queue.Published.Select(m => m.Channel).ToArray());
+        Assert.All(queue.Published, m => Assert.Equal(1, m.NotificationId));
+    }
+
+    [Fact]
+    public async Task NotificationCommandService_DeliversInline_WhenQueueIsUnavailable()
+    {
+        var repository = new FakeNotificationRepository();
+        var deliveryService = new FakeNotificationDeliveryService();
+        var unitOfWork = new FakeUnitOfWork();
+        var queue = new FakeQueuePublisher(available: false);
+        var service = new NotificationCommandService(
+            repository,
+            deliveryService,
+            new FakeWebSocketService(),
+            unitOfWork,
+            queue,
+            NullLogger<NotificationCommandService>.Instance);
+
+        await service.Handle(new CreateNotificationCommand(
+            UserId: 9,
+            Type: NotificationType.CriticalStock,
+            Context: NotificationContext.Materials,
+            Priority: NotificationPriority.Critical,
+            Title: "Stock critico",
+            Message: "El cemento Portland esta agotado",
+            TargetRole: UserRole.Manager,
+            Scope: NotificationScope.Project,
+            RelatedProjectId: 15,
+            RelatedEntityId: 4,
+            RelatedEntityType: "Material",
+            ActionUrl: "/projects/15/materials/4",
+            ActionText: "Revisar inventario"));
+
+        // Sin broker se degrada a la entrega en linea: ninguna notificacion se pierde.
+        Assert.Empty(queue.Published);
         Assert.Contains(deliveryService.DeliveredChannels, channel => channel == NotificationChannel.WebSocket);
         Assert.Contains(deliveryService.DeliveredChannels, channel => channel == NotificationChannel.Email);
     }
@@ -112,7 +158,9 @@ public class NotificationTests
             repository,
             new FakeNotificationDeliveryService(),
             new FakeWebSocketService(),
-            unitOfWork);
+            unitOfWork,
+            new FakeQueuePublisher(),
+            NullLogger<NotificationCommandService>.Instance);
 
         await service.Handle(new MarkAsReadCommand(NotificationId: 1, UserId: 5));
 
@@ -237,6 +285,23 @@ public class NotificationTests
 
         public Task<bool> CanDeliverAsync(Notification notification, NotificationChannel channel) =>
             Task.FromResult(true);
+    }
+
+    /// <summary>Cola de mentira: registra lo publicado y simula que el broker responde.</summary>
+    private sealed class FakeQueuePublisher : INotificationQueuePublisher
+    {
+        private readonly bool _available;
+
+        public FakeQueuePublisher(bool available = true) => _available = available;
+
+        public List<NotificationDeliveryMessage> Published { get; } = new();
+
+        public Task<bool> PublishAsync(NotificationDeliveryMessage message, CancellationToken ct = default)
+        {
+            if (!_available) return Task.FromResult(false);
+            Published.Add(message);
+            return Task.FromResult(true);
+        }
     }
 
     private sealed class FakeWebSocketService : IWebSocketService
