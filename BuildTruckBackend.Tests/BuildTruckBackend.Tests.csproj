@@ -27,6 +27,8 @@
     <ProjectReference Include="..\BuildTruckDocumentationService\BuildTruckDocumentationService.csproj" />
     <ProjectReference Include="..\BuildTruckIncidentService\BuildTruckIncidentService.csproj" />
     <ProjectReference Include="..\BuildTruckMaterialsService\BuildTruckMaterialsService.csproj" />
+    <ProjectReference Include="..\BuildTruckMachineryService\BuildTruckMachineryService.csproj" />
+    <ProjectReference Include="..\BuildTruckStatsService\BuildTruckStatsService.csproj" />
     <ProjectReference Include="..\BuildTruckConfigurationService\BuildTruckConfigurationService.csproj" />
     <ProjectReference Include="..\BuildTruckPersonnelService\BuildTruckPersonnelService.csproj" />
     <ProjectReference Include="..\BuildTruckNotificationService\BuildTruckNotificationService.csproj" />
