@@ -16,6 +16,7 @@ using BuildTruckMaterialsService.Shared.Infrastructure.Tokens.JWT;
 using BuildTruckShared.Domain.Repositories;
 using BuildTruckShared.Infrastructure.Interfaces.ASP.Configuration;
 using BuildTruckShared.Infrastructure.Persistence.EFC.Repositories;
+using BuildTruckMaterialsService.Materials.Infrastructure.Cache;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -132,6 +133,24 @@ builder.Services.AddScoped<IMaterialEntryRepository>(provider =>
     new MaterialEntryRepository(provider.GetRequiredService<MaterialsServiceDbContext>()));
 builder.Services.AddScoped<IMaterialUsageRepository>(provider =>
     new MaterialUsageRepository(provider.GetRequiredService<MaterialsServiceDbContext>()));
+
+// ===== CACHE =====
+// Redis en produccion; si no hay connection string, cache en memoria del proceso.
+// El codigo de Materials solo conoce IDistributedCache, nunca a Redis.
+var redisConnection = builder.Configuration.GetConnectionString("Redis");
+if (!string.IsNullOrWhiteSpace(redisConnection))
+{
+    builder.Services.AddStackExchangeRedisCache(options =>
+    {
+        options.Configuration = redisConnection;
+        options.InstanceName = "buildtruck:";
+    });
+}
+else
+{
+    builder.Services.AddDistributedMemoryCache();
+}
+builder.Services.AddScoped<IMaterialCacheService, RedisMaterialCacheService>();
 
 builder.Services.AddScoped<IMaterialCommandService, MaterialCommandService>();
 builder.Services.AddScoped<IMaterialEntryCommandService, MaterialEntryCommandService>();
